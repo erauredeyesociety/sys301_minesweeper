@@ -19,11 +19,13 @@ import config
 # Commands the caller (the hub-facing layer) is expected to execute.
 CMD_DRIVE = "drive"      # value: millimetres forward
 CMD_TURN = "turn"        # value: degrees, positive = right
+CMD_RESQUARE = "resquare"  # re-establish heading against a fixed reference; no value
 CMD_STOP = "stop"
 
 # States
 IDLE = "idle"
 LANE = "lane"            # driving a sweep lane, detector active
+RESQUARE = "resquare"    # re-square the heading at the end of a lane, before turning out of it
 TURN_A = "turn_a"        # first 90 deg of the lane change
 STEP = "step"            # sideways step to the next lane
 TURN_B = "turn_b"        # second 90 deg, now facing back down the arena
@@ -58,6 +60,7 @@ class SweepPlan(object):
         self.state = IDLE
         self.lane_index = 0
         self.turn_direction = 1   # +1 right, -1 left; alternates each lane change
+        self.stop_requested = False
 
     @staticmethod
     def _lanes_for(width, pitch):
@@ -78,6 +81,31 @@ class SweepPlan(object):
             raise ValueError("speed must be positive")
         return self.path_length_mm() / speed
 
+    def estimated_lane_seconds(self, speed_mms=None):
+        """Seconds for ONE more lane plus its sideways step. TURN TIME IS EXCLUDED.
+
+        Not estimated_seconds(), which is the whole sweep: the time box asks "can I afford the next
+        lane?" at each lane start, and answering that with the cost of every remaining lane would
+        trip the box on lane 1 of every run (degraded mode T1).
+
+        The exclusion is not a rounding error -- two 90 deg turns per lane change at an unmeasured
+        TURN_RATE_DPS is real time this number does not contain, so it UNDERSTATES the lane. Fold
+        turn time in once BM-4/BM-7 have measured a turn rate.
+        """
+        speed = config.TRAVERSE_SPEED_MMS if speed_mms is None else speed_mms
+        if speed <= 0.0:
+            raise ValueError("speed must be positive")
+        return (self.length_mm + self.pitch_mm) / speed
+
+    def stop_after_current_lane(self):
+        """Finish the lane in progress, then stop instead of turning into the next one.
+
+        A lane boundary is the only place a truncated run is still reportable: coverage is
+        lanes_completed / lanes_planned, and a sweep abandoned halfway down a lane has no honest
+        value for either. The time box (T1) calls this rather than stopping where it stands.
+        """
+        self.stop_requested = True
+
     def next_command(self):
         """Advance the state machine one step and return the command to execute."""
         if self.state == IDLE:
@@ -89,6 +117,16 @@ class SweepPlan(object):
             if self.lane_index >= self.total_lanes:
                 self.state = DONE
                 return Command(CMD_STOP)
+            if self.stop_requested:
+                self.state = DONE
+                return Command(CMD_STOP)
+            # Re-square only when another lane follows. Squaring against a boundary the robot has
+            # just finished with drives it back into that boundary for nothing, and after the last
+            # lane there is no heading left to protect.
+            self.state = RESQUARE
+            return Command(CMD_RESQUARE, detect=False)
+
+        if self.state == RESQUARE:
             self.state = TURN_A
             return Command(CMD_TURN, 90.0 * self.turn_direction)
 

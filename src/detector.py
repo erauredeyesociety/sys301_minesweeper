@@ -37,7 +37,14 @@ class Event(object):
         self.reason = reason
 
     def width(self):
-        return self.end_index - self.start_index
+        """Width in SAMPLES, inclusive of both ends -- the same span `_close()` gates on.
+
+        Corrected 2026-08-26: this returned `end - start`, one less than the `end - start + 1` the
+        gate uses. A one-sample event therefore printed `width=0` while `MIN_EVENT_SAMPLES` was 2,
+        so anyone reading this value to reason about why an event was rejected got a number that
+        did not match the rule that rejected it. Found by the analysis-plan audit.
+        """
+        return self.end_index - self.start_index + 1
 
     def describe(self):
         return "event[{0}..{1}] width={2} peak={3:.1f} {4}{5}".format(

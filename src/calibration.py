@@ -65,6 +65,23 @@ class Calibration(object):
                     self.on_threshold, self.off_threshold, self.polarity, self.floor_noise)
 
 
+def check_floor_stability(floor_samples, max_mad):
+    """Raise CalibrationError unless the floor reading is steady enough to build on.
+
+    calibrate() checks that floor and target are far apart, but a floor whose OWN reading
+    wanders invalidates every threshold derived from it and shows up later as phantom counts.
+    The measured MAD and the limit are both in the message because "calibration failed" tells
+    the Builder nothing on the day -- the fix is almost always sensor height or a loose mount.
+    """
+    if not floor_samples:
+        raise CalibrationError("no floor samples: floor stability cannot be judged")
+
+    mad = median_absolute_deviation(floor_samples)
+    if mad > max_mad:
+        raise CalibrationError(
+            "floor is not stable: MAD {0:.2f} > limit {1:.2f}".format(mad, max_mad))
+
+
 def calibrate(floor_samples, target_samples):
     """Build a Calibration from measured floor and target samples.
 
@@ -87,6 +104,23 @@ def calibrate(floor_samples, target_samples):
             "(floor {2:.1f}, target {3:.1f})".format(
                 contrast, config.MIN_CONTRAST, floor_level, target_level))
 
+    # The RATIO gate, not just the absolute one. MIN_CONTRAST and MAX_FLOOR_MAD are set as a pair so
+    # their ratio lands on the research rule, but a hand-edit of either silently breaks that -- and the
+    # result is a run that arms on separation the research says to refuse, then counts phantoms.
+    # Checking the ratio itself is what makes the guarantee survive an edit.
+    #
+    # The rule is contrast >= 6 * floor_SD (detection-and-sweep-techniques.md). Our spread statistic is
+    # MAD, and MAD ~ 0.6745 * SD for Gaussian noise, so 6 SD = 6/0.6745 = 8.90 MAD. Comparing a MAD
+    # against a rule written in SD is exactly the 1.48x unit error that has already bitten this project
+    # three times, so the conversion is done here once and named.
+    floor_noise = median_absolute_deviation(floor_samples)
+    if floor_noise > 0.0 and contrast < config.MIN_SNR_MAD * floor_noise:
+        raise CalibrationError(
+            "floor and target are not separable enough: contrast {0:.2f} is {1:.2f} MAD of floor "
+            "noise, need {2:.2f} MAD (= 6 SD). floor {3:.1f} +/- {4:.2f} MAD, target {5:.1f}".format(
+                contrast, contrast / floor_noise, config.MIN_SNR_MAD,
+                floor_level, floor_noise, target_level))
+
     polarity = 1 if target_level > floor_level else -1
 
     # Work in signal space so the thresholds are ordered regardless of polarity.
@@ -97,8 +131,6 @@ def calibrate(floor_samples, target_samples):
 
     on_threshold = midpoint + gap / 2.0     # must exceed this to turn ON
     off_threshold = midpoint - gap / 2.0    # must fall below this to turn OFF
-
-    floor_noise = median_absolute_deviation(floor_samples)
 
     return Calibration(floor_level, target_level, on_threshold, off_threshold,
                        polarity, floor_noise)
