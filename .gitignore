@@ -21,3 +21,6 @@ logs/
 # Office lock files (the report is edited as .docx)
 ~$*
 .~lock.*#
+
+# Scratch buffer (CLAUDE.md exempts tmp*.md from the no-root-md rule)
+tmp*.md
