@@ -1,0 +1,2271 @@
+Mobile Robot Sensory Coverage in 2-D Environments:
+An Optimization Approach with Efficiency Bounds
+
+arXiv:2405.15100v1 [cs.RO] 23 May 2024
+
+E. Fourney and J. W. Burdick and E. D. Rimon
+Abstract— This paper considers three related mobile robot
+multi-target sensory coverage and inspection planning problems
+in 2-D environments. In the first problem, a mobile robot must
+find the shortest path to observe multiple targets with a limited
+range sensor in an obstacle free environment. In the second
+problem, the mobile robot must efficiently observe multiple targets while taking advantage of multi-target views in an obstacle
+free environment. The third problem considers multi-target
+sensory coverage in the presence of obstacles that obstruct
+sensor views of the targets. We show how all three problems
+can be formulated in a MINLP optimization framework.
+Because exact solutions to these problems are NP-hard, we
+introduce polynomial time approximation algorithms for each
+problem. These algorithms combine polynomial-time methods
+to approximate the optimal target sensing order, combined
+with efficient convex optimization methods that incorporate the
+constraints posed by the robot sensor footprint and obstacles in
+the environment. Importantly, we develop bounds that limit the
+gap between the exact and approximate solutions. Algorithms
+for all problems are fully implemented and illustrated with
+examples. Beyond the utility of our algorithms, the bounds
+derived in the paper contribute to the theory of optimal
+coverage planning algorithms.
+
+I. I NTRODUCTION
+In the robot sensory coverage problems considered in this paper, a mobile robot must choose its motions so that its sensors
+can inspect multiple targets in a bounded environment. Robot
+sensory coverage applications include mine sweeping [2],
+crop sampling [35], intruder detection [12] and sewage
+system inspection [29]. Other applications include aerial inspection of industrial installations [3], [5], aerial search [28],
+seafloor mapping [16] and ship hull inspection [15]. See
+surveys by Acar and Choset [1] and Galceran [17].
+This paper studies three related mobile robot sensory
+coverage planning problems in 2-D environments. In the
+first two problems, a mobile robot must efficiently observe
+multiple targets with a limited range sensor in an obstacle
+free environment. First observing one target at a time, then
+exploiting possible multi-target views along the robot path.
+In the third problem, a mobile robot must efficiently observe
+with a limited range sensor multiple targets among stationary
+obstacles that obstruct sensor views of the targets.
+Why do we study the multi-target sensory coverage planning problem, and why do we emphasize an optimal shortest
+path framework? On every day until the year 2030, the world
+will add ∼1 gigawatt of solar power generation capacity.
+Some solar installations will be as large as 5 miles on a
+side. These facilities must be inspected on a regular basis,
+presumably by robots. Simple boustrophedon paths will
+suffice to inspect the solar panel surfaces by aerial drones.
+But the electrical inverter modules and electrical junctions
+
+boxes, whose failure can be detected by thermal cameras,
+are irregularly sited inspection targets. The vast size of these
+inspection problems requires a shortest path strategy.
+One of the novelties of this paper is to formulate these
+problems in a rigorous optimization framework. This framework brings the computational difficulty of coverage to the
+forefront. We show that all problems can be posed as mixed
+integer nonlinear optimization problems (MINLP). Because
+these MINLPs are NP-hard, we introduce polynomial time algorithms to approximately solve these problems. In addition
+to new algorithms, we provide rigorous efficiency bounds on
+the mobile robot path length that set new upper bounds on
+the length of a robot path to solve an inspection problem.
+These are the paper’s two main conceptual contributions.
+The MINLP approach and our approximate solution methods provide a flexible framework for coverage planning that
+can be extended to target specific observation requirements,
+different sensor scanning patterns, terrain dependent travel
+cost and control input limits. Prior works have often made
+restricted choices of these parameters
+Related work: We are not the first to recognize that
+sensory coverage planning (which is NP-hard) can be solved
+under MINLP formulation. Gentilini [18] adapted the MINLP
+formulations of Current [11] and Golden [19] to plan the
+motion of a robot arm to inspect 3-D objects with a distal
+camera. The camera visits viewing neighborhoods specified
+as convex sets. A direct optimization of the viewing path
+was proposed. However, direct MINLP solvers can only find
+globally optimal solutions in reasonable computation times
+for small numbers of regions [4], [7], [27]. Large number of
+targets can be solved using branch and bound methods, with
+much longer computation time [10].
+This paper solves off-line sensory coverage planning
+problems using a two-stage approach that is related to a
+long tradition in robotics. Danner [12] uses a two-stage
+scheme to plan mobile robot intruder detection routes in
+2-D environments. The first stage samples candidate robot
+sensing locations. The second stage computes in polynomial
+time a tour that visits the selected sensing locations.
+Englot [14] used a two-stage scheme for underwater
+inspection of ship hulls. A mesh representation of the hull
+defines a collection of targets to observe. The first stage uses
+random sampling to construct a graph that connects sensing
+nodes with multiple target views. The second stage computes
+a tour through the sensing nodes. Bircher [5] also used a
+two-stage scheme to plan aerial inspection of industrial sites.
+Mesh-based facets of the environment form the collection of
+targets to observe. Initial sensor node locations are chosen
+
+according to the sensor viewing pattern. The first stage
+computes a tour that visits all sensing nodes. The second
+stage adjusts the sensing positions to reduce the robot path
+length. This process repeats several times, but efficiency
+bounds on the coverage path length are not discussed.
+The MINLP formulation has been applied to a different problem of computing collision free paths for robot
+arms [30]. The robot arm joint space is partitioned into collision free convex cells whose visitation order is represented
+by the MINLP integer variables. The integer variables are then
+relaxed into continuous variables and the MINLP is solved
+as a convex optimization problem having only continuous
+variables. However, the solution needs rounding back into
+integer variables in a manner that does not guarantee efficiency bounds on the solution path.
+The mobile robot sensory coverage problem studied in
+this paper is related to the Traveling Salesperson Problem
+(TSP) with neighborhoods [31] in computational geometry.
+This NP-hard problem is approximately solved in polynomial
+time by finding a tour that visits each neighborhood, and then
+bounding the length of this tour in terms of the optimal tour
+length through the specified neighborhoods.
+In this paper, the neighborhoods represent sensing regions
+modeled as circles centered at the targets.1 When the circles have equal size and do not overlap, Dumitrescu [13]
+computes in polynomial time a tour that visits each circle
+with path length l(path) ≤ (1 + π8 )(1 + ϵ) · lopt , where lopt
+is the optimal tour length. The 1 + ϵ coefficient represents
+an approximation of an initial TSP tour that passes through
+the circle centers. For instance, 1+ϵ = 23 when Christofides [9]
+is used to approximate the TSP tour. When the sensing
+circles possibly overlap, Dumitrescu [13] computes a tour
+that visits each circle with path length bound l(path) ≤
+π(1 + π8 )(1 +ϵ)·lopt , where lopt is the optimal tour length.
+Isler adapted these techniques to sample crop data from
+circular areas (with path length efficiency bound [35]), and
+then to aerial robot inspection of ground targets visible
+through vertical cones of variable heights with path length
+efficiency bound [32].
+Paper contributions and format: In the sensory coverage
+problems considered in this paper, the mobile robot starts at
+the first target location T1 , moves to observe intermediate
+targets T2 , . . . , Tn−1 in any order, then stops within the
+detection range of a final target Tn . This problem is termed
+S-to-T sensory coverage, where S = T1 and T = Tn . The
+mobile robot observes the targets at discrete sensing locations
+along its path while ensuring that the targets lie within the
+detection range r of its on-board coverage sensors. The
+robot sensing locations thus lie in circular sensing regions
+of radius r centered at the targets (Fig. 1).
+The paper first describes the MINLP formulation of multitarget coverage in obstacle free environments with nonoverlapping sensing regions. An approximate shortest sensory coverage path is computed in two stages. First, a
+1 Our framework is readily extended to sensing patterns that can be
+modeled by a convex polygon.
+
+𝑇#
+
+𝑇%
+
+𝑇!
+
+𝑇$
+
+𝑟
+
+𝑇&
+target nodes
+
+𝑟
+
+coverage region
+of robot
+sensors
+
+𝑇"
+target node
+covered when
+robot is inside
+this region
+
+𝑟
+
+𝑇'
+
+Fig. 1. The problem geometry showing circular sensing regions centered
+at the targets and typical robot sensor footprints with detection range r.
+
+polynomial time algorithm finds a bounded approximation to
+the optimal S-to-T sensory coverage path, which establishes
+the sensing node visitation order. The sensing nodes positions
+are then optimized for the shortest path using efficient convex
+optimization. The robot’s path length bound is shown to
+approach l(path) ≤ 10
+3 ·lopt , where lopt is the optimal S-to-T
+sensory coverage path length. The approximation coefficient
+improves on [13] and is shown to be tight.
+The paper next develops a novel MINLP formulation for
+multi-target sensory coverage when the sensing regions may
+overlap in an obstacle free environment. A modified twostage approximation algorithm first places sensing nodes on
+the perimeter of base set sensing circles that overlap all other
+sensing circles. Application of the algorithm described above
+(approximate path construction, followed by sensing location
+optimization) is followed by a process of sensing node
+reduction. The constructed path satisfies the bound l(path) ≤
+5
+3 · 9 · lopt (with some constants neglected), where lopt is the
+length of the shortest path that observes all targets while
+taking advantage of multi-target views. The approximation
+bound improves on [13] but is not a tight bound.
+The third sensory coverage problem includes polygonal
+obstacles in the environment. The targets can only be viewed
+from obstacle bounded viewing regions of maximal detection
+range r. The sensory coverage path among obstacles can still
+be computed by a polynomial time two-stage approach. Path
+length optimization occurs within the obstacle free space,
+and the number of sensing is reduced, when possible. The
+path length approximation bound for this problem uses two
+parameters. The number of obstacle vertices within detection
+range of the targets, m, and the circular radius representing
+the average area of the viewing regions, ρ̄ ≤ r. The sensory
+2
+coverage path satisfies the bound l(path) ≤ 53 (1 + 8 ρ̄r 2 ) ·
+(lopt + 2r ·m) (with some constants neglected), where lopt
+is the length of the optimal S-to-T sensory coverage path in
+the environment. All algorithms are fully implemented and
+illustrated with execution examples.
+A very preliminary version of this work appeared in [8].
+The present paper sharpens Proposition 2 and provides the
+missing proof of this proposition. The bulk of Section IV
+on sensor node reduction is entirely new. Moreover, all of
+Section V and its novel bounds are new material.
+The paper is structured as follows. Section II formulates
+
+the first multi-target sensory coverage problem as a MINLP
+problem. Section III describes a two-step approximation
+algorithm for this problem and develops a path length
+approximation bound. Section IV adds multi-target views to
+the MINLP formulation, then describes an analogous approximation algorithm, a sensing node reduction algorithm, and
+a path length approximation bound. Section V generalizes
+the MINLP formulation to multi-target sensory coverage in
+the presence of obstacles. The section describes an approximation algorithm, followed by analysis of the algorithm’s
+path length approximation bound. The conclusion discusses
+an extension of the MINLP approach to partially known
+environments and 3-D sensory coverage planning problems.
+II. MINLP F ORMULATION OF THE M ULTI -TARGET
+S ENSORY C OVERAGE P ROBLEM
+This section describes the MINLP formulation of the basic
+multi-target sensory coverage problem. The mobile robot
+moves in a 2-D environment free of obstacles using an
+ideal position sensor and a finite detection range coverage
+sensor, whose footprint forms a circular or convex sector with
+detection range r (Fig. 1). The robot must observe targets
+T1 , . . . , Tn from discrete sensing nodes S1 , . . . , Sns (ns ≤
+n) along its path. The robot starts at target T1 (which is
+also labeled as sensing node S1 ) and ends within detection
+range of Tn , but otherwise observes the intermediate targets
+T2 , . . . , Tn−1 in any order. The sensing region that surrounds
+each target, R(Ti ), is the circle of radius r centered at Ti
+(Fig. 1). This is a specific type of viewing region, V (Ti ),
+which describes the area from which target Ti can be
+observed. When the robot sensor is located in R(Ti ), there
+exist sensor viewing directions that can observe target Ti .
+The multi-target sensory coverage problem: The simplest problem assumes one sensing node per target, ns = n,
+in an obstacle free environment. The goal is to find the
+shortest path, P, that allows the robot to observe all targets
+T1 , . . . , Tn from sensing nodes S1 , . . . , Sn , such that S1 =
+T1 and Sn ∈ R(Tn ).
+The path P is chosen to minimize the cost
+Cost({S1 , . . . , Sn }, {ξij }) =
+
+n
+n
+X
+X
+
+ξij ·d(Si , Sj ) (1)
+
+i=1 j=1,j̸=i
+
+over the sensing node locations S1 , . . . , Sn ∈ IR2 (S1 = T1 )
+and incidence variables, ξij for i, j ∈ {1, . . . , n}, such that
+(
+1 Tj is observed immediately after Ti is observed
+ξij =
+0 otherwise
+with d(Si , Sj ) ≥ 0 denoting the distance between sensor
+nodes Si and Sj . Terrain dependent travel costs can be
+handled by non-symmetric travel costs. This paper assumes
+symmetric travel costs, d(Si , Sj ) = d(Si , Sj ). In the symmetric case it suffices to use the reduced indices j > i in
+Eq. (1).
+For the sensory coverage path to be well defined, the cost
+minimization must satisfy the following constraints.
+
+A non-valid sensory coverage path starts at S1 = T1 and ends
+∈ R(T9 ). The disjoint loop through the
+sensing nodes
+P
+W = {S5 , S6 , S7 , S8 } does not satisfy the constraint i∈W,j∈W ξij≤ 3.
+Fig. 2.
+at S9
+
+1) Full path constraints: The path P must pass through
+each sensing node
+n
+n−1
+X
+X
+ξ1j = 1,
+ξin = 1,
+(2)
+j=2
+
+and
+i−1
+X
+
+ξji +
+
+j=1
+
+n
+X
+
+i=1
+
+ξij = 2
+
+i = 2 . . . n−1.
+
+(3)
+
+j=i+1
+
+Eq. (2) ensures that a single edge of P exits S1 and
+a single edge enters Sn . Eq. (3) ensures that a single
+edge of P enters (first summand) and a single edge exits (second summand) each intermediate sensing node.
+2) Connected path constraints: Additional constraints
+are needed to ensure that P forms a connected path.
+Let S = {S1 , . . . , Sn } be the set of sensing nodes. Let
+W be the index set of three or more distinct sensing
+nodes, and let |W | denote the set size. The constraints
+X
+ξij ≤ |W |−1, ∀W ⊆ S − {S1 , Sn }, |W | ≥ 3
+i∈W,j∈W
+
+prevent disconnected sub-paths by preventing sets of
+|W | ≥ 3 sensing nodes from forming disjoint loops
+(Fig. 2). The number of such constraints
+n−1
+X n−2
+1
+= 2n−1 − (n−1)(n−2) − 1
+2
+k
+k=3
+
+is exponential in n, which highlights the NP-hardness
+of the multi-target sensory coverage problem.
+3) Sensing region constraints: Each sensing node Si
+must lie inside the circular sensing region R(Ti ),
+expressed by the quadratic constraint
+||Si − Ti ||2 ≤ r2
+
+Si ∈ IR2 , i = 1 . . . n. (4)
+
+Problem #1: Compute the minimum cost S-to-T path P
+that visits variable sensing nodes S1 , . . . , Sn such that all
+targets T1 , . . . , Tn are observed at the sensing nodes. This
+problem is formulated as the MINLP optimization problem
+X
+
+n
+n
+X
+∗
+∗
+(S , {ξij }) = Arg Min
+ξij ·d(Si , Sj )
+S,{ξij }
+
+i=1 j=i,j>i
+
+where d(Si , Sj ) = ∥Si −Sj ∥ is the Euclidean distance. The
+sensing nodes S = {S1 , . . . , Sn } and the incidence variables
+{ξij } are subject to the constraints
+
+n
+X
+
+ξ1j = 1,
+
+j=2
+i−1
+X
+
+n−1
+X
+
+ξin = 1
+
+(5)
+
+i=1
+
+ξji +
+
+j=1
+
+X
+
+n
+X
+
+ξij = 2
+
+i = 2 . . . n−1
+
+(6)
+
+j=i+1
+
+ξij ≤ |W |−1, ∀W ⊆ S − {S1 , Sn }, |W | ≥ 3 (7)
+
+i∈W,j∈W
+
+ξij ∈ {0, 1}
+Si ∈ R(Ti )
+
+1 ≤ i, j ≤ n
+2
+
+Si ∈ IR , i = 1 . . . n
+
+(8)
+(9)
+
+where the sensing range constraints take the quadratic form
+of Eq. (4). A convex polyhedral sensing pattern can alternatively included by a set of linear constraints. Generically, for
+any convex sensing footprint, these constraints are simply
+Si ∈ V (Ti ).
+
+on the worst case path length produced by the algorithm.
+Hoogeven’s algorithm [22] is first used to determine the
+sensing nodes visitation order. The Hoogeveen path solution assigns fixed values to the incidence variables, thereby
+approximating a solution of the S-T TSP problem on the
+targets. Then, initial sensing node locations are placed at the
+target locations. Next, convex optimization finds the sensing
+node locations that yield the shortest sensory coverage path,
+given the visitation order. The section then analyzes this
+algorithm’s path length approximation bound.
+Hoogeveen S-to-T shortest path approximation:
+Hoogeveen’s algorithm [22], summarized in Algorithm 1,
+generates in polynomial time a path that visits all sensing
+nodes, which are initialized to the target locations, with a
+path length approximation bound that is described below.
+The algorithm first computes in line 2 a complete graph, G,
+by joining every pair of sensing nodes Si and Sj with edge
+weight d(Si , Sj ) = ∥Si −Sj ∥. This computation takes O(n2 )
+time where n is the total number of sensing nodes (one per
+target). The shortest S-to-T path that visits all sensing nodes
+lies in G, though it is NP-hard to find this path [22].
+Algorithm 1 Hoogeveen S-to-T Path Approximation
+Input: Initial Sensing node locations S = {S1 , . . . , Sn }
+1: procedure H OOGEVEEN(S)
+2:
+G = CompleteWeightedGraph(S)
+3:
+Tmin = MinSpanningTree(G)
+4:
+Vjoin = WrongNodeDegree(Tmin )
+5:
+Mopt = MinPerfectMatching(Vjoin )
+6:
+PE = EulerianPath(Mopt +Tmin )
+7:
+Return(Shortcut(PE ))
+8: end procedure
+
+Fig. 3. MINLP solution using BONMIN for eight targets that lie at the centers
+of the red sensing circles. (a) Initial path guess, and (b) the optimal sensory
+coverage path where each sensing node (blue dots) lies in a target centered
+sensing circle. (c) Another initial path guess with different visitation order
+for T8 , and (d) the MINLP solution gives the same globally optimal path.
+
+Exact MINLP example: Since Problem #1 is NP-hard,
+direct MINLP solvers can only solve simple instances in
+practical computation time. The example in Fig. 3 uses
+BONMIN [7], a branch-and-bound solver with nonlinear
+trust region that computes globally optimal solutions. BONMIN requires an initial, but not necessarily feasible, sensing
+nodes path guess (Fig. 3(a)). The optimal solution in Fig. 3(b)
+was computed in 5.8 seconds.2 Another initial path with
+different visitation order (Fig. 3(c)) gives the same optimal
+solution (Fig. 3(d)), in roughly the same computation time. ◦
+III. M ULTI -TARGET S ENSORY C OVERAGE WITH PATH
+L ENGTH B OUND
+This section describes a two-stage polynomial time algorithm
+that approximatly solves Problem #1, then provides a bound
+2 All evaluations using BONMIN use MATLAB 19a, the MATLAB Opti
+ToolBox [23] with the BONMIN solver, and an Intel i7-4770 CPU with
+16 Gbyte memory. Evaluations of the proposed algorithm use MATLAB
+R2023b and the CVX solver [21] run on an Intel core i9-13900H with 64
+GB RAM.
+
+Hoogeveen’s algorithm computes in line 3 a minimum
+spanning tree, Tmin , that spans all nodes of G with minimum total edge cost. This stage is computed with Prim’s
+algorithm in O(n log n) time. The minimum spanning tree
+is augmented with edges that ensure odd degree of nodes
+S1 and Sn and even degree of all other nodes. This stage is
+performed in Line 4, where nodes S1 and Sn have wrong
+degree when their node degree is even in Tmin , all other
+nodes have wrong degree when their degree is odd in Tmin .
+The set of wrong degree nodes, Vjoin , is computed in O(n)
+time and always contains an even number of nodes. In line 5,
+the edges to be added to Tmin are computed as a minimum
+perfect matching over the nodes of Vjoin ,3 using Blossom’s
+algorithm [26] in O(n3 ) time. The pairwise matchings of the
+nodes in Vjoin forms the set of edges, Mopt , that are added
+to Tmin in line 6.
+The larger graph, Tmin+Mopt , is next used to compute the
+desired path. An S-to-T path that traverses every edge of the
+latter graph exactly once (nodes may be revisited) forms an
+Eulerian path. The graph Tmin+Mopt possesses an Eulerian
+S1 -to-Sn path iff S1 and Sn have odd degree while all other
+nodes have even degree. The latter graph is constructed in
+3 In minimum perfect matching all nodes of V
+join are pairwise joined by
+edges whose total cost over all possible pairings is minimal.
+
+Algorithm 2 Shortest Cover
+Input: Targets T = {T1 , . . . , Tn }
+1: procedure S HORTEST C OVER(T )
+2:
+Set Si = Ti for i = 1 . . . n, S = {S1 , . . . , Sn }
+3:
+Porder = Hoogeveen(S)
+4:
+{ξij } = Incidence(Porder )
+5:
+Sopt = Arg Min Cost({ξij }, S, T )
+6:
+subject to S1 = T1 and Si ∈ R(Ti ) for i = 2 . . . n
+7:
+Return(path P, sensing nodes Sopt )
+8: end procedure
+
+a manner that ensures this property, and line 6 computes in
+O(n) time an Eulerian S1 -to-Sn path. The Eulerian path is
+finally shortened in line 7 into a path from S1 to Sn that visits
+a new sensing node in each step, by taking shortcuts along
+the graph G in O(n2 ) time. Hoogeveen [22] established
+that the resulting path visits every sensing node, starting at
+S1 and ending at Sn , with path length bound
+l(path) ≤ l(Tmin )+l(Mopt ) ≤ lT SP + 23 lT SP = 53 lT SP
+where lT SP is the length of the shortest path from S1 to Sn
+that visits all sensing nodes located at the targets.
+Efficient optimization of sensing node locations: Algorithm 1 computes a sensory coverage path that does not
+optimize the sensing node locations. When the targets are
+sparsely located with non-overlapping sensing circles (overlapping sensing circles are considered in Problem #2), the
+sensing nodes visitation order found by Algorithm 1 is
+a good initial path for the next step that optimizes the
+sensing locations. The path computed by Algorithm 1
+fixes the incidence variables, ξij , thus reducing the MINLP
+optimization cost to a function only of the sensing node
+locations, S1 , . . . , Sn ∈ IR2 :
+n−1
+X
+Cost(S1 , . . . , Sn ) =
+∥Sj+1 − Sj ∥.
+(10)
+j=1
+
+Each term ||Sj+1 −Sj || is a convex function, since it is the
+composition of a convex norm function with the linear
+function Sj+1 −Sj . The sum of convex functions is a convex function, hence the cost (16) is a convex function of
+S1 , . . . , Sn . The sensing circles form convex sets for the
+individual sensing node locations. Their conjunction therefore forms a convex set in the composite space S1 , . . . , Sn .
+Computation of the shortest sensory coverage path under
+fixed sensing node visitation order thus forms a convex
+optimization problem, which is summarized as Algorithm 2
+and computationally solved using [20], [21].
+Examples: Algorithm 2 requires an initial coverage path,
+provided by the Hoogeveen path computed in line 3, to
+perform convex optimization in line 5. When Algorithm 2 is
+applied to the problem of Fig. 3, it yields the same optimal
+path as BONMIN in 0.1 seconds (versus 5.8 seconds required
+by BONMIN). Algorithm 2 is next applied to the 18 targets
+placed at integer locations shown in Fig. 4, with sensing
+circles of detection range r = 0.49 units (the BONMIN solver
+was not able to solve this problem in reasonable time). Algorithm 2 computed a sensory coverage path for these targets in
+0.575 seconds, with the optimized sensing nodes (blue dots)
+and the coverage path (black curve) shown in Fig. 4.
+◦
+
+Fig. 4. Optimized sensory coverage path computed by Algorithm 2 for 18
+targets surrounded by sensing circles whose radii equal the robot detection
+range, r = 0.49. The sensory coverage path is the black curve while the
+18 blue dots indicate the optimized sensing node locations.
+
+Path length approximation bound: The approximation
+bound of Algorithm 2 is defined as the largest ratio of the
+algorithm’s path length measured relative to the optimal path
+length, taken over all problem instances. Our approximation
+bound is based on the following lemma.
+Lemma 1 ( [22]): Algorithm 1 computes in O(n3 ) time
+a path that visits all initial sensing nodes. Its length satisfies
+l(Alg. 1) ≤ 35 lT SP , where lT SP is the length of the shortest
+S-to-T path that visits all sensing nodes.
+The next proposition describes the path length approximation
+bound for Algorithm 2.
+Proposition 2: Algorithm 2 computes in O(n3 ) time
+a sensory coverage path whose length satisfies the approximation bound
+l(Alg. 2) ≤ 10
+(11)
+3 (1+δ(n)) · lopt
+where δ(n) ≪ 1 for large n, δ(n) → 0 as n → ∞, and lopt
+is the optimal S-to-T sensory coverage path in the obstacle
+free environment.
+Proof: Line 3 of Algorithm 2 computes in O(n3 ) time
+an initial sensory coverage path for the convex optimization
+procedure. The complexity of Algorithm 2 therefore depends
+upon the relative complexity of the convex optimization
+procedure. When convex optimization is performed with
+interior point methods [6], an optimal solution is computed
+within ϵ accuracy in kn2 · log(1/ϵ) steps, where n is the
+number of optimization variables and k is the number of
+steps required to evaluate the cost and constraints, which is
+O(n) in the MINLP formulation of Section II. Algorithm 2
+thus takes O(n3 ·log(1/ϵ)) time.4
+By Lemma 1, the initial sensory coverage path satisfies the
+bound l(Alg. 1) ≤ 35 lT SP . Algorithm 2 starts with this path,
+then computes a shorter path that visits optimized sensing
+nodes locations. Hence
+l(Alg. 2) ≤ 35 lT SP
+(12)
+where lT SP is the length of the shortest S1 -to-Sn path
+through sensing nodes located at the targets. As shown in
+Fig. 5, the geometry that leads to the worst case ratio
+between lT SP and lopt occurs when the sensing circle are
+4 The simplex method solves second-order convex problems extremely
+well in practice but its computation time is non-polynomial.
+
+Fig. 5. Geometry of a worst case ratio of path length through the targets,
+lT SP , to the optimal sensory coverage path length lopt (see appendix).
+
+packed in alternating linear pattern (see appendix). In this
+packing, the length of the shortest S1 -to-Sn path through
+the targets is
+lT SP = 2(n − 1)r
+while the length of the shortest sensory coverage path is
+lopt = (n − 4 + κ′o )r
+
+n > 4.
+
+where κ′o is from Eq. (27) and (25) in the appendix. It follows
+that the ratio lT SP /lopt is bounded by
+lT SP
+2(n − 1)
+≤
+lopt
+n − 4 + κ′o
+
+Fig. 6. (a) An 18 target (red dots) coverage problem overlaid with a dashed
+red circle showing the robot sensing range. (a) The S-to-T Hoogeveen path
+computed by Alg. 1. (b) The optimized sensing node locations computed
+by Alg. 2 (blue dots). (c) When redundant sensing nodes are removed, six
+sensing nodes can observe all targets.
+
+n > 4.
+
+Substituting for lT SP /lopt in Eq. (12) gives
+l(Alg. 2) ≤
+
+10
+n−1
+·
+· lopt
+3 n − 4 + κ′o
+
+n ≥ 4.
+
+(13)
+
+The term that multiplies 10/3 in Eq. (13) can be written as
+n−1
+4−κ′o
+=
+1+δ(n)
+where
+δ(n)
+=
+.
+n−4+κ′o
+n−4+κ′o
+Note that as n → ∞, δ(n) → 0.
+
+□
+
+IV. F EWER S ENSING N ODES THAN TARGETS
+When the targets are located close together in an obstaclefree environment, the covering robot might be able to take
+advantage of opportunities to view multiple targets from
+a single sensing location. Multi-target view opportunities
+can simplify and shorten the sensory coverage path. This
+section formulates the MINLP optimization problem that
+allows multi-target views, then describes a polynomial time
+approximation algorithm, followed by sensing node reduction along the coverage path. The section concludes with
+analysis of the algorithm’s path length approximation bound.
+Motivational example: Fig. 6(a) shows the 18 target example of Fig. 4, now with a larger sensing radius of r = 1.75
+units which allows individual sensing nodes to cover multiple
+targets. The initial Hoogeven path computed by Alg. 1 is
+shown in Fig. 6(a), while the optimized sensing node locations computed by Alg. 2 are shown in Fig. 6(b). The
+optimized sensing nodes are arranged along a nearly straight
+path, which is clearly the shortest path that observes all
+targets. When the optimized coverage path takes advantage
+of multi-target views, Fig. 6(c) shows that six sensing nodes
+suffice to observe all targets. This example shows that path
+optimization can be performed under maximally flexible
+sensing node placement, followed by sensing node pruning,
+or reduction, along the optimized coverage path.
+◦
+
+MINLP formulation: Let ns ≤ n denote the number of
+sensing nodes that now becomes an additional optimization
+variable. To allow fewer sensing nodes than targets, for each
+target Ti the sensing constraints of Eq. (4) must be satisfied
+by at least one sensing node Sj (j = 1 . . . ns ). This constraint
+can be expressed in disjunctive form
+
+Wns
+2
+2
+i = 1 . . . n.
+j=1 ||Sj −Ti || − r ≤ 0
+The disjunctive constraints can be expressed as a set of mixed
+integer constraints using viewing variables, ηij ∈ {0, 1}, and
+Big-M constants Mi for i = 1 . . . n [36]. Each constant Mi
+is chosen sufficiently large according to the rule
+
+Mi ≥
+max
+||x − T i ||2
+i = 1 . . . n (14)
+x∈R(Tj ), j=1...n
+
+where R(Tj ) is the sensing circle of radius r centered at
+Tj . Using the Big-M constants, each target Ti for i = 1 . . . n
+must be observed according to the conjunctive constraints
+||Sj − Ti ||2 ≤ ηij ·r2 + (1−ηij ) · Mi
+ns
+X
+ηij ≥ 1
+
+j = 1 . . . ns
+(15)
+
+j=1
+
+ηij ∈ {0, 1}
+
+j = 1 . . . ns .
+
+The viewing variables indicate sensing relationships: ηij = 1
+when Sj ∈ R(Ti ) and ηij = 0 otherwise. Eq. (15) ensures
+that at least one sensing node observes each target, with
+multi-views of the same target allowed. To our knowledge,
+this formulation represents the first complete statement of the
+multi-view problem with variable number of sensing nodes.
+Problem #2: Compute the shortest S-to-T path P that
+visits ns ≤ n variable position sensing nodes such that all
+targets T1 , . . . , Tn are observed at the sensing nodes. This
+problem is formulated as the MINLP optimization problem
+
+Fig. 7. A 24 targets example with overlapping sensing circles. The base
+set circle indices are I = {2, 6, 7, 8, 12, 13, 14, 15, 18, 24} (blue circles).
+Initial sensing nodes selected on the perimeter or center of the base set
+circles (blue dots).
+∗
+∗
+(n∗s , S ∗ , {ξij
+}, {ηij
+}) =
+
+Arg Min
+ns ,S,{ξij },{ηij }
+
+ X
+ns
+
+
+ξij ·d(Si , Sj )
+
+j=i,j>i
+
+where d(S i , S j ) = ∥Si −Sj ∥ is the Euclidean distance. The
+sensing nodes, S = {S1 , . . . , Sns }, and incidence variables,
+ξij , are subject to the constraints of Eqs (5)-(8) while the
+sensing nodes and viewing variables, ηij , must satisfy for
+each target Ti (i = 1 . . . n) the multi-view constraints (15).
+Polynomial time algorithm for multi-target views:
+The algorithm that approximately solves Problem #2 first
+computes a base set of disjoint sensing circles, such that
+all targets can be observed from sensing nodes in the base
+set sensing circles. Consider the collection of sensing circles
+centered at the targets, W = {R(Ti ) : i = 1 . . . n}, each
+having radius r. All isolated sensing circles are first selected
+as base set circles and removed from W. In each subsequent
+iteration, one randomly selects a sensing circle from W, then
+removes this circle and its overlapping circles from W. This
+iteration repeats until all sensing circles have been removed
+from W. The base set circles are computed in O(n) time
+and their indices are stored in the set I.
+Example: Fig. 7 illustrates the selection of base set circles
+on a 24 target example. All isolated sensing circles are first
+selected as base set circles and removed from W. Next R(T8 )
+is randomly selected as a base set circle and removed with
+its overlapping circles from W. This step repeats for R(T2 ),
+R(T18 ) and R(T14 ). Finally R(T6 ) is left in W and selected
+as the last base set circle.
+◦
+Initial Sensing node location selection: Each base set
+circle, R(Ti ) for i ∈ I, is used to select initial sensing
+node locations as follows. If R(Ti ) has no neighbors, no
+other target’s sensing circles overlap R(Ti ), the target Ti at
+its center is selected as an initial sensing node location.
+These are sensing nodes S6 , S7 , S12 , S13 , S15 , S24 in Fig. 7.
+Otherwise, R(Ti ) overlaps other sensing circles and sensing
+nodes are selected on R(Ti )’s perimeter at the midpoint of
+its overlap with each neighboring circle. These are S4 , S5 on
+
+Fig. 8. The 24 targets example of Fig. 7. The Hoogeveen path through
+the initial sensing nodes shown as red path, ordered by gray incidence
+arrows above. The optimized sensory coverage path computed under the
+Hoogeveen visitation order shown as black path, with the optimized sensing
+nodes overlaid as blue dots along this path.
+
+the perimeter of R(T2 ), S9 , S10 on the perimeter of R(T8 ),
+several sensing nodes on the perimeter of R(T18 ) and S23 on
+the perimeter of R(T14 ) in Fig. 7. The sensing node for each
+non-isolated base set circle is selected on its perimeter, at the
+center of its overlaps with the neighboring sensing circles.
+These are the perimeter of R(T2 ), R(T8 ), R(T14 ), R(T18 ) in
+Fig. 7. The initial sensing nodes are computed in O(n) time
+and ns = n at this stage.
+Sensing nodes optimization: Having identified initial
+sensing node locations, the algorithm that solves Problem #2
+proceeds much like the solution to Problem #1. Algorithm 1
+computes a Hoogeveen path that starts at S1 = T1 , visits the
+intermediate sensing nodes in any order and ends at a sensing
+node that observes the final target Tn . The Hoogeven path
+fixes the incidence variables, ξij , and the sensing nodes are
+indexed according to the Hoogeven path visitation order as
+S1 , . . . , Sn . The sum-of-norms cost function
+n
+X
+Cost(S1 , . . . , Sn ) =
+∥Si+1 − Si ∥
+(16)
+i=1
+
+forms a convex function of the sensing node locations. Since
+each target has its own sensing node at this stage, the viewing
+variables are set as ηij = 1 for j = i and ηij = 0 for j ̸= i (i =
+1 . . . n). Each sensing node Sj except S1 thus may vary in its
+sensing circle, R(Tj ). Computation of the shortest sensory
+coverage path under fixed visitation order and fixed viewing
+assignments forms a convex optimization problem that can be
+efficiently solved using Algorithm 2 of the previous section.
+Example: Fig. 8 illustrates the two-stage solution of Algorithm 2 on the 24 targets example of Fig. 7. The Hoogeveen
+path passing through the initial sensing nodes was computed
+in 0.4 seconds (red path). The sensing node locations are next
+optimized under the Hoogeveen visitation order as a convex
+optimization problem, with each sensing node allowed to
+freely vary in its target-centered sensing circle. The optimized sensory coverage path shown as black path in Fig. 8
+was computed in 1.11 seconds. The 24 optimized sensing
+
+Algorithm 3 Sensing Node Reduction
+
+Fig. 9. The sensing node reduction in Alg. 3 is illustrated, with intervals
+identified, sorted, reversed along to place sensing nodes.
+
+nodes appear as blue dots along the optimized path.
+◦
+Sensing node reduction: The final stage of the algorithm
+selects a reduced set of sensing nodes along the optimized
+sensory coverage path. General sensing node reduction in 2D environments forms an N P -hard set cover problem [38].
+However, sensing node reduction along the optimized path
+can be done in polynomial time as next described.
+The overlap segments on the optimized path, denoted as
+Ii = [ai , bi ] for i = 1 . . . k (k ≥ n), are defined as the intervals
+along the path where each sensing circle is first entered, at
+ai and exited, at bi . The overlap segments are thus uniquely
+associated with the sensing circles along the optimized path.
+Sensing node reduction starts by sorting the overlap segments
+along the path into list U. Moving in reverse from the end of
+the optimized path until the first ai entry is found, a sensing
+node is placed at ai , allowing the robot to observe Ti and
+possibly many targets along the [ai , bi ] segment, since other
+overlap segments have only begun in the region of ai , but
+none has ended. This is illustrated in Fig. 9, with S3 as the
+first node. All targets viewable from ai , Tj s.t. aj ≤ ai ≤ bj ,
+are removed from the list of uncovered target intervals U.
+This process repeats until all targets have been observed,
+shown in Fig. 9 as S1 , S2 , and S3 .
+The sensing node reduction process is summarized as Algorithm 3. Lines 3-6 compute the overlap segments, which
+are stored in U. Line 7 sorts these segments by their start
+point, ai for i = 1 . . . n. Lines 8-19 select sensing nodes by
+reversing along P and removing redundant overlap segments
+from U, while storing the selected sensing nodes in Smin .
+The path P consists of n−1 line segments checked against
+n sensing circles to identify overlap segments. Computation
+and sorting of the overlap segments thus takes O(n2 ) time,
+then sensing node reduction takes additional O(n) time.
+Example: Algorithm 3 was applied to the 24 sensing
+nodes located on the optimized sensory coverage path of
+Fig. 8. The algorithm found the reduced sensing nodes
+S1 , . . . , S14 shown in Fig. 10 in 2.0 seconds. These sensing
+nodes exploit multi-target views to observe all 24 targets. ◦
+The approximation algorithm that solves Problem #2 is
+summarized as Algorithm 4. Its main steps are base set
+selection in O(n) time, initial sensing nodes assignment in
+O(n) time, Hoogeveen path computation in O(n3 ) time,
+convex optimization in O(c · n2 ln(1/ϵ)) time, and sensing
+
+Input: Targets T = {T1 . . . Tn }. Optimized path P. Sensing
+nodes S = {S1 . . . Sn } along P.
+1: procedure S ENSING N ODE R EDUCTION(T , P, S)
+2:
+U ← ∅, Smin ← ∅
+3:
+for i = 1 to n do
+4:
+Ii ← OverlapInterval(R(Ti ), P)
+5:
+U ← U ∪ {Ii }
+6:
+end for
+7:
+Set U = SortOverlapSegments(U)
+8:
+while U =
+̸ ∅ do
+9:
+Snew = U(end)(ai )
+10:
+Smin = Smin ∪ {Snew }
+11:
+Set j = 1
+12:
+while j ≤ size(U) do
+13:
+if Snew ∈ Ij then
+14:
+Discard Ij from U
+15:
+j−−
+16:
+end if
+17:
+j++
+18:
+end while
+19:
+end while
+
+20:
+Return reduced sensing nodes Smin
+21: end procedure
+
+Algorithm 4 Shortest Cover Under Multi-Target Views
+Input: Targets T = {T1 , . . . , Tn }
+1: procedure R EDUCED S ENSING PATH(T )
+2:
+I = BaseSetCicrcles(T )
+3:
+{S1 , . . . , Sn } = BaseSetSensingN odes(I, T )
+4:
+Porder = Hoogeveen(S1 , . . . , Sn )
+5:
+{ξij } = Incidence(Porder )
+6:
+ηij = 1 for j = i, ηij = 0 for j ̸= i
+7:
+(P, Sopt ) = Arg Min Cost {ξij }, {ηij }, S, T
+8:
+subject to S1 = T1 and Si ∈ R(Ti ) i = 2 . . . n
+9:
+Smin = SensingNodeReduction(T , P, Sopt ) 
+10:
+Return path P, reduced sensing nodes Smin
+11: end procedure
+
+node reduction in O(n2 ) time, n is the number of targets.
+Path length bound: Proposition 3 describes the path
+length approximation bound for Algorithm 4. The proof
+follows Dumitrescu [13] with a slightly improved bound.
+Proposition 3: When the locations of targets T1 , . . . , Tn
+leads to overlapping sensing circles of radius r, Algorithm 4
+computes in O(n3 ) time a sensory coverage path whose
+length satisfies the approximation bound
+
+l(Alg. 4) ≤ 35 9 · lopt +(1+8π)r
+where lopt is the length of the optimal S-to-T sensory
+coverage path that takes advantage of multi-target views in
+an obstacle free environment.
+Proof: Let αopt be the shortest S-to-T sensory coverage path
+that takes advantage of multi-target views, with lopt denoting
+its length. The optimal path must visit every base set circle,
+otherwise the targets at the centers of these circles cannot be
+observed by the robot. Consider the area swept by a disc of
+radius 2r while its center moves along the path αopt
+A = 4r · lopt + 4πr2
+2
+
+(17)
+
+where 4πr is the area of two half-discs at the endpoints
+of αopt . The area swept by the disc covers all base set circles,
+each having radius r. Since the base set circles are disjoint
+
+Fig. 11. (a) The viewing region V (Ti ) of direct lines of sight that start
+at Ti and reach the sensing circle boundary or hit an obstacle before
+reaching maximal detection range. Occlusion edges are tangent to obstacles
+or reach sensing circle and obstacle intersection points. (b) The boundary
+that separates the viewing region V (Ti ) from other obstacle free regions,
+in green, consists of occlusion edge segments and sensing circle arcs.
+
+Fig. 10. The 24 targets example of Fig. 8 showing the optimized sensory
+coverage path (in black) with reduced sensing nodes S1 , . . . , S14 that use
+multi-target views to observe all targets along this path.
+
+A ≥ |I| · (πr2 )
+where |I| is the number of base set circles. Substituting for
+A according to Eq. (17) gives
+lopt
++ 1).
+(18)
+|I| ≤ 4(
+πr
+Next consider the path computed by Alg. 4. It starts at S1 ,
+visits S2 , . . . , Sn−1 in some order, then ends at Sn . Using
+Lemma 1, the length of this path, lH , satisfies the bound
+lH ≤ 53 lT SP where lT SP is the length of the shortest S-to-T
+path that starts at S1 and ends at Sn . The convex optimization
+stage of Alg. 4 only shortens the Hoogeveen path. Hence
+l(Alg. 4) ≤ lH ≤ 35 lT SP .
+An alternative path P that visits the sensing nodes takes
+advantage of the nodes’ initial locations on the base set circle
+perimeters and centers. By construction, each base set circle
+has sensing nodes on its perimeter or a single sensing node
+at its center. Path P starts at S1 and follows αopt . Each time
+αopt reaches a base set circle, imagine that the robot’s path
+executes full circumnavigation of the circle when it contains
+perimeter sensing nodes, and straight in-and-out motion to its
+center when the circle contains a sensing node at its center.
+The path then continues along αopt to the next base set circle.
+The length of this path, lb , satisfies the upper bound
+
+Cost({S1 , . . . , Sn }, {ξij }) =
+
+lb ≤ lopt + 2πr · |I| + r.
+
+n
+n
+X
+X
+
+ξij ·lmin (Sj , Sj+1 )
+
+i=1 j=1,j>i
+
+The path that circumnavigates the base-set-circles is longer
+than the shortest path that visits the sensing nodes. Hence
+lT SP ≤ lb and consequently
+l(Alg. 4) ≤ 53 lT SP ≤ 53 lb
+
+lopt
+≤ 35 lopt +8πr · ( πr
++1) + r = 53 (9 · lopt +(1+8π)r)
+where we substituted the upper bound (18) for |I|.
+
+V. M ULTI -TARGET S ENSORY C OVERAGE A MONG
+O BSTACLES WITH PATH L ENGTH B OUND
+This section considers multi-target sensory coverage in the
+presence of obstacles. We first develop an MINLP problem
+formulation, then describe an algorithm that approximately
+solves this problem, followed by sensing node reduction
+along the sensory coverage path. The section ends with
+analysis of the algorithm’s path length approximation bound.
+The targets T1 , . . . , Tn lie in an environment populated
+by polygonal obstacles that may obstruct sensor views of
+the targets. The robot can detect targets only along direct
+lines of sight within detection range r. Each target Ti can
+thus be detected from a viewing region, V (Ti ), defined as the
+set of rays that start at Ti and either reach the sensor range
+limit or hit an obstacle (Fig. 11(a)). Each viewing region
+consists of triangular radial sectors bounded by occlusion
+edges. Each occlusion edge is either tangent to an obstacle
+vertex or edge, or reaches an intersection point of the sensing
+circle boundary with an obstacle edge (Fig. 11(a)).
+In mobile robot sensory coverage, the presence of obstacles implies that targets which can be observed by the robot
+may not be physically accessible by the robot. This issue is
+not directly included in our algorithm. Rather, the problem is
+viewed as optimizing sensing node placements and planning
+a safe collision-free path between them. We assume that the
+entire free space can be continually accessed by the robot
+sensor, and viewing regions are constructed accordingly. If
+desired, obstacles may be replaced by their configuration
+space representations.
+MINLP formulation: The robot path cost is measured as
+the sum of the shortest collision free path lengths connecting
+successive sensing nodes along the robot path
+
+□
+
+where lmin (Sj , Sj+1 ) ≥ 0 is the length of the shortest
+collision free path connecting Sj and Sj+1 . The incidence
+variables, ξij for i, j ∈ {1, . . . , n}, are defined as before,
+ξij = 1 if Tj is observed right after Ti , and 0 otherwise.
+The MINLP formulation assumes one sensing node per
+target, without Big-M constants that allow multi-target views.
+However, sensing node reduction will be performed along
+
+the optimized sensory coverage path among obstacles. Each
+sensing node, Si ∈ IR2 , must lie inside the viewing region
+V (Ti ). This requirement is captured by two constraints
+||Si − Ti || ≤ r and lmin (Si , Ti ) = ||Si − Ti ||
+
+(19)
+
+where lmin (Si , Ti ) is the shortest collision free path between
+Si and Ti . The inequality ||Si −Ti || ≤ r ensures that Si lies
+inside R(Ti ), while the equality lmin (Si , Ti ) = ||Si − Ti ||
+ensures that Si has a direct line of sight to target Ti .
+Problem #3: Given targets T1 , . . . , Tn in an environment
+populated by polygonal obstacles, compute the shortest Sto-T path, P, that visits sensing nodes S1 , . . . , Sn such that
+all targets can be observed from the sensing nodes along
+direct lines of sight. This problem is formulated as the MINLP
+optimization problem
+ X
+
+n
+∗
+∗
+(S , {ξij }) = Arg Min
+ξij · lmin (Si , Sj )
+S,{ξij },
+
+j=i,j>i
+
+where the sensing nodes, S = {S1 , . . . , Sn }, and incidence
+variables, ξij , are subject to the constraints of Eqs (5)(8) while each sensing node Si must satisfy the viewing
+constraints of Eq. (19) for i = 1 . . . n.
+Approximation algorithm for multi-target views among
+obstacles: The algorithm that approximately solves Problem #3 selects initial sensing nodes, finds a sensor node visitation order, optimizes the ordered sensing node locations,
+then reduces the number of sensing nodes using multi-target
+views along the optimized path.
+The algorithm first selects a base set of disjoint viewing
+regions from which all targets can be observed along direct
+lines of sight. The technique is similar to the one used in
+the previous section. Consider the set of viewing regions,
+W = {V (Ti ) : i = 1 . . . n}. One randomly selects a viewing
+region from W, then removes this region and its overlaps
+with other viewing regions from W. This iteration repeats
+until all viewing regions are removed from W.
+Computation of the n-target viewing regions requires
+O(n·m2r log mr ) time, where mr ≤ m is the maximum
+number of obstacle vertices and edges within detection
+range r of each target, after an O(n·m) pre-processing
+step to identify the set of intersecting vertices and edges
+of cardinality mr . Each viewing region boundary consists
+of at most mr occlusion edges and circular arcs (due to
+sensor range limits). The existence of an overlap between
+two viewing regions can be found in O(mr log mr ) time
+using the sweepline algorithm [34]. The entire base set can
+thus be computed in O(n2 ·mr log mr ) time. The indices of
+the base set viewing regions are stored in the set I.
+Example: Fig. 12 illustrates the selection of base set viewing regions on a six target example. Initially all viewing regions in W have overlaps. Viewing region V (T5 ) is randomly
+selected and removed from W (including its overlap with
+region V (T4 )). Viewing region V (T6 ) is selected next, and
+removed with its overlapping regions V (T2 ), V (T3 ), V (T7 )
+from W. Hence, the base set is I = {5, 6}.
+◦
+Initial sensing node selection: Each base set viewing
+region, V (Ti ) for i ∈ I, is used to select initial sens-
+
+Fig. 12. A seven target example showing a base set of viewing regions
+V (T5 ), V (T6 ). Initial sensing node locations S1 , . . . , S7 are selected on
+the boundaries and centers of the base set viewing regions (see text).
+
+ing nodes as follows. If V (Ti ) is an isolated viewing region
+or intersects an obstacle vertex, the target Ti at its center is
+selected as a sensing node. If V (Ti ) overlaps a neighboring
+viewing region, V (Tj ), a sensing node Sj for the neighboring
+target Tj is selected on the boundary of V (Ti ). These are the
+sensing nodes S2 , S3 , S4 , S7 in Fig. 12. Base regions V (Ti )
+with neighbors but without obstacle vertex intersections have
+Si placed on the boundary of V (Ti ). Sensing nodes selection
+can be integrated into the overlap computation of the base set
+viewing regions, thus requiring only O(n) additional time.
+Hoogeveen S-to-T shortest path approximation: The
+algorithm that solves Problem #3 proceeds much like the
+previous problems’ solution. Algorithm 1 is used to
+compute a Hoogeveen path that starts at S1 = T1 , visits the sensing nodes S2 , . . . , Sn−1 in some order, and ends
+at sensing node Sn that observes target Tn . Hoogeveen’s
+algorithm needs as input a complete graph of shortest collision free paths connecting all sensing nodes in the polygonal
+environment. The visibility graph [37] contains the shortest
+collision free paths between all sensing nodes and can be
+computed in O((mcvx +n)2 log(mcvx +n)) time [37], where
+mcvx ≤ m is the total number of convex obstacle vertices in
+the environment, which simplifies the visibility graph. From
+the constructed visibility graph, the shortest collision free
+paths between all sensing node pairs can be computed in
+O((mcvx + n)3 ) additional time using Johnson’s algorithm
+[24]. The Hoogeveen path itself then takes O(n3 ) time to
+compute.
+Example: Fig. 13 shows the Hoogeveen path on the seven
+target example from Fig. 12, computed in .0195 seconds,
+connecting the initial sensing nodes S1 , . . . , S6 , shown in
+red.
+◦
+Sensing node location optimization: The sensing nodes
+are indexed according to the Hoogeveen path visitation order
+as S1 , . . . , Sn . The algorithm optimizes the sensing node
+locations inside obstacle free corridors, defined as follows.
+The ith corridor is bounded at both ends by linear segments,
+wi and wi+1 , that pass through sensing nodes Si and Si+1
+
+Fig. 13. The Hoogeveen S-to-T path, shown in red, passes through the
+sensing nodes S1 , . . . , S7 shown in Fig. 12. The optimized path is shown
+in black.
+
+(bold green segments in Fig. 14). The ith corridor’s left wall
+is the shortest collision free path connecting the segments’
+left endpoints, its right wall is the shortest collision free
+path connecting the segments’ right endpoints (Fig. 14).
+Both walls are computed in the path homotopy class of the
+Hoogeveen path connecting Si and Si+1 in the polygonal
+environment.5 The ith corridor, called an hourglass [25],
+contains all shortest collision free paths that connect points
+of wi with those of wi+1 within the path homotopy class,
+provided that wi and wi+1 do not intersect each other (nor
+their obstacle-free linear extensions).
+The corridors are constructed as follows. The first corridor
+is spanned by the sensing node S1 = T1 (a single-point
+segment) and the linear segment of size ≤ 2r that lies in
+the viewing region V (T2 ) and contains sensing node S2
+(w2 in Fig. 14). Each subsequent corridor is bounded by
+linear segments wi and wi+1 of size ≤ 2r that lie in their
+viewing regions V (Ti ) and V (Ti+1 ) and contain the sensing
+nodes Si and Si+1 (Fig. 14). The segments wi and wi+1 are
+clipped into collision free sub-segments when they overlap
+nearby obstacles. Computation of the n − 1 corridors takes
+O(nm2 log m+m·n) time.
+The corridors are next partitioned into triangular cells
+whose vertices lie on the corridor walls (Fig. 14). The
+triangulation is linear in the sense that the Hoogeveen path
+successively crosses each of these triangles, thus imposing
+linear order on the triangles of each corridor. Using boundary
+constrained triangulation [33], triangulation of the n − 1
+corridors takes O(n·m log(m)) time.
+Example: Fig. 14 shows the corridors that surround the
+Hoogeveen path for the seven target example of Fig. 12,
+computed and triangulated in 1.77 seconds.
+◦
+The sensing nodes locations are next optimized within
+the corridors as follows. Let the ith corridor consist of ki
+triangles. Let ei,0 , . . . , ei,ki denote the triangle edges crossed
+5 Two paths that connect endpoints of w and w
+i
+i+1 belong to the same
+path homotopy class when the loop formed by the two paths with wi and
+wi+1 does not surround any internal obstacle.
+
+Fig. 14. The seven target example of Fig. 12 showing the connected six
+corridors bounded by the sensing node S1 = T1 (a single-point segment),
+and then by linear segment of size ≤ 2r that lie in the viewing regions
+V (TH (i)) and contain the sensing nodes SH(i) for i = 2 . . . 7 (bold green
+segments marked with wi ). The optimized coverage path shown in black,
+with full set of sensing nodes marked. After sensing node reduction, the first
+reduced sensing node, the red star, observes T1 and T5 , the second star at
+S3 observes T2 , T3 , T4 , T6 , and the final reduced sensing node, coincident
+with S7 observes T7
+
+by the Hoogeveen path, indexed according to the linear order
+imposed by the Hoogeveen path crossing the edges. The
+triangle edges ei,0 = wi and ei,ki = wi+1 bound the ith
+corridor and contain the sensing nodes Si and Si+1 . To
+ensure that each sensing node observes its target, each Si
+varies in a segment formed by the intersection of ei,0 with
+the viewing region V (Ti ), such that the segment contains the
+initial sensing node Si .
+The path cost is now measured as a function of the
+path via points that vary on the triangle edges crossed
+by the Hoogeveen path. These via points are denoted
+{pi,0 , . . . , pi,ki } for i = 1 . . . n−1, and the path cost is
+Cost({p1,j }i=1..n−1,j=0..ki ) =
+
+n−1
+i −1
+X kX
+
+∥pi,j+1 −pi,j ∥
+
+i=1 j=0
+
+such that p1,0 = T 1 and pi+1,0 = pi,ki for i = 1 . . . n−2. Each
+corridor entry point, pi,0 , is subject to the viewing constraint
+pi,0 ∈ ei,0 ∩ V (Ti )
+th
+
+i = 1 . . . n−1
+
+such that the i viewing sub-segment contains the initial
+sensing node Si while the remaining via points are subject
+to the triangle edge constraints
+pi,j ∈ ei,j
+i = 1 . . . n − 1, j = 1 . . . ki .
+The path cost forms a convex function of the via points
+when they vary on linear segments. Moreover, the straight
+line segments between neighboring via points lie in obstacle
+free triangular cells. Convex optimization can thus efficiently
+optimize the sensing node locations within the corridors that
+surround the Hoogeveen path, as illustrated in the following
+example.
+Example: Consider again the seven target example. Fig.
+14 shows the sensory coverage path (in black) obtained by
+
+optimizing the path via point locations, starting from the
+initial sensing nodes located on the Hoogeveen path (shown
+in red). The optimized path was computed in .589 seconds,
+with sensing nodes located at S1 = T1 , then at Si = pi,0 for
+i = 2 . . . n − 1 and finally at Sn = pn−1,kn−1 where n = 7. ◦
+Sensing node reduction: Sensing node reduction is performed by Algorithm 3. The algorithm now requires the
+overlaps of the optimized path with the n viewing regions.
+These overlaps can be computed in O(n2 · mr ) time, then
+fed into Algorithm 3 which selects in O(n) additional
+time a reduced set of sensing nodes. These nodes observe
+all targets using multi-target line of sight views. Fig. 14
+shows the reduced sensing nodes along the optimized path,
+computed in .0279 seconds.
+Algorithm 5 Multi-Target Cover Among Obstacles
+Input: Targets T = {T1 , . . . , Tn }, polygonal obstacle vertices O, |O| = m.
+1: procedure R EDUCED S ENSING PATH(T , O)
+2:
+{V (T1 ), . . . ,V (Tn )} = V iewingRegions(T , O)
+3:
+I = BaseSetCicrcles(T , {V (Ti )})
+4:
+{S1 , . . . , Sn } = BaseSetSensingN odes(I, {V (Ti )})
+5:
+V = V isibilityGraphShortestP aths({S1 , . . . , Sn }, O)
+6:
+Porder = Hoogeveen(S1 , . . . , Sn , V)
+7:
+{ξij } = Incidence(Porder)
+8:
+(P, Sopt ) = Arg Min Cost {ξij }, S, T
+9:
+subject to S1 = T1 and Si ∈ ei,0 ∩ V (Ti ) i = 1 . . . n
+10:
+Smin = SensingNodeReduction(T , P, Sopt ) 
+11:
+Return path P, reduced sensing nodes Smin
+12: end procedure
+
+The approximation algorithm that solves Problem #3 is
+summarized as Algorithm 5. It consists of seven stages. The
+n viewing regions are computed in O(n · m2r log mr ) time,
+where mr is the maximum number of obstacle vertices and
+edges within detection range r of each target. Next, a base set
+of viewing regions and initial sensing nodes are selected in
+O(n2 mr log mr ) time. Shortest obstacle free paths between
+sensing nodes are computed in O((n + mcvx )3 ) time. The
+Hoogeveen path that passes through the sensing nodes is
+computed in O(n3 ) time. Obstacle free corridors are next
+computed and triangulated in O(m2r log mr + m · n) time.
+Convex optimization of the path via points is performed
+in O(kn2 ln(1/ϵ)) time. Finally, sensing node reduction is
+performed in O(n2 · mr ) time.
+Path length approximation bound: The following proposition assumes that all base set viewing regions have some
+area Ai > 0 which is captured by a radius ρi such that
+Ai = πρ2i for i = 1 . . . n.
+Proposition 4: Let targets T1 , . . . , Tn be located among
+polygonal obstacles. Let a point robot move in the freespace
+using a line-of-sight coverage sensor of detection range r.
+Algorithm 5 computes in O((m+n)3 log(m+n)) time a sensory coverage path whose length satisfies the approximation
+bound
+
+r2
+l(Alg. 5) ≤ 53 (1+8 2 ) · lopt + 2r·m + c
+ρ̄
+where lopt is the length of the optimal S-to-T coverage
+path in the polygonal environment, m is the total number
+
+of obstacle vertices, ρ̄ ≤ r is the radius of a circle with
+area equal to the average base set viewing region areas and
+2
+c = ( 53 · 8r
+ρ̄2 ·π + 2)r is a constant.
+Proof: Let αopt be the shortest S-to-T sensory coverage
+path, with length lopt . The optimal path must visit every base
+set viewing region, V (Ti ) for i ∈ I, otherwise the target Ti
+at the center of V (Ti ) cannot be observed by the robot.
+Consider the area swept by a disc of radius 2r while its
+center moves along αopt
+A = 4r · lopt + 4πr2
+(20)
+2
+where 4πr is the area of two half-discs at the endpoints
+of αopt . Since each V (Ti ) lies in a sensing circle of radius r
+centred at Ti , the area swept by the disc of radius 2r along
+αopt covers all base set viewing regions. By construction,
+the base set viewing regions are disjoint and contain areas
+equal to circles with radius ρi for i ∈ I. Hence
+|I|
+X
+A≥π·
+ρ2i
+(21)
+i=1
+
+where |I| is the number of base set viewing regions. Using
+the identity
+|I|
+|I|
+X
+X
+2
+1
+·
+ρi
+ρ2i ≥
+|I|
+i=1
+i=1
+we obtain the lower bound on A
+A ≥ |I| · π ρ̄2
+P|I|
+where ρ̄ = i=1 ρi /|I| is the average radius of the base set
+viewing region areas. Substituting for A according to Eq.
+(20) gives
+4r
+(lopt + πr).
+(22)
+|I| ≤
+π ρ̄2
+The S-to-T Hoogeveen path computed by Algorithm 5 starts
+at S1 = T1 , visits S2 , . . . , Sn−1 in any order, then ends at Sn
+within detection range of Tn . Using Lemma 1, the length
+of this path, lH , satisfies the bound lH ≤ 35 lT SP where
+lT SP is the length of the shortest S-to-T path. The convex
+optimization step of Alg. 5 only shortens the Hoogeveen
+path. Hence l(Alg. 5) ≤ lH ≤ 35 lT SP .
+An alternative path, P, takes advantage of the sensing node
+locations on the base set viewing regions’ perimeters and
+centers. Path P starts at S1 and moves along αopt . When αopt
+reaches a base set viewing region, P circumnavigates the
+viewing region’s outer perimeter when the perimeter contains
+sensing nodes, or executes a straight in-and-out motion to its
+center when a single sensing node lies at its center. The path
+then continues along αopt to the next base set viewing region.
+The length of P, lb , satisfies the following upper bound.
+Because the base set viewing regions are disjoint, each
+obstacle vertex lies in a single base set viewing region and
+bounds at most one occlusion edge. A full tour of a base set
+viewing region perimeter traverses each occlusion edge and
+each sensing circle arc once. If mr denotes the total number
+of obstacle vertices within detection range of the targets, the
+length of P is bounded by
+lb ≤ lopt + 2r · (π· |I| + mr + 1)
+
+where the term 2πr|I| bounds the total length of the circular
+arcs and obstacle edges on the viewing regions’ perimeters,
+while the term 2rmr bounds the total length of the viewing
+regions occlusion edges. When a single sensing node lies at
+the center of a base set viewing region, the detour of length
+2r to this node is upper bounded by 2πr.
+The alternative path P starts at S1 , circumnavigates the
+base set viewing regions while visiting the sensing nodes
+S2 , . . . , Sn−1 , then ends at Sn . This path is longer than
+the optimally shortest path that starts at S1 , visits the same
+intermediate nodes, then ends at Sn . Thus lb ≥ lT SP and
+the path length bound on Algorithm 5 becomes
+
+l(Alg. 5) ≤ 53 lT SP ≤ 53 lb ≤ 53 lopt+2r·(π·|I|+m+1) (23)
+Substituting the upper bound for |I| specified in Eq. (22)
+and mr ≤ m gives the path length bound
+
+r2
+l(Alg. 5) ≤ 35 (1+8 2 ) · lopt + 2r·m + c
+ρ̄
+2
+
+where c = ( 53 · 8r
+□
+ρ̄2 ·π + 2)r is a constant.
+Remark: One can construct several variations on the path
+length bound of Algorithm 5. One example follows. Given
+an environment and targets, |I| is a known quantity. Additionally, the viewing regionPareas can easily be computed
+|I|
+with the knowledge A ≥
+i=1 area(V (Ti )). Hence, one
+can replace A with the average, A ≥ |I| · E[area(Vi∈I )].
+This can serve as the starting point for developing probabilistic path length bounds. By using sample data points or
+known distributions, the expected value for the base set area
+or number of obstacle vertices could be substituted into Eq.
+(23) to generate a predicted bound
+lb ≤ lopt + 2 · r π ·
+lb ≤ (1 +
+
+
+4rlopt + 4πr2
++m
+E[area(Vi∈I )]
+
+8π · r2
+) · lopt + 2 · r · m + c̃
+E[area(Vi∈I )]
+
+where c̃ is a constant.
+
+◦
+
+VI. C ONCLUSION
+This paper considered three successively more demanding
+mobile robot sensory coverage problems: multi-target coverage in obstacle free environments with non-overlapping
+sensing circles centered at the targets, multi-target coverage
+in obstacle free environments with possibly overlapping
+sensing circles that allow multi-target views, and multi-target
+coverage in environments populated by obstacles that may
+obstruct sensor views of the targets. All three problems were
+formulated as NP-Hard MINLP optimization problems.
+For each problem, we introduced novel approximation
+algorithms that can be computed in polynomial time. All
+three problems were solved in roughly two stages. Initial
+sensing node locations were selected and a visitation order
+for these nodes was computed in polynomial time. Then
+efficient convex optimization was used to optimize the sensing node locations, yielding the shortest sensory coverage
+
+path under the set visitation order. In the second and third
+problems, multi-target views were used to reduce the number
+of sensing nodes, when possible. The algorithm solving the
+third problem uses obstacle obstructed viewing regions and
+shortest collision free path between sensing nodes to enable
+highly competitive execution times.
+The paper developed path length bounds for the three
+algorithms, expressed in terms of each problem’s optimal
+path length. These path length bounds provide limits for the
+gap between the exact solutions for these NP-hard problems
+and our polynomial time approximate solutions. Finally, all
+algorithms have been fully implemented in MATLAB with
+software available as part of the paper.
+Future research will focus on two areas. First, there is
+a need to efficiently search for and inspect multiple targets
+whose position is only approximately known to the robot.
+The robot must efficiently inspect viewing neighborhoods
+surrounding these targets, with provable efficiency bounds.
+Next, while the general environment layout might be known
+to the robot, a priori unknown obstacles may be encountered
+during the robot’s actions. Here, too, there is a need forprovable efficiency bounds, most likely expressed in terms
+of learned probabilistic obstacle distributions and percentile
+sensory coverage bounds that use these distributions. The
+techniques and algorithms described in this paper provide
+a strong foundation for future work on these problems.
+Our future research also aims to extend the MINLP
+framework to 3-D robot sensory coverage and inspection
+problems. Robotic agents can efficiently inspect exteriors
+of 3-D structures that form natural extensions of the planar
+environments considered in this paper. When a structure’s
+exterior is only approximately known to the robot, sensory
+coverage and inspection becomes a volumetric 3-D planning
+problem. Our MINLP optimization framework can model
+sensors with convex 3-D footprints. Hence, the techniques
+described in this paper have a good chance of providing
+highly efficient algorithms even for the most challenging 3-D
+sensory coverage and inspection planning problems.
+A PPENDIX I
+P ROOF OF P ROPOSITION 2
+. To analyze the approximation bound, we must find the
+worst case ratio (lT SP /lalg ) over all possible arrangements
+of targets, where lT S is the TSP path (PT SP ) through all
+targets, and lalg is the shortest possible sensing path (PCP P )
+that views all targets . We begin by assuming that the worst
+case arrangement of n targets consists of sensing circles
+arranged in a closely packed linear fashion (see Figure 5).
+This assumption will be analyzed below.
+The shortest TSP path between the targets in this arrangement is easily characterized. To characterize the shortest
+sensing path and its associated sensing locations, we use the
+Karush-Kuhn-Tucker (KKT) optimality conditions. We first
+analyze the case of an odd number of targets. Let T1 and Tn
+be the start node and final target, respectively (see Fig. 15
+for a seven target example). The optimal sensing path must
+contain a sensing node at T1 and n−1 sensing nodes lying in
+
+Fig. 15.
+
+Geometry of KKT conditions for odd number of targets.
+
+the remaining target sensing regions. One can show that in a
+linear packing of sensor regions, the shortest path is defined
+by four sensing node locations: S1 (located at T1 ), S2 in
+the sensing region around T2 , Sn−1 in the sensing region
+around Tn−1 , and Sn on the boundary of the sensing region
+surrounding Tn . The length of such a path, ||P ||, takes the
+form (see Fig. 15):
+||P || = ||P1 || + ||P2 || + ||P3 ||
+= ||S2 − T1 || + ||Sn−1 − S2 || + ||Sn − Sn−1 ||.
+We seek to minimize ||P ||, subject to the constraint that the
+key sensing nodes lie in their associated sensing regions:
+||S2 −T2 || ≤ R;
+
+||Sn−1 −Tn−1 || ≤ R;
+
+||Sn −Tn || ≤ R.
+
+Define the Path Lagrangian, LP as:
+LP
+
+=
+
+||P || + λ1 (||S2 − T2 || − R)
+
++
+
+λ2 (||Sn−1 − Tn−1 || − R) + λ3 (||Sn − Tn || − R).
+
+The minimal path length necessary KKT conditions are:
+Sn−1 − S2
+S1 − T2
+S2 − T2
+∂L
+−
++ λ1
+=
+∂S2
+||S2 − T2 || ||Sn−1 − S2 ||
+||S2 − T2 ||
+∂L
+Sn − Sn−1
+Sn−1 − S2
+−
+(24)
+=
+∂Sn−1
+||Sn−1 − S2 || ||Sn − Sn−1 ||
+Sn−1 − Tn−1
++λ2
+||Sn−1 − Tn−1 ||
+∂L
+Sn − Sn−1
+Sn − Tn
+=
++ λ3
+∂Sn
+||Sn − Sn−1 ||
+||Sn − Tn ||
+Since the ratios in these expressions can be interpreted as unit
+vectors, the KKT conditions yield insight into the shortest
+sensing path geometry. Figure 15 shows the geometry of the
+KKT conditions for an odd number of targets in the worst
+case target geometry.
+The first condition in Eq. (24) (see Fig. 16) dictates that
+sensing node S2 must be positioned so that the line underlying S2⃗T2 bisects the angle between the lines underlying
+T1⃗S2 and S2 S⃗n−1 . From Figure 16, one can calculate that at
+a minimal path length, the angle between T2⃗S2 and a vertical
+line, denoted θo∗ , is the solution to the following equation
+√
+∗
+))
+( 3 − cos(θodd
+∗
+= tan(2θodd
+)
+(25)
+∗
+(1 + sin(θodd ))
+Using this result, the shortest path length for an odd number
+of sensing regions is
+∗
+||Podd || = R[n − 4 + κodd (θodd
+)]
+
+(26)
+
+Fig. 16.
+
+Detailed Geometry of KKT condition around sensing node S2
+
+where
+√
+
+1/2
+κo (θo∗ ) = 2 (1 + sin θo∗ )2 + ( 3 − cos θo∗ )2
+− 2 sin θo∗
+(27)
+The shortest path length for an even number of targets can
+be analyzed in a similar way. The shortest path length in this
+case is
+√
+ n−3
+3 2 1/2
+∗
+2
+∗
+− sin θeven ) + (cos θeven −
+)
+R (
+−R
+2
+2
+∗
+where θeven
+is the solution to the following equation:
+√
+∗
+∗
+3 − cos θeven
+−η
+tan θeven
+=
+∗
+∗
+1 + sin θeven
+1 + η tan(2θeven
+)
+√
+∗
+∗
+and η = (2 cos θeven
+− 3)/(n − 3 − 2 sin θeven
+).
+∗
+∗
+, and
+One can show that as n increases, θeven → θodd
+that ||Peven || is very well approximated by the expression
+of ||Podd ||. In fact, ||Podd || in Eq. (26) is an under approximation of the path length, which ensures that Eq. (13) is
+the worst case bound. Thus, κ′o = κo (θo∗ ) yields the shortest
+optimal path, and the tightest bound in Eq. (26).
+Worst Case Target Arrangement. We next analyze the
+claim that the packed linear arrangement of target sensing
+regions in Figure 15 leads to the worst case ratio of the
+target TSP path length, lT SP , to the shortest sensing path
+length, lCP P . Our goal is the find the target locations that
+maximize the ratio
+
+∆ ≜
+
+lT∗ SP
+.
+∗
+lCP
+P
+
+The general proof proceeds by induction. Here we sketch the
+first few steps of the induction process.
+As above, we first develop conditions for extremal values
+of the ratio ∆. The goal is to maximize ∆ with respect to the
+choice of target locations (which is the same as minimizing
+−∆), subject to the (n − 1)(n − 2)/2 overlap constraints
+that no two sensing regions overlap, and that target node T1
+is fixed to a specific location:
+min
+
+T2 ,...,Tn
+
+subject to :
+
+− ∆(T2 , . . . , Tn )
+||Tj − Ti ||2 ≥ 4r2
+
+for i = 1, . . . , (n − 1) and j = 2, . . . , n.
+
+(28)
+
+If the ∆ Lagrangian is defined by:
+L∆ (N , ⃗λ) = −∆ +
+
+n−1
+X
+
+n
+X
+
+λi,j r2 − ||Tj − Ti ||2
+
+
+
+i=1 j=i+1
+
+then the Karush-Kuhn-Tucker (KKT) conditions for a constrained minimum are:
+∂L∆ (T2 , . . . , Tn , ⃗λ)
+∂∆
+0 ∈ −
+=−
+(29)
+∂Tk
+∂Tk
+n
+n
+X
+X
++2
+λj,k (Tj − Tk ) − 2
+λk,j (Tl − Ti )
+j=k+1
+2
+
+i=k−1
+2
+
+≥
+
+4r − ||Tj − Ti ||
+
+(30)
+
+0
+
+≤
+
+λi,j
+
+(31)
+
+0
+
+=
+
+λi,j (4r2 − ||Tj − Ti ||2 )
+
+(32)
+
+0
+
+If any derivative in (33) is non-zero for all unconstrained
+target locations, the unconstrained KKT conditions are not
+satisfied. Without loss of generality, initially assign a reference frame with origin at T1 and whose x-axis is collinear
+−−→
+with T1 T2 . In this reference frame, the problem is symmetrical with respect to the x-axis. Hence, we only analyze the
+case where T3,y , the y-coordinate of target T3 , is positive.
+The symmetric case, where T3,y < 0, is identical.
+
+where i = 2, . . . , (n − 1) in (29)-(32) and j = (i + 1), . . . , n
+(with i ̸= j) in Eq.s (30)-(32). To calculate ∂∆/∂Tj , for
+j = 2, 3,
+
+
+∆(Tj,i + µi ) − ∆(Tj,i )
+∂∆
+= lim
+µ⃗i →0
+∂Tj,i
+µi
+
+
+where i = x or i = y, and µ
+⃗ = µx µy denotes small
+perturbations of a target’s Cartesian locations.
+Since function ∆ may not be convex, conditions (29) (32) are only necessary conditions for a maximal value of ∆.
+Note that the geometry of PCP P and/or PT SP may change
+abruptly with small changes in target placements. In these
+cases, function ∆ can be non-smooth, and ∂∆/∂Ti must be
+interpreted as a generalized (set-valued) gradient.
+A. Case of Two Targets
+Let two targets, T1 and T2 , be separated by a distance
+2r + µ, where µ ≥ 0. One can see by inspection that lT∗ SP =
+∗
+2r + µ and lCP
+P = r + µ. Thus,
+l∗
+∆ = ∗T SP
+lCP P
+
+=
+
+2r + µ
+.
+r+µ
+
+This ratio takes its largest value when µ → 0. I.e., when the
+boundaries of the circular sensing regions R(T1 ) and R(T2 )
+nearly touch. Equivalently, the non-overlapping constraint is
+active at the maximum.
+B. Case of Three Targets
+For targets T1 , T2 , and T3 , let T1 be fixed to a given
+location. Since ∆ may not be convex, its extrema may occur
+when no, some, or all constraints are active. We first show
+that ∆ cannot be maximized under with no active constraints.
+We then analyze the cases of one, two, and three active
+constraints, concluding that ∆ is maximized when the three
+targets form the smallest possible equilateral triangle.
+KKT condition (32) implies that if each pair of targets is
+more than 2r apart, then λ1,2 = λ1,3 = λ2,3 = 0, and an
+extremum in ∆ occurs when the following two conditions
+hold simultaneously:
+⃗0 ∈ − ∂∆ ;
+∂T2
+
+⃗0 ∈ − ∂∆ .
+∂T3
+
+(33)
+
+Fig. 17.
+Variations in the geometry of PCP P with respect to target
+location when no constraints are active. Target T3 cannot lie in circular
+yellow regions, where constraints must be active. When T3 lies in Region
+I, PCP P is a straight line from T1 to the boundary of R(T3I ). When T3
+lies in Region II, PCP P is a two segment path intersecting the boundaries
+of R(T2 ) and R(N3II ). When T3 lies in Region III, the targets must be
+relabeled, with the relabeled problem falling into Region I or Region II.
+
+Figure 17 shows how path PCP P changes with respect
+to placements of T3 . When T3 lies in Region I, PCP P is
+a straight line passing through R(T2 ), and it orthogonally
+intersects the boundary of R(T3 ). Sensing node S2 can
+placed anywhere along the intersection of PCP P and R(T2 ).
+When T3 lies in Region II, PCP P is a two segment path.
+The first segment intersects the boundary of R(T2 ) at sensing
+location, S2 , whose location is a solution to the following two
+equations, which are derived from shortest path conditions:
+(T2 − S2 ) · (T3 − S2 )
+r||T3 − S2 ||
+||T2 − S2 ||2
+
+(T1 − S2 ) · (T3 − S2 )
+(34)
+r||T1 − S2 ||
+= r2
+
+=
+
+When T3 lies in Region III, the path PT SP changes
+characters: the path through targets T1 -T2 -T3 is not the
+shortest TSP path through the targets–the visitation sequence
+must be reordered T1 -T3 -T2 . This can be done by swapping
+the indices of T2 and T3 . The new relabeled problem lies in
+either Region I or Region II. Thus, Region III is irrelevant.
+The shortest path geometry suggests a change of coordinates that simplifies the analysis of the KKT conditions. In
+both Regions I and II of Figure 17, let F3 denote a reference
+frame whose origin is coincident with S3 , and whose x-axis
+−−→
+(denoted x3 ) is collinear with T3 S2 . See Figure 17. Let µ3
+denote the distance along the positive x3 axis, starting with
+−−→
+µ3 = 0 at S3 . Move target T3 along the segment T3 S2 ,
+while keeping T1 and T2 fixed. Target T3 can translate along
+−−→
+T3 S2 until the constraint ||T3 − T2 || ≥ r becomes active. Let
+D denote the distance between its initial location and the
+location where the constraint becomes active.
+The location of T3 in either Region I or Region II can
+thus be uniquely parametrized by the location S2 on the
+
+shortest path to T3 and the distance D. Additionally, F3 is
+well defined throughout these regions. Let η denote the angle
+−−→
+between x3 -axis and the line segment T3 T2 as T3 translates
+along axis x3 , this angle monotonically increases.
+As T3 translates along x3 , the value of ∆ can be expressed
+as an approximately linear fractional function form:
+lo
+− µ3 cos η(δ3 )
+∆ = T SP o
+lCP P − µ3
+
+(35)
+
+o
+where lTo SP = ||T2 −T1 ||+||T3 −T2 || and lCP
+P = ||S3 −T1 ||.
+Note that the angle η slowly increases as T3 translates. Thus,
+∂η/∂δ3 > 0 for all δ3 ∈ [0, T ].
+The following Lemma, whose proof is a simple calculation, yields insight into (35).
+Lemma 5: Let N and M be positive constants, with N >
+M . Let 0 < β(µ) < 1. and let ∂β(µ)/∂δ > 0 for all µ ∈
+[0, D], for some ∞ > T > 0. Then, the gradient function
+(36) with respect to µ is positive for all µ ∈ [0, D]:
+
+N − β(µ)µ
+.
+(36)
+M −µ
+Note that the geometry of PCP P is independent of small
+variations in T2 when T3 lies in Region I. Hence, ∂∆/∂T2 =
+⃗0. However, Lemma 5 implies that ∂∆/∂x3 > ⃗0 for all T3
+located in Region I. Thus, the KKT conditions cannot be
+satisfied in Region I. Moreover, the maximum value of ∆ in
+Region I occurs when R(T3 ) nearly touches R(T2 ).
+A similar condition holds in Region II of Figure 17. In
+reference frame F3 , the function ∆ in Region II takes the
+same form as Equation (36), and by Lemma 5, its derivative
+is always positive. Hence, the KKT-conditions cannot be
+satisfied for any location of T3 in Region II. Thus, one or
+more constraints must be active at the maxima of ∆.
+
+Fig. 18. Variations in the geometry of PCP P with respect to target location
+for the constrained case of ||T1 − T2 || = r. When target T3 is located in
+Region I, PCP P is a straight line from T1 to the boundary of R(T3I ). In
+Region II, PCP P is a two-segment path that first intersects the boundary
+of R(T2 ), and then intersects the boundary of R(T3I I).
+
+Case of One Active Constraint. We will next consider
+the cases where a single constraint is active (one pair of
+target nodes are separated by distance 2r). There are three
+pairings to consider: (R(T1 ), R(T2 )), (R(T1 ), R(T3 )), and
+(R(T2 ), R(T3 )). Figure 18 depicts the first constraint pairing,
+(T1 , T2 ). As in Figure 17, the problem is symmetric with
+respect to an axis passing through T1 and T2 .
+
+The KKT conditions under this constraint take the form:
+∂∆
+⃗0 ∈ ∂L
+⇒ ⃗0 ∈ −
+− λ1,2 (T2 − T1 ) (37)
+∂T2
+∂T2
+∂∆
+⃗0 ∈ ∂L
+⇒ ⃗0 ∈ −
+(38)
+∂T3
+∂T3
+Using the same analysis of the three unconstrained targets
+in Figure 17, it is easy to see that in both Region I and Region
+II of Figure 18 that ∂∆/∂x3 is always positive, and therefore
+the KKT conditions cannot be satisfied in the interiors of
+Regions I and II. Moreover, for both regions, ∆ is maximized
+on the boundary, where ||T3 − T2 || = 2r.
+When T1 and T3 are constrained to be a distance 2r apart,
+the path passing through the sequence T1 -T2 -T3 is not the
+shortest possible path through the targets – the visitation
+sequence must be reordered as T1 -T3 -T2 . This can be done
+by swapping the indices of T2 and T3 . The newly relabeled
+problem thus has T1 and T2 constrained to be a distance 2r
+apart, and this case was analyzed above.
+
+Fig. 19.
+
+Geometry of PCP P when ||T3 − T2 || = 2r.
+
+In the remaining single constraint case to consider, T2 and
+T3 lie a distance 2r apart (see Figure 19) so that target T3
+is constrained to lie on a circle of radius 2r centered on T2 .
+The KKT-conditions in this case are:
+⃗0 ∈ − ∂∆ + λ2,3 (T3 − T2 )
+(39)
+∂T2
+⃗0 ∈ − ∂∆ − λ2,3 (T3 − T2 ).
+(40)
+∂T3
+As seen in Figure 19, the geometry of PCP P changes
+as T3 ’s location varies over the circle. In Region I of Fig.
+19, PCP P forms a straight line from T1 that intersects
+the boundary of R(T3 ) orthogonally. In Region II, PCP P
+is a two segment path: the first segment connects T1 to
+sensing location S2 , while the second segment departs S2
+and intersects the boundary of R(T3 ) orthogonally at S3 .
+The location of S2 is determined analogously to Equation
+(34). The character of PT SP changes in Region III: the
+path sequence T1 -T2 -T3 is not the shortest path through the
+targets, starting from T1 . As above, the indices of targets T2
+and T3 are swapped to yield a correct path, resulting in a
+configuration that lies in either Region I or Region II. Thus,
+Region III can be ignored.
+Let reference frame F3 be centered at T3 , with its x-axis
+−−→
+colinear to T3 T2 (see Figure 19). For all locations of T3 in
+
+Region I, the y3 component of λ2,3 (T3 −T2 ) in Equation (39)
+is zero. The magnitude of lT SP does not vary in Region I,
+and hence ∂lT SP /∂y3 = 0. Consequently, the gradient of ∆
+simplifies to
+∂∆
+∆ ∂lCP P
+= −(
+)
+.
+∂x3
+lCP P ∂x3
+This term take a nonzero value at all locations of T3 except
+where T1 , T2 , and T3 are colinear. Thus, the y-component
+of (40) is always nonzero, except at the colinear target
+condition. It can be shown that the colinear configuration
+is a saddle point. Thus, ∆ is not extremized in Region I.
+In Region II of Fig. 19, with F3 chosen as shown, the
+y-component of the term λ23 (T3 − T2 ) is zero. But since
+LCP P varies as T3 varies along Region II, Eq. (40) is not
+satisfied, and therefore there is no stationary point of ∆ in
+Region II.
+Case of Two Active Constraints. The are
+possible
+three
+groupings
+of
+paired
+constraints
+between sensing regions R(T1 ), R(T2 ), and R(T3 ):
+((R(T1 ), R(T2 ))&(R(T2 ), R(T3 )); ((R(T1 ), R(T3 )) &
+(R(T2 ), R(T3 ))) and ((R(T1 ), R(T2 ))&(R(T1 ), R(T3 ))).
+Figure 20 depicts the geometry when constraints are active
+between R(T1 ) and R(T2 ), as well as R(T2 ) and R(T3 ).
+Different candidate locations of T3 are shown.
+
+Fig. 21. Geometry of Sensing Regions and PCP P for the case of 4 targets.
+(a) two constraints are active: ||T2 − T1 || = ||T3 − T2 || = 2r, and R(T4 )
+is unconstrained. (b) Three different extremizing configurations of R(T4 )
+are shown.
+
+displaced from their constrained configuration to a nearby
+unconstrained location, while the other targets remain fixed,
+then the value of ∆ decreases. That is, targets T2 and T3
+must be constrained as shown to maximize ∆, regardless
+of the location of T4 . Again, using a KKT analysis, one
+can show that ∆ is extremized when R(T4 ) is constrained
+with respect to the other sensing regions. Figure 21 shows
+the three extremizing locations of target T4 , indicated by T4I ,
+T4II , and T4III . A direct calculation shows that target location
+T4II maximizes ∆.
+D. Case of 5 and more targets
+
+Fig. 20. Geometry of Sensing Regions and PCP P when two constraints
+are active: ||T2 − T1 || = ||T3 − T2 || = 2r. Three different configurations
+of R(T3 ) are shown. Path PT SP has the same length for all configurations.
+Path PCP P (red dashed line) is shortest when the sensing regions form an
+equilateral triangle.
+
+Note that lT SP is the same for all configurations of T3 that
+satisfy the constraints. Hence, the ratio ∆ is maximized when
+PCP P achieves its shortest length. A direct calculation shows
+that |PCP P | is minimized when the three sensing regions
+form a tightly nested equilateral triangle. An analogous result
+holds for the other constraint combinations.
+In summary, the worst case ratio of the ratio ∆ for the
+situation of 3 targets occurs when all inter-target constraints
+are active, resulting in a equilateral triangle configuration.
+C. Case of 4 Targets
+Figure 21(a) depicts a problem with 4 targets. The first
+three targets are constrained to form an equilateral triangle, with the fourth target placed at an arbitrary, but
+unconstrained, location. It can be shown, using the KKTlike analysis described above, that if targets T2 or T3 are
+
+When a fifth target is added, the results above can be
+extrapolated to show that ∆ is extremized when the sensing
+regions are tightly packed. Direct calculations show that
+maximum magnitude of ∆ is realized in the configuration
+shown in Figure 22. For six or more targets, the same
+analytical approach leads to the linear packing arrangement
+of the sensing regions that is seen in Figure 5. As the number
+of targets increases, there are a discrete number of sensing
+circle packings that lead to the largest ∆ ratio. However, the
+linear packing arrangement is as short as any other packing
+arrangment. Thus, the linear packing arrangement suffices
+for our analysis.
+
+Fig. 22.
+
+Extremizing Geometry of 5 Targets.
+
+R EFERENCES
+[1] E. Acar, H. Choset, and J. Y. Lee. Sensor based coverage with
+extended range detectors. IEEE Transactions on Robotics, 22(1):189–
+198, 2006.
+[2] E. Acar, H. Choset, Y. Zhang, and M. Schervish. A survey on
+inspecting structures using robotic systems. Int. J. Robotics Research,
+22:441–461, 2016.
+
+[3] Randa Almadhoun, Tarek Taha, Lakmal Seneviratne, Jorge Dias, and
+Guowei Cai. A survey on inspecting structures using robotic systems.
+Int. J. Advanced Robotics Systems, pages 1–18, 2016.
+[4] Pietro Belotti, Christian Kirches, Sven Leyffer, Jeff Linderoth, James
+Luedtke, and Ashutosh Mahajan. Mixed-integer nonlinear optimization. Acta Numerica, 22, 05 2013.
+[5] Andreas Bircher, Mina Kamel1, Kostas Alexis1, Michael Burri,
+Philipp Oettershagen1, Sammy Omari, Thomas Mantel1, and Roland
+Siegwart. Three-dimensional coverage path planning via viewpoint
+resampling and tour optimization for aerial robots. Autonomous
+Robots, 40:1059–1078, 2016.
+[6] R. Bland, D. Goldfarb, and M. Todd. The ellipsoid method: A survey.
+Operations Research, 29, 12 1981.
+[7] P. Bonami, L. T. Biegler, A. R. Conn, G. Cornuejols, I. E. Grossmann,
+C. D. Laird, A. Lodi J. Lee, F. Margot, and A. Waechter. An
+algorithmic framework for convex mixed integer nonlinear programs.
+Discrete Optimization, 5(2):186–204, 2008.
+[8] Joel W. Burdick, Amanda Bouman, and Elon Rimon.
+From
+multi-target sensory coverage to complete sensory coverage: An
+optimization-based robotic sensory coverage approach. In 2021 IEEE
+International Conference on Robotics and Automation (ICRA), pages
+10994–11000, 2021.
+[9] Christofides, N. Worst-Case analysis of a new heuristic for the
+travelling salesman problem. Technical Report 388, Carnegie-Mellon
+University, Pittsburgh, PA, 1976.
+[10] Walton Pereira Coutinho, Roberto Quirino do Nascimento, Artur Alves
+Pessoa, and Anand Subramanian. A Branch-and-Bound Algorithm for
+the Close-Enough Traveling Salesman Problem. INFORMS Journal
+on Computing, 28(4):752–765, November 2016.
+[11] John R. Current and David A. Schilling. The Covering Salesman
+Problem. Transportation Science, 23(3):208–213, August 1989.
+[12] T. Danner and L.E. Kavraki. Randomized planning for short inspection
+paths. In IEEE Int. Conf. on Robotics and Automation, pages 971–976
+vol.2, San Francisco, CA, USA, 2000. IEEE.
+[13] Adrian Dumitrescu and Joseph S B Mitchell. Approximation algorithms for TSP with neighborhoods in the plane. Journal of
+Algorithms, 48(1):135–159, 2003.
+[14] Brendan Englot and Franz Hover. Planning Complex Inspection
+Tasks Using Redundant Roadmaps. In Henrik I. Christensen and
+Oussama Khatib, editors, Robotics Research, volume 100, pages 327–
+343. Springer International Publishing, Cham, 2017.
+[15] Brendan Englot and Franz S. Hover. Three-dimensional coverage
+planning for an underwater inspection robot. Int. J. Robotics Research,
+32(9-10):1048–1073, August 2013.
+[16] E. Galceran and M. Carrares. Efficient seabed coverage path planning
+for asvs and auvs. In IEEE/RSJ Int. Conf. on Intelligent Robots and
+Systems, pages 88–93, 2012.
+[17] E. Galceran and M. Carreras. A survey on coverage path planning for
+robotics. Robotics and Autonomous Systems, 61(4):146–155, 2013.
+[18] Iacopo Gentilini, François Margot, and Kenji Shimada. The travelling
+salesman problem with neighbourhoods: MINLP solution. Optimization Methods and Software, 28(2):364–378, April 2013.
+[19] Bruce Golden, Zahra Naji-Azimi, S. Raghavan, Majid Salari, and
+Paolo Toth. The Generalized Covering Salesman Problem. INFORMS
+Journal on Computing, 24(4):534–553, November 2012.
+[20] Michael Grant and Stephen Boyd. Graph implementations for nonsmooth convex programs. In V. Blondel, S. Boyd, and H. Kimura,
+editors, Recent Advances in Learning and Control, Lecture Notes
+in Control and Information Sciences, pages 95–110. Springer-Verlag
+Limited, 2008. http://stanford.edu/˜boyd/graph_dcp.
+html.
+[21] Michael Grant and Stephen Boyd. CVX: Matlab software for disciplined convex programming, version 2.1. https://cvxr.com/
+cvx, March 2014.
+[22] J.A. Hoogeveen. Analysis of Christofides’s heuristic: Some paths are
+more difficult than cycles. Operat. Res. Lett., 10:291–295, 1991.
+[23] Inverse Problem Limited. Opti Toolbox - A Free Matlab Tool for
+Optimization . https://www.inverseproblem.co.nz/OPTI/, 2019.
+[24] Donald B. Johnson. Efficient algorithms for shortest paths in sparse
+networks. J. ACM, 24(1):1–13, jan 1977.
+[25] S Kapoor, S N Maheshwari, and J S B Mitchell. An efficient algorithm
+for euclidean shortest paths among polygonal obstacles in the plane.
+Discrete & Computational Geometry, 18(4):377–383, December 1997.
+[26] Vladimir Kolmogorov. Blossom V: a new implementation of a min-
+
+imum cost perfect matching algorithm. Mathematical Programming
+Computation, 1(1):43–67, July 2009.
+[27] J. Kronqvist, D. Bernal, A. Lundell, and I. Grossmann. A review
+and comparison of solvers for convex MINLP. Optimization and
+Engineering, 20, 06 2019.
+[28] Helge A. Lauterbach, C. Bertram Koch, Robin Hess, Daniel Eck,
+Klaus Schilling, and Andreas Nuchter. The Eins3D project — Instantaneous UAV-Based 3D Mapping for Search and Rescue Applications.
+In IEEE Int Symp Safety, Security, and Rescue Robotics, pages 1–6,
+Würzburg, Germany, September 2019. IEEE.
+[29] S. G. Loizou and C. C. Constantinou. Multi-robot coverage on
+dendritic topologies under communication constraints. In IEEE 55th
+Conference on Decision and Control, pages 43–48, 2016.
+[30] T. Marcussi, M. Petersen, D. Wrangel, and R. Tedrake. Motion planning around obstacles with convex optimization. arXiv:2205.04422,
+May 2022.
+[31] Joseph S.B. Mitchell, Csaba D. Tóth, Jacob E. Goodman, and Joseph
+O’Rourke. Shortest paths and networks. Chapman & Hall/CRC, 3rd
+edition, 2017.
+[32] Patrick A Plonski and Volkan Isler. Approximation algorithms for
+tours of height-varying view cones. The International Journal of
+Robotics Research, 38(2-3):224–235, 2019.
+[33] F.P. Preparata and M.I. Shamos. Computational Geometry: An Introduction. Monographs in Computer Science. Springer New York,
+2012.
+[34] Michael Ian Shamos and Dan Hoey. Geometric intersection problems.
+In 17th Annual Symposium on Foundations of Computer Science (sfcs
+1976), pages 208–215, 1976.
+[35] Pratap Tokekar, Joshua Vander Hook, David Mulla, and Volkan
+Isler. Sensor Planning for a Symbiotic UAV and UGV System for
+Precision Agriculture. IEEE Transactions on Robotics, 32(6):1498–
+1511, December 2016.
+[36] A. Vecchietti, S. Lee, and I.E. Grossman.
+Modeling of Discrete/Continuous Optimization Problems: Characterization and Formulation of Disjunctions and Their Relaxations. Computers and Chemical
+Engineering, 27(3):433–448, 2003.
+[37] Emo Welzl. Constructing the visibility graph for n-line segments in
+o(n2) time. Information Processing Letters, 20(4):167–171, 1985.
+[38] D. P. Williamson and D. B. Shmoys. The Design of Approximation
+Algorithms. Cambridge University Press, N.Y., 2011.
+
+

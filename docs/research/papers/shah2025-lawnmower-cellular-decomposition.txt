@@ -1,0 +1,885 @@
+End-to-End Framework for Robot Lawnmower Coverage Path
+Planning using Cellular Decomposition
+
+arXiv:2506.06028v1 [cs.RO] 6 Jun 2025
+
+Shah Nikunj1 , Utsav Dey1 and Kenji Nishimiya1
+Abstract— Efficient Coverage Path Planning (CPP) is necessary for autonomous robotic lawnmowers to effectively navigate
+and maintain lawns with diverse and irregular shapes. This
+paper introduces a comprehensive end-to-end pipeline for
+CPP, designed to convert user-defined boundaries on an aerial
+map into optimized coverage paths seamlessly. The pipeline
+includes user input extraction, coordinate transformation, area
+decomposition and path generation using our novel AdaptiveDecompositionCPP algorithm, preview and customization
+through an interactive coverage path visualizer, and conversion
+to actionable GPS waypoints. The AdaptiveDecompositionCPP
+algorithm combines cellular decomposition with an adaptive
+merging strategy to reduce non-mowing travel thereby enhancing operational efficiency. Experimental evaluations, encompassing both simulations and real-world lawnmower tests,
+demonstrate the effectiveness of the framework in coverage
+completeness and mowing efficiency.
+
+I. I NTRODUCTION
+Coverage Path Planning (CPP) in mobile robotics aims
+to generate paths that guarantee every point within a specified region is traversed [1], [2]. In the context of robotic
+lawnmower applications, irregular lawn shapes and obstacles
+complicate the task of achieving total coverage and a visually
+appealing cut. Many existing CPP methods [3]–[5] focus on
+achieving high coverage but give less attention to operational
+efficiency and lawn aesthetics. Operational efficiency here
+involves minimizing unnecessary turning maneuvers and
+nonmowing travel; aesthetics requires producing straight,
+uniform cuts with minimal deviations and overlaps [6].
+Achieving both efficiency and aesthetics calls for smooth,
+continuous paths that reduce abrupt turns and idle maneuvers.
+In real-world lawn mowing, operators often rely on userdefined boundaries and adjust for varying mower widths
+and cutting parameters. Unfortunately to the best of our
+knowledge, few existing methods integrate all these considerations (coverage, efficiency, aesthetics) into a single,
+adaptable pipeline.
+To address this gap, we introduce a modular framework
+for coverage path planning (CPP)—the AdaptiveDecompositionCPP algorithm. Our approach is designed to accommodate different cutting parameters while remaining flexible
+with regard to path-planning algorithms. It accounts for
+user-defined boundaries, mower geometry, and operational
+constraints. Fig.1 demonstrates our overall pipeline starting
+from user-drawn boundaries on an aerial map to GPS-based
+path execution on an actual lawnmower. We evaluated our
+method in both simulation and on real hardware. The results
+1 Honda R&D Co., Ltd. Wako-shi, Japan [shah nikunj,
+utsav dey, kenji nishimiya]@jp.honda
+
+User polygon input from aerial
+map in GPS coordinates
+
+Coordinate
+Conversion
+
+Binary Map
+Generation
+
+Path Generation
+
+Real Robot Execution
+
+Path Visulaization
+
+Fig. 1: Proposed end-to-end framework execution of a sample lawn area with an actual lawnmower system. Clockwise
+from top: User-defined polygon input by marking GPS
+corner points on an aerial map; Input pre-processing pipeline;
+Visualization of the generated path using the preview simulator; GPS Trajectory comparison during autonomous path
+following.
+
+show that our approach achieves high coverage, reduces
+unnecessary turns and nonmowing travel, and also improves
+the overall aesthetics of the cut lawn.
+In the following sections, we review related CPP methods
+(Section II), describe our adaptive algorithm and pipeline
+(Section III), and present experimental results that validate
+our approach. We conclude by discussing how future research may further enhance operational efficiency and cut
+quality.
+II. R ELATED W ORK
+Coverage Path Planning (CPP) is often compared to the
+well-known Traveling Salesman Problem (TSP) [7], [8].
+The Covering Salesman Problem (CSP) [9], an adaptation
+of TSP where an agent is required to cover the vicinity
+of each city rather than just visiting it, is more closely
+related to the CPP task. By definition, CPP requires an agent
+to cover every point in a given area at least once. [10]
+For instance, in the case of lawnmowers, this translates to
+mowing every part of the lawn. The TSP is known to be
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+(a) Field shape
+
+Fig. 2: Illustration of the boustrophedon cell decomposition
+method, as described in [3], dividing the area into simple
+subsections, incrementally from left to right.
+
+NP-hard, meaning it becomes computationally intensive to
+solve as the problem size increases, necessitating heuristic
+solutions [11]. Similarly, the task of mowing an entire grasscovered region, also known as the “lawnmower problem,”
+has also been established as NP-hard by Arkin et al. [12]
+Therefore, more practical approaches are often preferred over
+optimal ones in real-world applications.
+Coverage Path Planning (CPP) is a relatively old problem,
+with some of the earliest algorithms being published in 1988
+by Cao et al. [13] and Yasutomi et al. [14] Many current coverage path planning algorithms have been well summarized
+in the survey works by Galceran et al. [2] and Choset et
+al. [1] Considering a 2D problem setup and a single agent
+in operation, there are broadly three types of approaches:
+cell decomposition methods, grid-based methods, and neuralbased methods. [2]
+Cell decomposition methods such as [3], [15], [16] aim to
+divide the free space into simpler, non-overlapping subsections. These subsections are free of obstacles and complex
+maneuvers and can usually be covered end-to-end by simple
+zigzag motion. One such example is the boustrophedon
+decomposition [3], where the decomposition lines are created
+by finding critical points around the obstacles (see Fig
+2). Our algorithm is indeed a modified approach to this
+decomposition method.
+Grid-based methods divide the free space into small,
+equal-sized unit cells. [4] The algorithm then plans the path
+from one grid cell to another nearby grid cell until all the
+eligible grid cells are covered. The technique used for planning may differ depending on the algorithm. For example,
+the work by Zelinsky et al. [4] uses a distance transform
+that propagates a wavefront from the goal (assigned a value
+of 0) to the start, assigning a specific number to each grid
+element. Based on these distance values, the algorithm starts
+covering the cells from higher to lower values, resulting in
+a gradient-descent-like path.
+Neural network-based approaches are the most recent
+development in this domain. They also divide the free space
+into grid cells and try to exploit neuron-like connection
+properties by considering each grid cell as a neuron. The
+works of Luo et al. [5] and Guo et al. [17] show the potential
+applications of neural-based approaches. These methods have
+the advantage of handling dynamic environments but are
+usually computationally heavy and may converge to the local
+optimum in some cases.
+End-to-end approaches like ours are generally difficult
+to find in the literature. The most closely related work to
+
+(b) Decomposed
+
+(c) Merged
+
+Fig. 3: (a) The initial lawn shape provided as input. (b) The
+lawn is divided into 12 sections using cellular decomposition
+with a 36◦ sweeping direction. (c) The final output after
+merging the sections into 5 optimized regions.
+
+our approach is a software tool developed by Hameed [18],
+which utilizes K-Means clustering and Dubins’ curves for
+optimal Coverage Path Planning (CPP). Although the paper
+suggests that a robot equipped with a GPS could follow the
+generated path, it does not provide a comprehensive endto-end implementation pipeline and is not tested on real
+hardware. The algorithm uses K-Means clustering to divide
+mowing tracks into sections; however, this method has several drawbacks. It requires users to manually determine the
+optimal number of clusters (K) based on starting coordinates,
+a process that is both challenging and prone to error, making
+it unsuitable for automated pipelines. Additionally, K-Means
+is vulnerable to becoming trapped in local optima depending
+on its initialization [19]. Moreover, the method does not optimize for tracks across all possible angles of decomposition,
+which limits its effectiveness in diverse scenarios.
+Overall, while some approaches offer partial solutions
+to the CPP problem, there remains a lack of a comprehensive, adaptable, and computationally efficient end-to-end
+framework for diverse lawn shapes. Our proposed hybrid
+method fills this gap by combining cellular decomposition
+and adaptive merging techniques optimized for both coverage
+efficiency and practicality in real-world scenarios.
+III. M ETHODOLOGY
+A. Coverage Path Planning Algorithm
+1) Overview and Notations: In the given algorithm, L
+denotes the input image to be decomposed with m rows and
+n columns. D represents a decomposition of L. |D| is the
+number of regions in that decomposition. θ is an orientation
+angle ranging from 0◦ to 180◦ . D∗ and θ∗ are the optimal
+decomposition and its associated orientation. The goal is
+to minimize the number of regions. Nopt is the set of all
+possible decompositions and their associated orientations.
+The procedure AdaptiveDecompositionCPP iterates over all
+possible orientations θ. It calls DecomposeMerge to obtain
+decompositions Dθ at each angle. It then selects the decomposition with the fewest regions. Within DecomposeMerge,
+Lθ is the image rotated by 90◦ −θ; to align the decomposition
+lines along the image column. C is the set of critical points
+across all iterations. Ci is the ordered set of critical points
+for iteration i based on the sequence of insertion. R is the
+set of regions drawn from the critical points. The procedure
+CriticalPoints identifies and collects critical points according
+to conditions defined later. Lθi,j refers to the image region
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+at row i and column j. The procedure DrawLines updates
+the image with lines through these critical points. It forms
+the regions. The procedure Merge removes the first element
+from the ordered set Ci . Fig. 3 shows the input lawn image,
+its decomposition into sections, and the final merged regions.
+Algorithm 1 AdaptiveDecompositionCPP Algorithm
+1: procedure A DAPTIVE D ECOMPOSITION CPP
+2:
+Nopt ← ∅
+
+for θ ∈ {0, 1, . . . , 180} do
+Dθ ← DecomposeMerge(θ, L)
+Nopt ← Nopt ∪ {(Dθ , θ)}
+∗ ∗
+6:
+(D , θ ) ← argmin(D,θ) {|D| : (D, θ) ∈ Nopt }
+7:
+return D∗
+8: procedure D ECOMPOSE M ERGE (θ, L)
+9:
+Lθ ← rotate(L, 90◦ − θ)
+10:
+C←∅
+11:
+for i ∈ {2, . . . , n} do
+12:
+Ci ← CriticalPoints(i, Lθ )
+13:
+Ci ← Merge(Ci )
+14:
+C ← C ∪ Ci
+15:
+R ← DrawLines(C, Lθ )
+16:
+return R
+17: procedure C RITICAL P OINTS (i, Lθ )
+18:
+Ci ← ⟨⟩
+▷ Initialize Ci as an ordered set
+19:
+for j ∈ {1, . . . , m} do
+20:
+if (region classification changes) then
+21:
+if (split or merge condition met) then
+22:
+Ci ← Ci ∪ ⟨(Lθi−1,j , Lθi,j )⟩
+3:
+4:
+5:
+
+23:
+
+return Ci
+
+24: procedure M ERGE (Ci )
+
+Ci ← Ci [2 . . .] ▷ Remove the first element from the
+ordered set Ci
+26:
+return Ci
+27: procedure D RAW L INES (C, Lθ )
+28:
+R←∅
+29:
+Lθ ← updateImageLines(C, Lθ )
+30:
+R ← extractRegions(Lθ )
+31:
+return R
+25:
+
+2) Conditions for a Point to be Critical: Critical points are
+key locations where changes in the region’s classification or
+connectivity occur, and they play a vital role in determining
+the structure of the decomposed regions.
+Change in Region Classification: A point is potentially
+critical if there is a change in its classification compared
+to the adjacent column. The current column is part of the
+lawn and the adjacent column is non-lawn and vice versa.
+If such a point is detected then the following conditions are
+verified to confirm it as a critical point:
+• Splitting Condition: A point is critical if it results in a
+previously connected region becoming disconnected in
+the next column. This can be visualized as a split in the
+free space.
+• Merging Condition: A point is critical if it results
+in two previously disconnected regions becoming con-
+
+Start
+
+User-Defined
+Polygon Input
+
+End
+
+GPS Waypoints
+
+GPS Boundary
+Extraction
+
+Conversion to GPS
+Paths
+
+Coordinate
+Transformation
+
+Confirmation of
+Customization
+
+Coverage Path
+Planning Algorithm
+
+Preview and Customization
+
+Fig. 4: Flowchart illustrating the pipeline for generating
+optimized coverage paths, from user-defined polygon input
+to GPS waypoint output.
+
+nected in the next column.
+3) Method: The AdaptiveDecompositionCPP algorithm computes an optimal coverage path by iterating
+over angles θ from 0 to 180 degrees (see Procedure AdaptiveDecompositionCPP, Line 3). For each angle, it calls
+DecomposeMerge to decompose the area (Line 4) and stores
+the result Dθ with θ in Nopt (Line 5). It selects the decomposition D∗ with the fewest regions to minimize turns (Line
+6) and returns D∗ (Line 7).
+The DecomposeMerge procedure rotates the area L by
+90◦ −θ (Line 9) and initializes a set C for critical points (Line
+10). It iterates over columns i to find critical points using
+CriticalPoints (Line 12) and merges them using Merge (Line
+13). The decomposition and merging process is illustrated
+in Fig. 3(b) and Fig. 3(c), where the lawn is initially
+decomposed into 12 sections (Fig. 3(b)) and subsequently
+merged into 5 optimized regions (Fig. 3(c)). The merged
+critical points are then used to draw paths with DrawLines
+(Line 15), which generates the boundaries or lines separating
+different regions based on the critical points identified and
+merged in previous steps. DrawLines first updates the image
+to reflect these lines (Line 29) and then extracts and returns
+the set of decomposed regions R (Line 30), providing the
+structured layout needed for optimal path planning. The
+result R is returned (Line 16).
+The CriticalPoints procedure initializes an ordered set Ci
+(Line 18). It iterates over each point in column i to detect
+changes in region classification (Line 20) and adds points
+to Ci if a split or merge condition is met (Line 22). The
+set Ci is returned (Line 23). If at least one critical point
+is detected, the start and end points of the lawn area in
+that specific column are also added to complete the set. The
+Merge procedure removes the first element from the ordered
+set Ci (Line 25) and returns the modified set (Line 26).
+B. End-to-End Pipeline for Coverage Path Planning
+This section describes the end-to-end pipeline for converting GPS boundary data into coverage paths for autonomous
+systems. The pipeline is designed to achieve full coverage
+with minimal overlap and low redundancy in the path, as
+illustrated in the flow diagram in Fig. 4.
+1) User-defined Input and GPS Boundary Extraction:
+The process begins with a user drawing a polygon on a map
+interface to define the boundary of the target area. The system
+then extracts the GPS coordinates of the vertices of this
+polygon. These act as the starting point for the subsequent
+steps in generating optimized coverage paths.
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+the autonomous system through the planned path, ensuring
+complete coverage of the area.
+IV. E XPERIMENT
+A. Definitions
+Coverage Percentage: It measures how fully the area
+is mowed and is critical to ensure full coverage without
+unmowed spots.
+• Non-Mowing Distance: It represents the distance traveled when the mower is not actively cutting grass, such
+as moving between sections and minimizing it reduces
+wasted time and energy. Distance per Coverage (DC):
+This metric is defined as ratio:
+Mowing Distance + Non Mowing Distance
+Coverage Percentage
+•
+
+Fig. 5: Comparison of different simulator configurations:
+Clockwise from the top left, the first image shows the default
+settings, the second image illustrates a high turn radius
+with an increased width, the third image depicts a greater
+distance from the boundary, and the fourth image shows the
+configuration when a U-turn is changed to a three-point turn.
+
+2) Coordinate Transformation and Map Generation: To
+simplify processing and visualization tasks, the extracted
+GPS coordinates are converted into a local coordinate system. This transformation makes it easier to handle computations that are otherwise complex in a geodetic coordinate
+system. Using the transformed coordinates, a map or grid
+representation of the area is generated, which serves as the
+input for the Coverage Path Planning Algorithm.
+3) Area Decomposition and Path Generation Using the
+Coverage Path Planning Algorithm: This step utilizes the
+method described in the algorithm section for its robustness
+and computational simplicity. The Coverage Path Planning
+Algorithm manages both the decomposition of the area and
+the generation of coverage paths. This method is chosen
+for its balance of simplicity and effectiveness, but it can
+be replaced with another algorithm if different criteria or
+specific needs arise. The result of this step is a set of
+optimized paths represented in the local coordinate system.
+4) Interactive coverage path visualizer: We developed a
+ROS-based coverage path visualizer to visualize, preview,
+and fine-tune the generated mowing trajectories prior to realworld execution. This environment renders the layout of the
+target lawn area and mowing paths, allowing users to adjust
+parameters such as the offset from the boundaries, the turning
+radius, and the mowing width in real-time.
+As shown in Fig. 5, the first image displays the default
+settings, the second image illustrates a high turn radius
+with increased width, and the third image depicts a higher
+gap from the boundary, whereas the fourth image depicts a
+variation in turn type. Once satisfied with the configuration,
+they can proceed to the next step, which is generating the
+GPS output.
+5) Conversion to GPS Paths: After the user confirms the
+path in the simulator, the optimized paths are converted
+back into GPS coordinates. This conversion makes the paths
+suitable for use by autonomous vehicles or mowers. The
+final output is a sequence of GPS waypoints that guide
+
+indicating how much distance is traveled per unit percentage of area covered. Lower values signify more
+efficient paths.
+• Mowing distance: It is the distance traveled during
+mowing.
+B. Comparison with baseline algorithms
+We focus on deterministic methods based on geometry
+because they use the geometry of the lawn and do not rely
+on training data, making them easier to interpret, debug and
+refine. As discussed in the related work section, there are
+major varieties of non-learning based CPP algorithms. One
+is decomposition-based and the other is grid-based. Below
+is our observation from Table I.
+Our approach achieves better coverage than both Boustrophedon Decomposition [20] and Trapezoidal Decomposition [2] with lower mowing and non-mowing distance.
+We attribute the lower non-mowing distance to merging,
+which reduces the number of decompositions leading to
+fewer travels between decompositions. The lower mowing
+distance without any observable deterioration in the coverage
+percentage also signifies that there is comparatively less
+overlapping of paths in case of our approach.
+The grid-based method [21] has slightly higher coverage
+percentage; however, the path planned by this method has
+a lot of abrupt turns in the middle which leads to a nonaesthetic cut of the lawn. Also, for practical use, turning
+is a more difficult and time-consuming operation for a
+mower, hence the very high number of turns is also a big
+disadvantage.
+Given these observations, our approach proves to be more
+suitable for lawnmowing operations than existing methods.
+On the efficiency side, our lower nonmowing distance and
+comparable or better coverage percentages clearly indicate
+reduced unnecessary travel. From an aesthetic perspective,
+smoother and more direct paths, especially when compared
+to the numerous abrupt turns in the grid-based method, yield
+straighter lines and a more uniform cut. These measurable
+improvements align with our primary goals of maximizing
+efficiency and improving lawn appearance, as described in
+the introduction. Also, except for the grid-based approach
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+TCD [2]
+
+BCD [20]
+
+Grid-Based [21]
+
+Ours
+
+45
+20811
+1946
+94.5%
+8
+240.9
+
+47
+20608
+2504
+96.8%
+7
+238.7
+
+174
+19285
+96.5%
+199.8
+
+57
+19856
+471
+97.2%
+3
+208.9
+
+Output Image
+Number of Turns
+Mowing Distance
+Non Mowing Distance
+Coverage Percentage
+Number of Decompositions
+Distance per Coverage
+
+TABLE I: Comparison with baseline Coverage Path Planning algorithms (TCD stands for Trapezoidal Cell Decomposition
+and BCD stands for Boustrophedon Cell Decomposition). Yellow lines indicate the non-mowing path. Red lines represent
+subsection boundaries. Generated coverage paths are shown as blue lines. The base map is chosen so as to effectively
+visualize the differences between the compared approaches.
+
+(above 1000 ms) the average execution time of all other
+methods was noted to be below 100 ms on a desktop CPU
+system.
+C. Impact of Merging and Decomposition Angle on Key
+Metrics
+The results table (Table II) illustrates how different strategies, such as merging and varying decomposition angles,
+affect key evaluation metrics such as coverage percentage,
+nonmowing length, and distance per coverage.
+Coverage Percentage: Generally, merging sections tend to
+increase the coverage percentage by reducing gaps between
+mowing paths. For example, in Result #1 at the reference
+angle of 0◦ , the coverage improves from 95.18% without
+merging to 97.61% with merging. However, in Results #3
+and #4, optimizing the decomposition angle without merging yields the highest coverage percentages—98.56% and
+98.76%, respectively. This indicates that angle optimization
+alone can sometimes provide superior coverage by aligning
+the mowing paths more effectively with the area’s geometry.
+The slight decrease in coverage when merging is applied
+in these cases may be due to the complexity introduced
+by merging sections, which could lead to less optimal path
+overlaps or increased difficulty in covering irregular areas
+fully.
+Non-Mowing Distance: Merging sections and optimizing
+the decomposition angle usually reduces non-mowing distance across all maps, as it minimizes unnecessary movements between separate subsections. For example, in Result
+#3 at the optimized angle of 104◦ , non-mowing distance
+decreases from 87.9 m without merging to 59.6 m with
+merging. This highlights that merging effectively generates
+more continuous paths, thus enhancing operational efficiency
+by reducing idle travel time.
+Distance per Coverage (DC): Angle optimization consistently reduces this DC metric, improving efficiency. For
+instance, in Result #1, optimizing the angle from 0◦ to
+36◦ , without merging, decreases the DC value from 21.27
+
+to 20.03; whereas with merging the DC value decreases
+from 21.62 to 20.65. However, exceptions exist; in Result
+#4 without merging scenario, the lower DC value of 13.94
+occurs at the reference angle of 0◦ , but also has a lower
+coverage percentage of 95.56%. This suggests a trade-off
+between efficiency and completeness—while the mower travels less distance per unit percentage area, it covers less of
+the total area. Therefore, when evaluating mowing strategies,
+it’s important to balance Distance per Coverage with the
+coverage percentage to ensure both efficient operation and
+comprehensive area coverage.
+These results show that merging and angle optimization
+help in optimizing mowing paths which results in efficient coverage with minimal energy usage. Our algorithm
+is designed to directly optimize decomposition angles and
+merging leading to more efficient mowing.
+D. Framework Validation using Hardware
+To validate the pipeline, we conducted a hardware test
+using a medium-sized lawnmower. Validation begins with a
+user-defined input on a real aerial map (refer to Fig. 6a).
+The pipeline then processes this input to generate optimized
+coverage paths within a simulator environment, as depicted
+in Fig. 6b. We also added a boundary bordering path to
+ensure the completeness of the task. Once we confirm the
+coverage output in the simulator, the software prepares the
+GPS waypoints for lawnmower execution. The results, shown
+in Fig. 6c, present both the generated GPS path (green)
+and the actual path traced by the lawnmower (red). This
+comparison highlights the pipeline’s ability to translate userdefined inputs into optimized paths that the lawnmower can
+effectively follow without significant deviation, errors, or
+boundary violations.
+The comparison of the overlap between the input map,
+the generated GPS trajectory, and the actual path traced
+by the lawnmower provides a means to validate the endto-end framework. The localization accuracy, however, was
+constrained by the current system setup, which relied solely
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+Decomposition angle: reference
+
+Decomposition angle: min sections
+
+Merging: No
+
+Merging: Yes
+
+Merging: No
+
+Merging: Yes
+
+Results #1
+Angle
+Number of Decompositions
+Mowing Distance
+Non Mowing Distance
+Coverage %
+Distance per Coverage
+
+0°
+12
+1904.6m
+122.0m
+95.18
+21.27
+
+0°
+6
+1996.4m
+114.5m
+97.61
+21.62
+
+36°
+12
+1798.7m
+125.0m
+96.39
+20.03
+
+36°
+5
+1902.6m
+109.1m
+97.35
+20.65
+
+Results #2
+Angle
+Number of Decompositions
+Mowing Distance
+Non Mowing Distance
+Coverage %
+Distance per Coverage
+
+0°
+6
+2264.8m
+114.8m
+97.69
+24.39
+
+0°
+4
+2384.5m
+148.4m
+98.51
+25.69
+
+90°
+5
+2242.3m
+125.7m
+99.45
+23.85
+
+90°
+3
+2241.1m
+107.2m
+98.80
+23.85
+
+Results #3
+Angle
+Number of Decompositions
+Mowing Distance
+Non Mowing Distance
+Coverage %
+Distance per Coverage
+
+0°
+8
+1192.6m
+123.0m
+96.06
+13.71
+
+0°
+5
+1272.5m
+98.5m
+97.83
+13.99
+
+104°
+4
+1190.0m
+87.9m
+98.56
+12.97
+
+104°
+2
+1160.4m
+59.6m
+97.95
+12.43
+
+Results #4
+Angle
+Number of Decompositions
+Mowing Distance
+Non Mowing Distance
+Coverage %
+Distance per Coverage
+
+0°
+12
+1232.0m
+99.6m
+95.56
+13.94
+
+0°
+6
+1322.2m
+101.3m
+95.92
+14.88
+
+109°
+4
+1304.5m
+73.4m
+98.76
+13.96
+
+109°
+2
+1336.6m
+64.7m
+98.60
+14.26
+
+TABLE II: Summary of the algorithm test results. Each column represents a combination of the two parameters of interest:
+whether decomposed sections are merged and the angles of decomposition - compared between the reference 0° (horizontal)
+angle and the optimal angle (angle with minimum subsections). Yellow lines indicate the non-mowing path. Red lines
+represent subsection boundaries. Generated coverage paths are expanded to the size of the mowing width to visualize
+accurate coverage.
+
+on RTK-GNSS technology. Future enhancements, such as
+the integration of advanced sensor fusion techniques using
+camera or IMU [22] or the adoption of higher-precision
+RTK-GNSS systems [23], have the potential to significantly
+improve the alignment accuracy between the planned and
+executed paths.
+The results presented in Fig. 6 also demonstrate the
+versatility of our approach in adapting to various environmental conditions. The top example, which is executed on
+
+slightly uneven terrain with low GPS reliability, highlights
+the system’s robustness in difficult environments, while the
+bottom example illustrates the ability to effectively handle
+obstacles through appropriate decompositions. The entire
+path, including boundary bordering and section-to-section
+movements, is autonomously executed without interruption, since all this tasks are effectively integrated into our
+path generation algorithm. This validation underscores the
+pipeline’s effectiveness in real-world scenarios, confirming
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+(a) User-defined polygon on aerial map
+
+(b) Generated path visualization
+
+(c) Generated vs traced GPS trajectory
+
+Fig. 6: Pipeline validation for actual mowing task. (a) A user-defined boundary polygon overlaid on an aerial map. (b) A
+simulator preview of the generated coverage path, including offset boundaries and turning maneuvers. (c) A comparison of
+the planned GPS trajectory (green) and the actual path traced by the lawnmower (red), confirming successful execution in
+real-world conditions.
+
+that the generated paths are both practical and reliable for
+autonomous mowing applications.
+V. C ONCLUSION
+We have introduced a comprehensive end-to-end CPP
+framework specifically designed for the operational needs of
+autonomous robotic lawnmowers. Central to our approach
+is the AdaptiveDecompositionCPP algorithm, which dynamically optimizes the decomposition angle and employs a
+merging strategy to minimize non-mowing distances and
+enhance mowing efficiency.
+Experimental results, both in simulations and real-world
+hardware, demonstrate significant improvements in key metrics such as coverage percentage, non-mowing distance, and
+distance per coverage. By reducing unnecessary movements
+and optimizing mowing paths, our algorithm ensures efficient coverage with minimal energy usage. For instance,
+in comparison to standard trapezoidal and boustrophedon
+methods, our approach attains a higher coverage (97.2% vs.
+94.5% and 96.8%) while cutting non-mowing distance by
+up to 80%, thereby significantly improving both efficiency
+and cut quality. The successful execution of generated GPS
+trajectories by an actual lawnmower confirms the pipeline’s
+
+practical viability, accurately translating user-defined inputs
+into executable paths without errors or boundary violations.
+The current framework is based on the assumption of
+a static, 2D (relatively flat) environment, which limits its
+ability to replan the path in the presence of moving obstacles,
+thereby reducing its adaptability to more dynamic environments. Additionally, there are opportunities for further
+optimization in the section-merging strategy, which, currently
+remains relatively simplistic and may result in suboptimal
+coverage for irregularly shaped lawns. Similarly, the preplanning of the mowing order for sub-sections could be optimized to minimize non-mowing travel. Future advancements,
+including enhanced localization, multi-lawnmower coordination, and the extension of the approach to accommodate
+varying terrain gradients, hold the potential to significantly
+improve the system’s robustness and efficiency across a
+broader range of operational environments.
+
+ACKNOWLEDGMENT
+We would like to acknowledge the support of Mr. Ichiro
+Yamaguchi for his help in supporting the development of the
+simulator and testing functionalities for this work.
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+R EFERENCES
+[1] H. Choset, “Coverage for robotics – a survey of recent results,” Annals
+of Mathematics and Artificial Intelligence, vol. 31, no. 1, pp. 113–126,
+2001.
+[2] E. Galceran and M. Carreras, “A survey on coverage path planning
+for robotics,” Robotics Auton. Syst., vol. 61, pp. 1258–1276, 2013.
+[3] H. Choset and P. Pignon, “Coverage path planning: The
+boustrophedon cellular decomposition,” 1998. [Online]. Available:
+https://api.semanticscholar.org/CorpusID:16233318
+[4] A. Zelinsky, R. Jarvis, J. Byrne, and S. Yuta, “Planning paths of
+complete coverage of an unstructured environment by a mobile robot,”
+2007.
+[5] C. Luo, S. X. Yang, D. A. Stacey, and J. C. Jofriet,
+“A solution to vicinity problem of obstacles in complete
+coverage path planning,” Proceedings 2002 IEEE International
+Conference on Robotics and Automation (Cat. No.02CH37292),
+vol. 1, pp. 612–617 vol.1, 2002. [Online]. Available:
+https://api.semanticscholar.org/CorpusID:33262037
+[6] M. Sportelli, M. Fontanelli, M. Pirchio, C. Frasconi, M. Raffaelli,
+L. Caturegli, S. Magni, M. Volterrani, and A. Peruzzi, “Robotic
+mowing of tall fescue at 90 mm cutting height: Random trajectories
+vs. systematic trajectories,” Agronomy, vol. 11, no. 12, 2021. [Online].
+Available: https://www.mdpi.com/2073-4395/11/12/2567
+[7] J. Modares, F. Ghanei, N. Mastronarde, and K. Dantu, “Ub-anc planner: Energy efficient coverage path planning with multiple drones,”
+2017 IEEE International Conference on Robotics and Automation
+(ICRA), pp. 6182–6189, 2017.
+[8] P. T. Kyaw, A. Paing, T. T. Thu, R. E. Mohan, A. V. Le, and
+V. Prabakaran, “Coverage path planning for decomposition reconfigurable grid-maps using deep reinforcement learning based travelling
+salesman problem,” IEEE Access, vol. 8, pp. 225 945–225 956, 2020.
+[9] E. M. Arkin and R. Hassin, “Approximation algorithms for
+the geometric covering salesman problem,” Discrete Appl. Math.,
+vol. 55, no. 3, p. 197–218, dec 1994. [Online]. Available:
+https://doi.org/10.1016/0166-218X(94)90008-6
+[10] Y. Gabriely and E. Rimon, “Spanning-tree based coverage of continuous areas by a mobile robot,” Annals of mathematics and artificial
+intelligence, vol. 31, pp. 77–98, 2001.
+[11] A. Ouaarab, B. Ahiod, and X.-S. Yang, “Discrete cuckoo search
+algorithm for the travelling salesman problem,” Neural Computing and
+Applications, vol. 24, pp. 1659–1669, 2014.
+[12] E. M. Arkin, S. P. Fekete, and J. S. B. Mitchell, “Approximation
+algorithms for lawn mowing and milling,” Comput. Geom. Theory
+Appl., vol. 17, no. 1–2, p. 25–50, oct 2000. [Online]. Available:
+https://doi.org/10.1016/S0925-7721(00)00015-8
+[13] Z. L. Cao, Y. Huang, and E. L. Hall, “Region filling
+operations with random obstacle avoidance for mobile robots,”
+J. Field Robotics, vol. 5, pp. 87–102, 1988. [Online]. Available:
+https://api.semanticscholar.org/CorpusID:5131874
+[14] F. Yasutomi, M. Yamada, and K. Tsukamoto, “Cleaning robot control,”
+in Proceedings. 1988 IEEE International Conference on Robotics and
+Automation, 1988, pp. 1839–1841 vol.3.
+[15] Y. Li, H. Chen, M. Er, and X. Wang, “Coverage path planning
+for uavs based on enhanced exact cellular decomposition method,”
+Mechatronics, vol. 21, pp. 876–885, 2011.
+[16] S. Brown and S. L. Waslander, “The constriction decomposition
+method for coverage path planning,” 2016 IEEE/RSJ International
+Conference on Intelligent Robots and Systems (IROS), pp. 3233–3238,
+2016.
+[17] Y. Guo and M. Balakrishnan, “Complete coverage control for nonholonomic mobile robots in dynamic environments,” in Proceedings 2006
+IEEE International Conference on Robotics and Automation, 2006.
+ICRA 2006., 2006, pp. 1704–1709.
+[18] I. A. Hameed, “Coverage path planning software for autonomous
+robotic lawn mower using dubins’ curve,” in 2017 IEEE International
+Conference on Real-time Computing and Robotics (RCAR), 2017, pp.
+517–522.
+[19] F. Yang, T. Sun, and C. Zhang, “An efficient hybrid data clustering
+method based on k-harmonic means and particle swarm optimization,”
+Expert Syst. Appl., vol. 36, pp. 9847–9852, 2009.
+[20] H. Choset, “Coverage of known spaces: The boustrophedon cellular
+decomposition,” Autonomous Robots, vol. 9, pp. 247–253, 2000. [Online]. Available: https://api.semanticscholar.org/CorpusID:43524659
+
+[21] Y. Gabriely and E. D. Rimon, “Spiral-stc: an on-line coverage
+algorithm of grid environments by a mobile robot,” Proceedings
+2002 IEEE International Conference on Robotics and Automation
+(Cat. No.02CH37292), vol. 1, pp. 954–960 vol.1, 2002. [Online].
+Available: https://api.semanticscholar.org/CorpusID:5126902
+[22] F. Caron, E. Duflos, D. Pomorski, and P. Vanheeghe, “Gps/imu data
+fusion using multisensor kalman filtering: introduction of contextual
+aspects,” Inf. Fusion, vol. 7, pp. 221–230, 2006.
+[23] K. Ng, J. Johari, S. Abdullah, A. Ahmad, and B. Laja, “Performance
+evaluation of the rtk-gnss navigating under different landscape,” in
+2018 18th International Conference on Control, Automation and
+Systems (ICCAS). IEEE, 2018, pp. 1424–1428.
+
+Presented at the 2025 IEEE ICRA Workshop on Field Robotics
+
+

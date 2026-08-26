@@ -1,0 +1,48 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# sys301-docs — docs-rag instance config (HOST-SIDE CLI ONLY)
+# ══════════════════════════════════════════════════════════════════════════════
+# Single-KB deployments are ENV-DRIVEN: docker-compose.yml mounts NO config.yaml,
+# so the API container never reads this file — it reads .env. This file exists
+# only so the HOST-side `rag` CLI resolves the right ingest directory:
+#
+#   * without it, `rag up` refuses to start without --defaults, and
+#   * `rag ingest` / `rag sync` with no path silently fall back to the built-in
+#     default `./data/docs` (which does not exist here) and ingest 0 documents.
+#
+# Every value below MUST stay equal to its .env counterpart. .env is the source
+# of truth for the running containers; this is the source of truth for the CLI.
+# ══════════════════════════════════════════════════════════════════════════════
+
+project_name: sys301-docs
+
+network:
+  name: sys301-docs-net      # == RAG_NETWORK_NAME
+  port: 10060                # == RAG_PORT / RAG_PORT_BASE
+
+ingestion:
+  # Scanned recursively. Must equal, or live under, DOCS_PATH in .env — the
+  # ingest-root guard (RAG_INGEST_ROOT_GUARD=on) rejects anything outside it.
+  directories:
+    - /home/devel/sys301_minesweeper/docs
+  extensions:
+    - md
+    - txt
+    - pdf                    # for the academic PDFs the report work will add later
+  chunk_size: 256            # == CHUNK_SIZE
+  chunk_overlap: 50          # == CHUNK_OVERLAP
+
+search:
+  default_mode: hybrid
+  top_k: 5                   # == RAG_TOP_K
+  min_similarity: 0.6        # == RAG_MIN_SIMILARITY
+
+embedding:
+  model: nomic-embed-text    # == EMBEDDING_MODEL
+  dimension: 768             # == EMBEDDING_DIMENSION
+  backend: ollama            # == EMBEDDING_BACKEND
+
+llm:
+  model: llama3.2:3b         # == LLM_MODEL — NOT PULLED; /api/ask is unavailable
+  temperature: 0.3
+  timeout: 300
+  base_url: http://host.docker.internal:11434

@@ -1,0 +1,3511 @@
+Near-Optimal Coverage Path Planning with Turn Costs
+Dominik Krupke∗
+
+arXiv:2310.20340v1 [cs.RO] 31 Oct 2023
+
+Abstract
+Coverage path planning is a fundamental challenge in
+robotics, with diverse applications in aerial surveillance,
+manufacturing, cleaning, inspection, agriculture, and more.
+The main objective is to devise a trajectory for an agent
+that efficiently covers a given area, while minimizing time
+or energy consumption. Existing practical approaches often lack a solid theoretical foundation, relying on purely
+heuristic methods, or overly abstracting the problem to a
+simple Traveling Salesman Problem in Grid Graphs. Moreover, the considered cost functions only rarely consider turn
+cost, prize-collecting variants for uneven cover demand, or
+arbitrary geometric regions.
+In this paper, we describe an array of systematic methods for handling arbitrary meshes derived from intricate,
+polygonal environments. This adaptation paves the way
+to compute efficient coverage paths with a robust theoretical foundation for real-world robotic applications. Through
+comprehensive evaluations, we demonstrate that the algorithm also exhibits low optimality gaps, while efficiently handling complex environments. Furthermore, we showcase its
+versatility in handling partial coverage and accommodating
+heterogeneous passage costs, offering the flexibility to trade
+off coverage quality and time efficiency.
+
+1
+
+Introduction
+
+Coverage path planning is an important problem for
+various applications such as aerial surveillance [14],
+cleaning [13], milling [37], mowing [30], pest control [9],
+and more. It has already received a considerable amount
+of attention, mostly from a practical perspective, but
+also with some theoretical results. The problem is provably hard to solve on multiple levels, as it contains
+NP- and PSPACE-hard problems such as the Traveling Salesman Problem (TSP), Covering, and the
+Piano Mover Problem.
+The simplest theoretical abstraction of the problem
+is the TSP in Grid Graphs. Here, we simply place
+a grid, with a cell size matching the agent’s coverage
+capabilities, over the area and compute the shortest tour
+on it. Because the TSP appears in many applications,
+it is one of the most well researched optimization
+problems, such that there are highly capable solvers
+despite its proved hardness. The Concorde solver [3]
+is able to solve instances with tens of thousands of
+vertices to proved optimality [5] and there are other
+algorithms that can compute good solutions for much
+larger instances. Concorde is also used to optimize
+∗ Department of Computer Science, TU Braunschweig, 38106
+Braunschweig, Germany, krupke@ibr.cs.tu-bs.de
+
+coverage paths, e.g., by Bormann et al. [13].
+Although solving the TSP in Grid Graphs aims to
+minimize tour length, which is an important factor in
+energy consumption, this narrow optimization criterion
+can lead to unintended consequences. In applications
+such as multicopters, straighter flight paths are generally more energy-efficient [15, 39]. An objective focused
+solely on minimizing the length of a coverage tour often
+encourages wavy routes, as this approach enables, e.g.,
+covering two lanes in a single pass. Consequently, these
+ostensibly shorter tours can actually be more expensive
+to execute.
+This issue is addressed in the problem Milling
+with Turn Costs, which not only minimizes the
+length but also the sum of turn angles the tour performs
+through the grid [7]. While still not capturing all the
+dynamics, it serves as a more realistic approximation
+for various scenarios and mitigates the shortcomings of
+focusing solely on length minimization. Unfortunately,
+turn costs increase the complexity of the problem such
+that not only itself but already the cycle cover relaxation
+becomes NP-hard [24]. While the optimally solvable
+problem size increased from less than 100 vertices [20]
+to over 1000 vertices [25], the still large difference to
+classical TSP shows the limits of computing optimal
+solutions for realistic dynamic models, even for strongly
+simplified environments.
+Besides complex dynamics, we sometimes do not
+need to cover the whole area. A true 100 % coverage
+is in many cases even not achievable because the tool
+simply does not fit into every corner. Instead, we have
+a feasible area that allows us to move in, and a smaller
+subset of it that is actually ‘valuable’. A vacuum robot
+can move within the whole room, but often there are
+dirt-prone areas and cleaner areas, which do not need
+to be cleaned every time. A harvester can move along
+the whole field, but crop yield can be heterogeneous; the
+harvester does not need to harvest everything, rather
+only most of the harvest. For aerial supervision, there
+are areas of higher and lower interest. Additionally,
+there may be areas that are harder to pass than others,
+e.g., wind fields for UAVs [53] and difficult terrain or
+inclinations [30] for ground-based vehicles.
+Fekete and Krupke [24, 25] proposed a constantfactor approximation algorithm for the Milling with
+
+40
+
+40
+
+30
+
+30
+
+20
+
+20
+
+10
+
+10
+
+0
+
+0
+
+10
+
+10
+
+20
+
+20
+
+30
+
+30
+10
+
+0
+
+10
+
+20
+
+30
+
+40
+
+(a) Polygonal instance.
+
+10
+
+0
+
+10
+
+20
+
+30
+
+40
+
+(b) Solution after meshing.
+
+Figure 1: A complex polygonal instance (a) is discretized using a meshing-algorithm in which the trajectory (b) is computed. Green indicates important areas,
+red indicates increased passage costs, and blue indicates
+the covered area of the black trajectory. We see that the
+trajectory minimizes the turn costs and focuses on the
+important areas while the expensive areas are avoided.
+
+Turn Costs problem on grid graphs, which is also
+able to handle partial coverage via skipping-penalties.
+In this paper, we generalize this algorithm to work on
+arbitrary meshes obtained from polygonal environments
+and heterogeneous costs, which allows us to compute
+efficient trajectories based on a theoretical foundation
+for real-world applications, see Fig. 1. We show in
+our evaluation that the algorithm is able to compute
+solutions that are on average close to optimum (10 %
+to 15 %), on the mesh representation. While the
+constant-factor approximation guarantee may be lost
+for arbitrary meshes, this paper shows how a theoretical
+algorithm for coverage path planning on square grids
+can be generalized for real-world applications.
+
+cally improve the achievable tours. When only considering the length of the trajectory, the problem becomes
+the famous Traveling Salesman Problem (TSP),
+which is NP-hard even in square grids [32], but can
+be solved well in practice due to extensive algorithm
+engineering [4]. To account for the non-negligible dynamics, we need to incorporate turn costs, which makes
+the problem significantly harder. Even previously simple relaxations become NP-hard [24] but constant-factor
+approximations are available [6, 7, 24]. On grid graphs,
+instances with around 1000 vertices could be solved to
+optimality, and approximation algorithms have been applied to instances with up to 300 000 vertices [25]. For
+general points in the plane, the problem is known as
+the Angular Metric TSP, and only a logarithmic
+approximation is known [1]. A further generalization to
+abstract graphs is the Quadratic TSP, which plays
+an important role, e.g., in bioinformatics [26]. Of these
+problems, only instances with less than 100 vertices can
+be expected to be solved to optimality in reasonable
+time [33, 45, 2]. On the practical side, the CPP has
+been considered on models with distance and turn costs
+in various degrees, such as only minimizing the number
+of turns [34], the sum of turn angles [12, 43, 39] (like
+this paper), or even model- and experiment-based cost
+functions [42, 15]. Including heterogeneous cost functions have also been considered for CPP, e.g., [54, 30],
+and for simple path planning [38, 52, 46].
+Another aspect of this paper is the ability to selectively cover the area, based on some value distribution. There are a few paper that also consider partial
+coverage path planning. Papachristos et al. [43] and
+Ellefsen, Lepikson, and Albiez [23] consider partial inspection of three-dimensional structures with distance
+and turn costs. Jensen et al. [34] and Soltero et al. [51]
+perform coverage without a fixed radius, but minimize
+the distance of (weighted) points of interests to the trajectory. Murtaza et al. [40] compute a full-coverage of
+the area, but prioritize subareas based on a probability
+distribution to find targets quickly. Sharma et al. [50]
+also compute a full-coverage of the area, but with a
+limited budget, resulting in multiple tours that try to
+efficiently cover as much as possible. However, all of
+these problems have significant differences to our problem. On the theoretical side, there are the Penalty and
+Budget TSP, which allow skipping vertices at a penalty
+or try to cover as much as possible within a budget. An
+overview of such problems is given by Ausiello et al. [8].
+
+1.1 Related Work Planning a trajectory for a tool
+to cover an area, e.g., mowing a field or vacuuming a
+room, is known as the Coverage Path Planning problem
+(CPP). The CPP already enjoyed a lot of attention for
+different applications, models (e.g., multi-robot), constraints, and objectives, as can be seen in multiple surveys [17, 27, 13, 14]. There are multiple approaches,
+the two most prominent being: (1) decomposing the
+larger area into simpler areas that can be covered using spiraling or zigzag patterns ([42, 19, 18]) and (2)
+applying a (regular square) grid onto the area, where
+each grid cell roughly represents the coverage area, converting the geometric coverage problem into a discrete
+1.2 Contributions In this paper, we make the foltouring problem on grid graphs ([12, 40, 54, 50, 39]).
+lowing contributions:
+In this paper, we use the second approach but generalized to arbitrary meshes that can adapt better to the
+• We generalize an approximation algorithm for covarea than strict grids, as a well fitting mesh can drastierage tours in regular grid graphs to work on more
+
+realistic polygonal instances by using meshing algorithms, paving the way to compute more efficient
+coverage tours with a robust theoretical foundation
+for real-world applications.
+
+signs a cost to each consecutive triple u, v, w of waypoints with uv, vw ∈ E. We call such a triple a passage through the middle point v. The goal is to find a
+tour T = p0 , p1 , . . . , p|T |−1 , p0 with pi pi+1 ∈ E for all
+i ∈ {0, . . . , |T | − 1} that minimizes the objective
+
+• We approximate the dynamics of the agent by using
+|T |−1
+a model based on a linear combination of the travX
+X
+eled distance and the sum of turn angles, as well as (1.1) min
+val(p)
+cost(pi−1 , pi , pi+1 ) +
+T
+local multiplication factors for heterogeneous pasi=0
+p∈P,p̸∈T
+{z
+} |
+|
+{z
+}
+sage costs. This also allows creating soft obstacles,
+Touring cost
+Coverage loss
+which should – but do not have to – be avoided.
+We define the cost of using a passage uvw by a linear
+• We investigate partial coverage by using a penalty combination of length of the two segments and their
+for missed coverage, which allows trading off cov- turn angle, weighted by τ ∈ R+ . It may additionally be
+erage quality and time efficiency. The area can be scaled by a local factor α .
+v
+weighted to target important areas with the tour.
+
+
+d(u, v) + d(v, w)
++ τ · turn(u, v, w)
+• We locally improve the tour by using a large neigh- cost(u, v, w) = αv ·
+2
+borhood search (LNS), which is able to improve the
+tour by a few percent.
+The distance is halved to avoid double charging the
+edges. See Appendix A for a more extensive discussion.
+• We evaluate the optimality gap of the implementation on over 500 instances, which were semi2 Generalized Algorithm
+automatically generated to mimic real-world sceIn this section, we show how to adapt the algorithm of
+narios. Data and code are provided.
+Fekete and Krupke [24, 25] to solve polygonal instances
+We do not maintain the approximation factor of including expensive and valuable areas. More precisely,
+the original algorithm, but we show that the imple- we show how to approximate the area using an embedmentation is still able to compute good solutions on ded graph, adapt the previous algorithm to work on
+arbitrary meshes by using sound lower bounds. Due arbitrary embedded graphs, and add optimizations.
+The generalized algorithm has seven steps: (1)
+to a lack of real-world instances and models, the evaluation is done only on synthetic instances, which were Convert the polygonal instances to a discrete graph of
+semi-automatically generated trying to mimic agricul- waypoints. (2) Compute a fractional solution in this
+tural areas, locations with multiple buildings, and com- graph using linear programming. (3) Select atomic
+plex architecture. A comparison to the geometric model strips using the fractional solution. This step is more
+without the restriction to a mesh is not performed, as complicated for general meshes than for square grids.
+strong lower bounds are difficult to obtain. However, a (4) Perform a matching on the atomic strips and obtain
+comparison of the achievable solution quality of different a cycle cover. (5) Improve the cycle cover. (6) Connect
+grids and meshes was performed and the best meshing the cycles to form a tour. (7) Improve the tour. Steps
+strategy was used for the evaluation. We noticed that (1), (3), (5), and (7) significantly differ from the original
+focusing on the coverage of the edges rather than on algorithm, and we will describe them in detail. However,
+the coverage of the points improves results when choos- if we are given a regular square grid for (1) and disable
+ing a mesh resolution. Using hexagonal grids instead of the local optimization, (5), and (7), the behavior of the
+square ones also shows beneficial, especially with higher algorithm is nearly identical to the original algorithm.
+The resulting trajectories are shown in Fig. 2.
+turn costs. Furthermore, it is important to note that
+not all meshing algorithms are well-suited for addressing our specific problem. The corresponding study has 2.1 Step 1: Discretization We apply the meshing
+algorithm dmsh (v0.2.17)[49] with additional smoothing
+been attached in Appendix C.
+by optimesh [48] onto the polygon to obtain a nicely
+1.3 Preliminaries Given a graph G = (P, E), where fitting mesh, as can be seen in Fig. 3a. The optimal
+√
+P ⊂ R2 is a set of waypoints, which span a potential distance between two waypoints is set to 0.95 · 4/ 3 · r,
+trajectory, and E are segments connecting two way- where r represents the coverage radius, assuming the
+points. Additionally, we are given a value function tool to have a circular coverage. We set r = 1 in
+val : P → R+ , which assigns a value to each way- the examples, but the algorithm works for any r. The
+√
+point, and a cost function cost : P 3 → R+ , which as- distance 4/ 3 · r ≈ 3.31 · r in a triangular grid, which
+
+Figure 2: Examples of instances and solutions. The weight for the turn costs vary, resulting in different tour
+characteristics (high turn costs lead to a higher redundancy and longer straight lines). The trajectories are
+smoothed in post-processing using Bézier curves.
+
+is approximated by the mesh, leads to parallel lines
+being a perfect 2 · r apart. As dmsh prefers vertices
+to be too far apart over too close, we counter this by
+reducing the distance by 5 %. Tours on this sparse
+grid will miss some area on turns, but we minimize
+turns and the missed coverage can be compensated by
+slightly enlarging the turns in post-processing. The
+coverage value is estimated by the area covered by the
+Voronoi-cell of the waypoint, see Fig. 3b. We could
+also use the coverage of the agent at the waypoint,
+but this is less accurate because the coverage primarily
+happens when moving along the edges. Getting a mesh
+that yields good tours is non-trivial, and a considerable
+number of experiments were necessary to find a good
+meshing algorithm and parameters. Many aspects
+of the discretization also struggle with the infamous
+numeric issues of geometric operations, that have to be
+handled carefully. Instead of dmsh also the Packing
+of Parallelograms-algorithm of gmsh [28] can be used
+to obtain similar good meshes. gmsh is faster and more
+robust, but has more outliers regarding the quality than
+dmsh. There are many other meshing algorithms, but
+most of them are not suitable for our purpose as they
+will not allow smooth trajectories and equally sized cells
+but focus on different qualities. More details can be
+found in Appendix C.
+
+12.5
+10.0
+7.5
+5.0
+2.5
+0.0
+2.5
+5.0
+7.5
+
+10
+5
+0
+5
+10
+10
+
+0
+
+10
+
+10
+
+5
+
+(a)
+
+0
+
+5
+
+10
+
+(b)
+
+Figure 4: Fractional solutions in red for full-coverage
+(a) and partial coverage (b). The thickness indicates
+the fractional values.
+
+skipping the waypoint and paying for its coverage loss.
+(2.2)
+min
+
+X
+
+val(v) · sv +
+
+v∈P
+
+(2.3)
+
+s.t.
+
+X
+
+cost(u, v, w) · xuvw
+
+u,w∈N (v)
+
+X
+
+xuvw + sv ≥ 1
+
+∀v ∈ P
+
+u,w∈N (v)
+
+(2.4)
+
+2 · xwvw +
+
+X
+
+xwvu =
+
+u∈N (v),u̸=w
+
+10
+
+10
+
+5
+
+5
+
+0
+
+0
+
+5
+
+5
+
+10
+
+2 · xvwv +
+
+0
+
+(a) Meshing
+
+10
+
+xvwu
+
+∀vw ∈ E
+
+u∈N (w),u̸=v
+
+10
+10
+
+X
+
+10
+
+0
+
+10
+
+(b) Voronoi cells.
+
+The objective in Eq. (2.2) simply minimizes the
+missed coverage value and touring costs. Equation (2.3)
+enforces a waypoint either to be covered or skipped, and
+Eq. (2.4) enforces a consistent flow, i.e., every edge is
+used equally from both sides. Examples for fractional
+solutions covering the whole area or for partial coverage
+are given in Fig. 4a resp. Fig. 4b.
+
+Figure 3: To convert a polygonal instance into a graph,
+we first mesh the polygon (a) and use the coverage value 2.3 Step 3: Atomic Strips In the next step, we
+of the Voronoi cells (b) to approximate the coverage want to compute a cycle cover, using the fractional sovalue of each waypoint.
+lution of the previous solution as a hint. If the costs
+would only depend on the distance, the cycle cover could
+efficiently be computed by a minimum-weight perfect
+2.2 Step 2: Linear Relaxation Given the graph matching. For this, we would replace every waypoint by
+G = (P, E), we can obtain a fractional solution for a two vertices and connect them to all other vertices with
+cycle cover by using linear programming. We work on the corresponding distance, efficiently calculable by Dipassages uvw = wvu that cover a waypoint v ∈ P jkstra’s algorithm. To implement partial coverage, we
+coming from or going to the neighbored waypoints would add an edge with the corresponding value of the
+u, w ∈ N (v). For every passage uvw, the variable coverage loss between the two vertices of a waypoint.
+xuvw ≥ 0 denotes how often the passage is used. The minimum-weight perfect matching would then eiAdditionally, we use the variable sv ≥ 0 that denotes ther enforce every waypoint to have an incoming and an
+
+outgoing trajectory, i.e., be in a cycle, or only use the
+internal edge and skip the waypoint.
+With turn costs, the cycle cover problem gets NPhard, but Fekete and Krupke [24] showed that we
+can use the fractional solution of the previous step to
+estimate in which orientation we go through a waypoint,
+and move the corresponding turn costs to the edge
+weights. In square grids, this technique can be shown
+to yield a 4-approximation, and a 6-approximation in
+triangular grids. This can be imagined as replacing
+every waypoint by an epsilon-length segment, as in
+Fig. 5, whose orientation is most used in the fractional
+solution. We are calling these epsilon-length segments
+atomic strips. Computing a minimum-weight perfect
+matching on the endpoints, yields the optimal cycle
+cover that includes all these segments. If the segments
+have been chosen correctly (which is NP-hard), the
+minimum-weight perfect matching actually corresponds
+to an optimal cycle cover on the waypoints.
+
+10
+
+5
+
+0
+
+5
+
+10
+10
+
+5
+
+0
+
+5
+
+10
+
+15
+
+Figure 5: Replacing every waypoint by an atomic strip
+(black segments) converts the problem into a matching
+problem without losing the turn costs. The orientation
+of each atomic strip needs to be guessed from the
+fractional solution (Fig. 4a), and wrong guesses can
+degrade the solution.
+Meshes make the selection of these atomic strips
+more complicated, as there can be more than just
+two or three sensible orientations. A useful property
+of the atomic strips is that the larger the turn is,
+the more orientations are optimal. For a U-turn,
+every orientation is optimal. The straighter a passage,
+the more important a good orientation becomes; but
+often these cases are easy to guess from the fractional
+solution. Therefore, it is sensible to limit the potential
+orientations to the orientations of incident edges, i.e.,
+neighbors. We weight each orientation by how well the
+passages of the fractional solution fit to it and chose the
+one with the highest sum.
+
+Figure 6: Optimal tours with turn costs in a regular
+triangular grid can require a linear amount of passages
+through some waypoints (red).
+
+Connecting all waypoints with each other results
+in a quadratic number of edges, whose weights are
+non-trivial to compute. Fekete and Krupke [25] noted
+that it is more efficient to only connect the waypoints
+with their neighbors (also making the weights easy to
+compute), and to allow for optional atomic strips to
+deal with potentially necessary overlapping trajectories.
+An optional atomic strip can be implemented by simply
+adding an edge with zero weight between its endpoints,
+allowing it to be neutralized without additional costs.
+Arkin et al. [7] showed that in a square grid, every
+vertex is visited at most four time, limiting the number
+of necessary optional atomic strips. For triangular grids,
+the number of necessary visitations can be linear, as
+shown in Fig. 6, destroying the approximation factor
+when using this optimization. However, this is an
+artificial instance, and in our instances, every waypoint
+is usually only covered once or twice. A further
+challenge is that the optional atomic strips also have
+to match the original trajectory of the longer edges
+to reconstruct the actual costs. Otherwise, connecting
+two waypoints via optional atomic strips could be more
+expensive than connecting them directly. Adding a
+number of optional strips for any orientation would
+solve this problem, but it would also increase the
+computational complexity. Therefore, we limit the
+number of atomic strips per waypoint to a constant k,
+and additionally allowing every waypoint p ∈ P at most
+one atomic strip per neighbor n ∈ N (p). This keeps the
+complexity of the auxiliary graph in O(|P | · k 2 ).
+An example for different k can be seen in Fig. 7 and
+the detailed implementation is described in Appendix B.
+
+2.4 Step 4: Matching We are left with a weighted
+graph on the endpoints of the atomic strips, and we
+want to compute a minimal matching. There are edges
+between any endpoints of atomic strips belonging to
+neighbored waypoints in the grid. The weight corresponds to the touring costs between the two waypoints,
+with the corresponding orientation at the endpoints.
+Additionally, each atomic strip has an edge between its
+two endpoints. For the mandatory atomic strip, the
+
+5
+
+5
+
+5
+
+5
+
+4
+
+4
+
+4
+
+4
+
+3
+
+3
+
+3
+
+3
+
+2
+
+2
+
+2
+
+2
+
+1
+
+1
+
+1
+
+1
+
+0
+
+0
+
+0
+
+0
+
+1
+
+1
+
+1
+
+1
+
+2
+
+2
+
+2
+
+2
+
+4
+
+6
+
+(a) k = 3
+
+8
+
+2
+
+4
+
+6
+
+2
+
+8
+
+2
+
+4
+
+(b) k = 4
+
+6
+
+8
+
+2
+
+4
+
+(c) k = 5
+
+6
+
+8
+
+(d) k = 6
+
+Figure 7: Example of atomic strip selection for different k. The atomic strips are displayed in yellow (optional)
+and red (mandatory). The grid is displayed in black and the fractional solution in blue.
+weight corresponds to the opportunity loss, i.e., the assigned coverage value, when not covering it. For all
+others, the cost is zero to allow skipping them without additional costs. Let k be the maximal number of
+atomic strips at a waypoint, then the number of vertices
+and edges in the matching instance is in O(|P | · k 2 ).
+We solve the corresponding minimum-weight perfect matching instance with the Blossom V algorithm of
+Kolmogorov [35]. The author states a worst-case complexity of O(n3 m), which would be prohibitive, but in
+practice it shows to be sufficiently fast even for large instances. Connecting the atomic strips via the matched
+endpoints yields a set of cycles, see Fig. 9a, that we can
+connect in Step 6.
+
+10
+
+10
+
+10
+
+10
+
+5
+
+5
+
+5
+
+5
+
+0
+
+0
+
+0
+
+0
+
+5
+
+5
+
+5
+
+5
+
+10
+
+10
+
+10
+
+10
+
+10
+
+5
+
+0
+
+(a)
+
+5
+
+10
+
+10
+
+5
+
+0
+
+(b)
+
+5
+
+10
+
+10
+
+5
+
+0
+
+(c)
+
+5
+
+10
+
+10
+
+5
+
+0
+
+5
+
+10
+
+(d)
+
+Figure 8: By optimizing local areas (red) of cycle covers (blue) with mixed integer programming, we can improve the initial cycle cover. The solution provided by
+the previous approach without optimizations is shown in
+Fig. 8a. We then select an expensive area (Fig. 8b) and
+optimize it to near optimality, resulting in (Fig. 8c). After five such iterations, we end with a visibly improved
+solution (Fig. 8d). By chance, the optimized solution is
+2.5 Step 5: Local Optimization Before we con- even connected.
+tinue to connect the cycles to a single tour, we can optimize the cycle cover. For this, we select a small but
+expensive part of the solution and compute a (nearly) tegral variables, the linear program in Section 2.2 yields
+optimal solution via mixed integer programming. This a corresponding MIP. In this MIP we fix all variables
+can be repeated multiple times until a satisfying solu- of the given solution except the variables corresponding
+tion is obtained, see Fig. 8. Note that it is possible to the t + 1 selected waypoints. Of course, we do not
+to solve many instances with 1000 vertices in regular need to include the fixed waypoints in this MIP at all
+square grids to optimality, as described in [41, 25]. Also, but only need to place the corresponding constants into
+for irregular grids, small instances with less than 100 Eq. (2.4). This ensures that the local solution remains
+vertices can usually be solved within seconds. We de- consistent with the fixed exterior solution. After optinote the desired number of vertices for local optimiza- mizing the local MIP, we replace the part in the solution
+and exclude the root and its neighbors to be selected as
+tion by t.
+We select the expensive area to be optimized by root in further iterations. This is necessary because the
+choosing an expensive root and selecting the first t expensive parts can already be optimal (within their lovertices of a breadth-first-search. The expense of a cal area) and should not be optimized again.
+A useful property of the MIP is that the optimizawaypoint in a solution is denoted as the cost of the
+tion
+process usually is faster, if our (local) solution is
+passages covering it, or the corresponding opportunity
+already
+(nearly) optimal. If we provide the MIP-solver
+loss if it is not used. To make the selection more robust,
+with
+the
+corresponding start solution, it only has to
+we also include the expenses of all direct neighbors by
+find
+a
+matching
+lower bound. Using the running time
+summing them.
+and
+the
+actual
+improvements,
+one could improve the
+By simply replacing the fractional variables with inselection of the next area, or dynamically increase it.
+
+much each cycle is worth. We estimate the value of
+a cycle by the sum of values of its covered waypoints. If
+10
+10
+a waypoint occurs in different cycles, only the first cycle
+gets its value. This can happen if two cycles cross and
+5
+5
+cannot be connected due to turn costs. Because this
+0
+0
+rarely happens, the estimated cycle values are accurate
+5
+5
+if the values of the waypoints are accurate. Otherwise,
+the value of a cycle can be underestimated and result in
+10
+10
+10
+0
+10
+10
+0
+10
+a slightly lower solution quality.
+Next, we need to know how expensive it is to
+connect
+any two cycles. This can be achieved with a
+(a) Cycle cover
+(b) Connecting
+Dijkstra-variant on the edge graph. Working on the
+Figure 9: The matching of the atomic strips of Fig. 5 edge graph of the grid allows us to include not only the
+yields a set of tours (a). In this case, a red and a blue distance of the path, but also the turn costs between any
+cycle. It can also directly decide not to cover some two edges. To make things simpler, we use a directed
+waypoints, but in this case the coverage values are very version where we also include the direction through
+high. This cycle cover is then connected to a tour (b) which we pass the edge, as can be seen in Fig. 11.
+via and edge (red).
+
+By choosing disjunct areas, this optimization approach
+also allows efficient parallelization. However, we leave
+such optimizations to future work, and simply perform
+i iterations for a fixed area size t.
+2.6 Step 6: Connecting Cycles Now, we only need
+to connect the cycles to form a tour. For adjacent cycles,
+this is quite simple and involves only minimal extra
+costs: simply go through every edge that connects two
+cycles and perform a merge via the least expensive one,
+see Fig. 9b. A simple optimization would be to use two
+parallel edges once, instead of one edge twice, but this is
+also done automatically in Section 2.7. Things get more
+complicated if the cycles are farther apart. It could be
+that the connection costs actually outweigh the touring
+costs of the corresponding cycles. If the area covered
+by the cycle is not valuable enough, we are better off
+simply removing the cycle, see Fig. 10.
+
+Figure 11: Converting the grid (gray) into a directed
+edge graph to compute a shortest path with turn costs
+inside. The distance and turn costs are assigned to the
+blue arcs.
+
+The distance cost of using an edge can now simply
+be assigned to the outgoing arc in the edge graph. If
+we let k be the maximum degree in the grid, then we
+have at most O(|P | · k) vertices and O(|P | · k 2 ) edges
+in the auxiliary graph. Using Dijkstra’s algorithm, we
+can compute the least expensive path between any two
+edges (ignoring possibly collected coverage value) in
+O(|P | · k 2 log |P |). The costs are symmetric, so it is
+optimal in both directions. Still missing are the costs
+involved merging a (doubled) path with a cycle. It
+would be expensive to check all combinations for edges
+incident to the two cycles. Instead, we can select one
+(a) Low value.
+(b) Value increased.
+of the cycles and initialize all incident edges in the
+Dijkstra-algorithm with the final connection costs to it.
+Figure 10: If the valuable areas (green) are more We now only have to find the least expensive incident
+distanced, the cycles (blue) should only be connected edge to the target circle using the already computed
+if the value is high enough in relation to the costs. In distances by Dijkstra’s algorithm.
+(a) the right area’s value is not high enough and its cycle
+With these two pieces of information, we can comgets removed. In (b) the value is increased and the cycle pute a prize-collecting steiner tree (PCST) on the cygets connected.
+cles and their connections. The resulting tree corresponds to the worthwhile cycles and how to connect
+To select any cycles, we first need to know how them. Computing an optimal PCST is NP-hard, but
+14
+
+14
+
+14
+
+14
+
+12
+
+12
+
+12
+
+12
+
+10
+
+10
+
+10
+
+10
+
+8
+
+8
+
+8
+
+8
+
+6
+
+6
+
+6
+
+4
+
+5.0
+
+7.5
+
+10.0 12.5 15.0
+
+4
+
+5.0
+
+7.5
+
+10.0 12.5 15.0
+
+4
+
+6
+
+5.0
+
+7.5
+
+10.0 12.5 15.0
+
+4
+
+5.0
+
+7.5
+
+10.0 12.5 15.0
+
+the cycle covers obtained here are usually small enough
+to be solved optimally using integer programming. Otherwise, an implementation [31] of the 2-approximation
+by Goemans and Williamson [29] can be used. If there
+are some zero or negative connection costs, we can directly connect the corresponding cycles before we compute the PCST. Using a PCST instead of just greedily
+connecting cycles potentially also integrates cycles that
+are not valuable enough on their own, but they become
+valuable in combination with other cycles.
+Using the PCST, we now iteratively merge cycles
+(using the doubled paths computed using the Dijkstraapproach) in a depth-first search starting from an arbitrary cycle in the PCST. Whenever we merge two
+cycles, the path creates additional docking points that
+may be cheaper than the originally computed connecting paths. However, we do not need to recompute the
+whole Dijkstra-tree, but can simply reduce the costs for
+the corresponding edges and let the reduced costs propagate. Caveat: During the joining of the cycle with the
+doubled path, passages are actually replaced from the
+cycle. The shortest paths originating from such removed
+passages become invalid. As this rarely occurs and can
+be detected, recomputation should only be performed if
+such an invalid shortest path is about to be used.
+2.7 Step 7: Local Optimization After connecting
+the cycles to form a tour, the connecting parts are
+often highly redundant, as can be seen in Fig. 12.
+Luckily, we can extend the local optimization approach
+of Section 2.5 to connected tours. The challenge is
+to make sure that the tour remains connected after
+local optimizations. The used MIP does not enforce
+connectivity and may disconnect the tour again. A
+naı̈ve approach is to only accept local improvements
+that preserve the connectivity and discard all others.
+This is of course quite restrictive and we can find a
+superior solution.
+
+17.5
+15.0
+12.5
+10.0
+7.5
+5.0
+2.5
+
+17.5
+15.0
+12.5
+10.0
+7.5
+5.0
+2.5
+
+Subtour elimination in the MIP is more difficult
+than for, e.g., the Traveling Salesman Problem:
+not only are all visitations optional, but two tours
+can cross without being connected. Simply enforcing
+that two edges have to leave a connected component,
+therefore, does not yield the desired result. In [41] we
+actually have a corresponding MIP. Because we already
+start with a tour and know that we have to connect an
+interior solution (inside the small area to be optimized)
+to the fixed exterior solution, we can devise a simpler
+separation constraint.
+There are two types of subtours: those that are
+completely within the area and those that are only partially within the area. We can only get an infeasible
+solution with subtours of the second type if the local solution incorrectly connects the exterior solution. However, both types can be handled equally.
+We either want a subtour C to dissolve or to become
+part of the connected tour. For this, there needs to be
+a vertex passage of a subtour to be unused, or a vertex
+passage leaving the subtour used. We select an arbitrary
+vertex passage of the first type and demand that the
+sum of the second type is greater than it. Note that this
+assumes the existence of an external, fixed solution, and
+is otherwise not exact.
+Let XA be the vertex passage variables that are
+contained in the area A and can be modified by the
+local optimization. This includes all variable xuvw with
+u, v, w ∈ A. If u or w are not in A, vu resp. vw
+must be used in the solution, i.e., the edge connects
+the changeable interior solution to the fixed exterior
+solution. All other variables are fixed.
+Let XC be the vertex passage variables that are
+used by the subtour C. Let XC′ be the vertex passage
+variables that share one edge with the subtour C but
+are not in XC . These are the vertex passages that leave
+the trajectory of C. We can now state a constraint that
+eliminates C, if it has been created by an optimization
+on XC .
+
+(2.5)
+
+X
+
+x ≥ xc
+
+xc ∈ XC ∩ XA , C is subtour
+
+′ ∩X
+x∈XC
+A
+
+There exist more efficient options for connecting,
+e.g.,
+more distant subtours, but this hardly applies for
+0
+5
+10
+15
+20
+0
+5
+10
+15
+20
+optimizing only small areas. For the case that the
+(a) Cycles before connecting.
+(b) Tour.
+MIP does not yield a connected solution for A within
+a fixed number of iterations, we discard the infeasible
+Figure 12: Especially due to the connection approach solution do not change A in this iteration. Applying
+of subtours, a lot of redundant coverages (red) can be this approach multiple times can significantly improve
+created, which we aim to minimize.
+the solution, as can be seen in the example in Fig. 13.
+
+10
+5
+15
+10
+5
+15
+10
+
+Lower is better
+
+12%
+10%
+8%
+6%
+4%
+
+Type
+
+Cycle Cover
+Tour
+
+2%
+0%
+
+0
+
+10 25 50 100 200
+
+Optimization iterations
+
+(a) Iterations.
+
+Obj. (% above lower bound)
+
+Obj. (% above lower bound)
+
+15
+
+Lower is better
+
+12%
+10%
+8%
+6%
+4%
+
+Type
+
+Cycle Cover
+Tour
+
+2%
+0%
+
+0
+
+10 25 50 75 100
+
+Optimization area
+
+(b) Optimization area.
+
+5
+15
+10
+5
+15
+10
+5
+0
+
+10
+
+20 0
+
+10
+
+20 0
+
+10
+
+20 0
+
+10
+
+20
+
+Figure 14: Influence of the number of iterations (a)
+and the optimization area (b) for the local optimization
+depending on whether it is applied on cycle covers
+(Step 5) or tours (Step 7). The 0-bars are the baseline
+without local optimization and show the initial gap to
+the fractional solution (upper bound on optimality gap),
+the other bars show the optimality gap after the local
+optimization. This is the average over all 500 instances,
+the error bars show the standard deviation.
+
+Figure 13: Multiple steps of the tour optimization. The
+optimized area and the changed parts are highlighted in
+red. In some steps, no changes are made because the considered in the original algorithm. The important
+questions are: (1) How much can we improve the
+solution is (locally) optimal in the area.
+solution using this optimization? We have to make
+sure that the improvement is worth the additional
+complexity. (2) Should we focus on optimizing the
+3 Evaluation
+cycle covers or the tours? While the tours are the final
+In this section, we evaluate the performance of the result, the cycle covers are less expensive to optimize.
+algorithm on a set of benchmark instances. We first (3) How much influence do the number of iterations
+evaluate the influence of the new optimizations and then and the size of the area have? The runtime increases
+the overall performance on the benchmark instances.
+linearly with the number of iterations but exponentially
+We generated 500 random instances for our bench- with the size of the area. However, the NP-hard nature
+mark using unions and differences of reasonably simple of the problem also implies that area cannot be fully
+and thick random polygons. The generation was su- substituted by iterations.
+pervised and the parameters were manually adjusted to
+To answer these questions, we computed solutions
+create instances that mimic complex agricultural fields, that performed a local optimization on either cycle cover
+architecture, groups of buildings, and other real-world or tour with 0, 10, 25, 50, 100 and 200 iterations and an
+scenarios. The valuable areas and areas with increased area of 50 vertices. Additionally, we computed solutions
+costs were also chosen by randomly placing thick poly- that performed 50 iterations of the local optimization on
+gons, with possible overlaps that summed up. Examples either cycle cover or tour, but with a varying area of 0,
+of these instance can be seen in Fig. 2. The selection 10, 25, 50, 75 and 100 vertices.
+of these examples was random and, thus, should reflect
+The results in Fig. 14a show that the optimizations
+the distribution in the 500 instances.
+with an area size of 50 vertices yield a visible improveAll experiments were run on Ubuntu workstations ment for partial coverage in both steps. 10 iterations
+with AMD Ryzen 7 5800X (8 × 3.8 GHz) CPU and on the cycle cover already reduce the optimality gap (in
+128 GB of RAM. The code is run with Python 3.8.8 comparison to the lower bound) by around 10 %. The
+and uses Gurobi 9.1.2. More details can be found further iterations lose effectiveness, as can be expected
+in the repository https://github.com/d-krupke/ because we prioritize the expensive areas, but an imALENEX24-partial-coverage-path-planning.
+provement remains visible. While the optimization is
+successful on cycle covers, it is even more impressive on
+3.1 Local Optimization In the first experiment, we tours. Here, the first 10 iterations lower the optimalevaluate the local optimization steps, that were not ity gap by more than 20 %. The further iterations also
+
+3.2 Optimality Gap To evaluate the overall performance of the algorithm, we again run the algorithm on
+the 500 instances. The plot in Fig. 16a shows how the
+quality of the solution develops over the size of the instances. The quality is again measured by the difference
+of the objective value to the lower bound provided by
+the fractional solution (see Section 2.2). We can see that
+the objective is around 10 % to 15 % above the fractional
+solution, as we have already seen in the previous exper-
+
+Cycle Cover
+Tour
+
+300
+200
+100
+0
+
+0
+
+10 25 50 100 200
+
+Optimization iterations
+
+(a) Iterations.
+
+Runtime (s)
+
+Lower is better
+Type
+
+400
+
+Runtime (s)
+
+remain stronger than for cycle cover, but their improvements still decline quickly. This implies that the cycle
+covers are already nearly optimal, but the connection
+of the cycles to a tour is not very efficient. The local
+optimization on tours can easily find (locally) suboptimal parts in the connected solution and improve them
+visibly.
+The results in Fig. 14b for varying area are surprisingly very similar: Doubling the area has a similar effect
+as quadrupling the iterations. One difference is that for
+optimizing cycle covers, the larger areas are more important than for tours. Optimizing only small areas with
+10 vertices barely improves the solution. For tours, on
+the other hand, such small areas can already make a
+significant difference. This is very useful to know because optimizing 10 vertices is extremely fast and could
+still be done by brute-force. Thus, we can do many iterations with such small areas in a short time. Larger
+areas still have their advantage, and 50 iterations of size
+100 are roughly as effective as 200 iterations of size 50.
+The runtime differences for the number of iterations
+and the size of the area can be seen in Fig. 15. Surprisingly, the runtime for larger areas looks nearly linear
+(caveat: the x-axis for iterations is exponential, but it
+is almost linear for area). However, this data should be
+used with caution because it can be skewed. The implementation is only optimized for quality but not for
+runtime. The connectivity detection, necessary to make
+sure that we did not accidentally disconnect the tour
+and have to insert constraints, is especially inefficient.
+Instead of only analyzing the changed part, it always
+checks the whole solution with a procedure written in
+pure Python. This gives the tour variant a significant
+overhead which could be eliminated. The tour variant
+will still remain slower because the solution frequently
+gets disconnected and needs to be reconnected using
+additional constraints. These constraints become less
+efficient for larger areas because the solution develops
+more options to evade it. For larger optimization areas,
+additional constraints should be developed and used.
+For the next experiment, we use 25 iterations of size
+50 for both steps. For tours, we use at most 10 cutting
+plane iterations.
+
+400
+350
+300
+250
+200
+150
+100
+50
+0
+
+Lower is better
+Type
+
+Cycle Cover
+Tour
+
+0
+
+10 25 50 75 100
+
+Optimization area
+
+(b) Optimization area.
+
+Figure 15: Runtime for more iterations or larger areas
+in the local optimization. Shown as the mean runtime
+in seconds over all 500 instances.
+
+iments. However, we make the new observation here
+that the quality slightly degrades for larger instances.
+Based on the tool radius of 1.0, the larger (graph) instances have multiple thousand vertices. This degradation could be converging, but the data is relatively
+noisy and has too small a range to make any sure assumptions. The gap is generally smaller for lower turn
+costs, but this is not surprising because the turn costs
+make the problem combinatorially more complex. This
+influences at least the quality of the fractional solution,
+which provides us with the lower bound. Whether the
+actual solution has a larger optimality gap cannot be
+answered from the solution.
+3.3 Runtime The primary focus of this paper is on
+the quality of the solutions, but the runtime is also an
+important factor. The original algorithm was able to
+solve instances with over 300 000 vertices, though this
+could take several hours and require a powerful workstation. The instances considered in this paper only have
+a few thousand vertices, as the implementation is only
+optimized for quality and not for runtime. Despite being relatively small, the instances are still non-trivial,
+as seen in Fig. 2. These instances require a runtime of a
+few minutes, as can be seen in Fig. 16b. Improving the
+efficiency of the prototype is possible in multiple places.
+However, there are inherent challenges when compared
+to the original algorithm. First, the original algorithm
+benefits from the simplicity of square grids, which have
+only three types of passages. Second, it utilizes basic
+integer arithmetic, while the algorithm in this paper
+requires floating-point arithmetic, potentially affecting
+convergence behavior.
+
+20%
+15%
+
+5
+50
+
+Lower is better
+1000
+
+Runtime (s)
+
+Obj. (% above lower bound)
+
+Lower is better
+Turn-cost
+25%
+1
+
+10%
+
+800
+600
+400
+
+5%
+
+200
+
+0%
+
+0
+
+5000
+
+Area
+
+(a)
+
+10000
+
+fractional relaxation, which is known to be weak for
+budget constraints. However, the linear relaxation could
+potentially be improved by additional constraints or by
+performing some branching steps.
+Acknowledgments
+
+5000
+
+Area
+
+10000
+
+This work has been supported by the German Research
+Foundation (DFG), project “Computational Geometry:
+Solving Hard Optimization Problems” (CG:SHOP),
+grant FE407/21-1.
+
+(b)
+
+Figure 16: (a) Optimality gap (compared to fractional References
+solution as lower bound) on graph instance over area
+size. It shows that the optimality gap increases for
+[1] Alok Aggarwal, Don Coppersmith, Sanjeev Khanna,
+larger instances, and that lower weights on turn costs
+Rajeev Motwani, and Baruch Schieber.
+The
+result in better solutions. (b) Mean runtime over
+angular-metric traveling salesman problem. SIAM
+instance size of the Python-implementation. Note that
+J. Comput., 29(3):697–711, 1999.
+doi:10.1137/
+it goes down again at the end because there are only
+S0097539796312721.
+few very large instances which by chance happen to
+[2] Oswin Aichholzer, Anja Fischer, Frank Fischer,
+be simpler than the average instance. Thus, this is a
+J. Fabian Meier, Ulrich Pferschy, Alexander Pilz, and
+statistical effect and not a real trend.
+Rostislav Staněk. Minimization and maximization ver-
+
+4
+
+Conclusion
+
+In this paper, we showed how to adapt a constantfactor approximation algorithm for coverage tours on
+grid graphs to arbitrary meshes derived from intricate,
+polygonal environments. While the approximation factor may be lost in the process (if the mesh does not
+happen to be a perfect square grid), we demonstrated
+that the algorithm still yields low optimality gaps in
+practice. Furthermore, we showcased its versatility in
+handling partial coverage and accommodating heterogeneous passage costs, offering the flexibility to trade off
+coverage quality and time efficiency. This adaptation
+paves the way to compute efficient coverage paths with
+a robust theoretical foundation for real-world robotic
+applications.
+Potential future work includes multi-robot variants
+of the problem, in which a fixed number of robots may
+be used. The current approach should be extendable
+by only adapting the connection step (Step 6) if only
+the overall sum of costs is of interest. If the individual
+costs are of interest, the proposed approach could be
+generalized by not only deciding for an orientation
+(Step 3) based on the linear relaxation, but extending
+the linear relaxation to multiple robots (essentially
+copying it for every robot), and additionally deciding
+which robot should be used. A practically relevant but
+algorithmically challenging variant is to maximize the
+coverage quality for a given budget. Among others,
+one problem in our approach is the reliance on the
+
+sions of the quadratic travelling salesman problem. Optimization, 66(4):521–546, 2017.
+[3] David Applegate, Robert Bixby, Vasek Chvatal, and
+William Cook. Concorde tsp solver. URL: http:
+//www.math.uwaterloo.ca/tsp/concorde.html.
+[4] David L. Applegate, Robert E. Bixby, Vašek Chvátal,
+and William J. Cook. The traveling salesman problem.
+Princeton university press, 2011.
+[5] David L. Applegate, Robert E. Bixby, Vasek Chvátal,
+William J. Cook, Daniel G. Espinoza, Marcos Goycoolea, and Keld Helsgaun. Certification of an optimal TSP tour through 85, 900 cities. Oper. Res. Lett.,
+37(1):11–15, 2009. doi:10.1016/j.orl.2008.09.006.
+[6] Esther M. Arkin, Michael A. Bender, Erik D. Demaine, Sándor P. Fekete, Joseph S. B. Mitchell, and
+Saurabh Sethia. Optimal covering tours with turn
+costs. In S. Rao Kosaraju, editor, Proceedings of the
+Twelfth Annual Symposium on Discrete Algorithms,
+January 7-9, 2001, Washington, DC, USA, pages 138–
+147. ACM/SIAM, 2001. URL: http://dl.acm.org/
+citation.cfm?id=365411.365430.
+[7] Esther M. Arkin, Michael A. Bender, Erik D. Demaine, Sándor P. Fekete, Joseph S. B. Mitchell, and
+Saurabh Sethia. Optimal covering tours with turn
+costs. SIAM J. Comput., 35(3):531–566, 2005. doi:
+10.1137/S0097539703434267.
+[8] Giorgio Ausiello, Vincenzo Bonifaci, Stefano Leonardi,
+and Alberto Marchetti-Spaccamela. Prize collecting
+traveling salesman and related problems. In Teofilo F.
+Gonzalez, editor, Handbook of Approximation Algorithms and Metaheuristics, Second Edition, Volume 1:
+Methologies and Traditional Applications, pages 611–
+628. Chapman and Hall/CRC, 2018. doi:10.1201/
+9781351236423-34.
+
+[9] Aaron T. Becker, Mustapha Debboun, Sándor P.
+Fekete, Dominik Krupke, and An Nguyen. Zapping
+zika with a mosquito-managing drone: Computing optimal flight patterns with minimum turn cost (multimedia contribution). In Boris Aronov and Matthew J.
+Katz, editors, 33rd International Symposium on Computational Geometry, SoCG 2017, July 4-7, 2017, Brisbane, Australia, volume 77 of LIPIcs, pages 62:1–62:5.
+Schloss Dagstuhl - Leibniz-Zentrum für Informatik,
+2017. doi:10.4230/LIPIcs.SoCG.2017.62.
+[10] Marshall W. Bern. Triangulations and mesh generation. In Jacob E. Goodman and Joseph O’Rourke,
+editors, Handbook of Discrete and Computational Geometry, Second Edition, pages 563–582. Chapman and
+Hall/CRC, 2004. doi:10.1201/9781420035315.ch25.
+[11] Marshall W. Bern and Paul E. Plassmann. Mesh
+generation. In Jörg-Rüdiger Sack and Jorge Urrutia,
+editors, Handbook of Computational Geometry, pages
+291–332. North Holland / Elsevier, 2000. doi:10.
+1016/b978-044482537-7/50007-3.
+[12] Richard Bormann, Joshua Hampp, and Martin Hägele.
+New brooms sweep clean - an autonomous robotic
+cleaning assistant for professional office cleaning. In
+IEEE International Conference on Robotics and Automation, ICRA 2015, Seattle, WA, USA, 26-30 May,
+2015, pages 4470–4477. IEEE, 2015. doi:10.1109/
+ICRA.2015.7139818.
+[13] Richard Bormann, Florian Jordan, Joshua Hampp,
+and Martin Hägele. Indoor coverage path planning:
+Survey, implementation, analysis. In 2018 IEEE International Conference on Robotics and Automation,
+ICRA 2018, Brisbane, Australia, May 21-25, 2018,
+pages 1718–1725. IEEE, 2018. doi:10.1109/ICRA.
+2018.8460566.
+[14] Tauã M. Cabreira, Lisane B. Brisolara, and Paulo R.
+Ferreira Jr.
+Survey on coverage path planning
+with unmanned aerial vehicles. Drones, 3(1), 2019.
+URL: https://www.mdpi.com/2504-446X/3/1/4, doi:
+10.3390/drones3010004.
+[15] Taua M. Cabreira, Carmelo Di Franco, Paulo
+Roberto Ferreira Jr., and Giorgio C. Buttazzo. Energyaware spiral coverage path planning for UAV photogrammetric applications. IEEE Robotics Autom.
+Lett., 3(4):3662–3668, 2018. doi:10.1109/LRA.2018.
+2854967.
+[16] Long Chen and Michael Holst. Efficient mesh optimization schemes based on optimal delaunay triangulations. Computer Methods in Applied Mechanics and
+Engineering, 200(9-12):967–984, 2011.
+[17] Howie Choset. Coverage for robotics - A survey of
+recent results. Ann. Math. Artif. Intell., 31(1-4):113–
+126, 2001. doi:10.1023/A:1016639210559.
+[18] Howie Choset, Ercan U. Acar, Alfred A. Rizzi, and
+Jonathan E. Luntz. Exact cellular decompositions
+in terms of critical points of morse functions. In
+Proceedings of the 2000 IEEE International Conference
+on Robotics and Automation, ICRA 2000, April 2428, 2000, San Francisco, CA, USA, pages 2270–2277.
+
+IEEE, 2000. doi:10.1109/ROBOT.2000.846365.
+[19] Howie Choset and Philippe Pignon. Coverage path
+planning: The boustrophedon cellular decomposition.
+In Field and service robotics, pages 203–209. Springer,
+1998.
+[20] Igor R. de Assis and Cid C. de Souza. Experimental evaluation of algorithms for the orthogonal
+milling problem with turn costs. In Panos M. Pardalos and Steffen Rebennack, editors, Experimental Algorithms - 10th International Symposium, SEA 2011,
+Kolimpari, Chania, Crete, Greece, May 5-7, 2011.
+Proceedings, volume 6630 of Lecture Notes in Computer Science, pages 304–314. Springer, 2011. doi:
+10.1007/978-3-642-20662-7_26.
+[21] David H. Douglas and Thomas K. Peucker. Algorithms
+for the reduction of the number of points required to
+represent a digitized line or its caricature. Cartographica: the international journal for geographic information and geovisualization, 10(2):112–122, 1973.
+[22] Qiang Du, Vance Faber, and Max D. Gunzburger.
+Centroidal voronoi tessellations: Applications and algorithms. SIAM Rev., 41(4):637–676, 1999. doi:
+10.1137/S0036144599352836.
+[23] Kai Olav Ellefsen, Herman Augusto Lepikson, and
+Jan C. Albiez. Multiobjective coverage path planning:
+Enabling automated inspection of complex, real-world
+structures. Appl. Soft Comput., 61:264–282, 2017.
+doi:10.1016/j.asoc.2017.07.051.
+[24] Sándor P. Fekete and Dominik Krupke. Covering
+tours and cycle covers with turn costs: Hardness
+and approximation. In Pinar Heggernes, editor, Algorithms and Complexity - 11th International Conference, CIAC 2019, Rome, Italy, May 27-29, 2019,
+Proceedings, volume 11485 of Lecture Notes in Computer Science, pages 224–236. Springer, 2019. doi:
+10.1007/978-3-030-17402-6_19.
+[25] Sándor P. Fekete and Dominik Krupke. Practical
+methods for computing large covering tours and cycle
+covers with turn cost. In Stephen G. Kobourov
+and Henning Meyerhenke, editors, Proceedings of the
+Twenty-First Workshop on Algorithm Engineering and
+Experiments, ALENEX 2019, San Diego, CA, USA,
+January 7-8, 2019, pages 186–198. SIAM, 2019. doi:
+10.1137/1.9781611975499.15.
+[26] Anja Fischer, Frank Fischer, Gerold Jäger, Jens Keilwagen, Paul Molitor, and Ivo Grosse. Exact algorithms and heuristics for the quadratic traveling salesman problem with an application in bioinformatics.
+Discret. Appl. Math., 166:97–114, 2014. doi:10.1016/
+j.dam.2013.09.011.
+[27] Enric Galceran and Marc Carreras. A survey on
+coverage path planning for robotics. Robotics Auton.
+Syst., 61(12):1258–1276, 2013. doi:10.1016/j.robot.
+2013.09.004.
+[28] Christophe Geuzaine and Jean-François Remacle.
+Gmsh: A 3-d finite element mesh generator with
+built-in pre-and post-processing facilities. International journal for numerical methods in engineering,
+
+79(11):1309–1331, 2009.
+[29] Michel X. Goemans and David P. Williamson. A
+general approximation technique for constrained forest
+problems. SIAM J. Comput., 24(2):296–317, 1995.
+doi:10.1137/S0097539793242618.
+[30] Ibrahim A. Hameed.
+Intelligent coverage path
+planning for agricultural robots and autonomous
+machines on three-dimensional terrain.
+J. Intell.
+Robotic Syst., 74(3-4):965–983, 2014. doi:10.1007/
+s10846-013-9834-6.
+[31] Chinmay Hegde, Piotr Indyk, and Ludwig Schmidt.
+A nearly-linear time framework for graph-structured
+sparsity. In Francis R. Bach and David M. Blei, editors, Proceedings of the 32nd International Conference
+on Machine Learning, ICML 2015, Lille, France, 6-11
+July 2015, volume 37 of JMLR Workshop and Conference Proceedings, pages 928–937. JMLR.org, 2015.
+URL: http://proceedings.mlr.press/v37/hegde15.
+html.
+[32] Alon Itai, Christos H. Papadimitriou, and Jayme Luiz
+Szwarcfiter. Hamilton paths in grid graphs. SIAM J.
+Comput., 11(4):676–686, 1982. doi:10.1137/0211056.
+[33] Gerold Jäger and Paul Molitor. Algorithms and experimental study for the traveling salesman problem of second order. In Boting Yang, Ding-Zhu Du, and Cao An
+Wang, editors, Combinatorial Optimization and Applications, Second International Conference, COCOA
+2008, St. John’s, NL, Canada, August 21-24, 2008.
+Proceedings, volume 5165 of Lecture Notes in Computer Science, pages 211–224. Springer, 2008. doi:
+10.1007/978-3-540-85097-7_20.
+[34] Katharin R. Jensen-Nau, Tucker Hermans, and
+Kam K. Leang. Near-optimal area-coverage path planning of energy-constrained aerial robots with application in autonomous environmental monitoring. IEEE
+Trans Autom. Sci. Eng., 18(3):1453–1468, 2021. doi:
+10.1109/TASE.2020.3016276.
+[35] Vladimir Kolmogorov. Blossom V: a new implementation of a minimum cost perfect matching algorithm.
+Math. Program. Comput., 1(1):43–67, 2009. doi:10.
+1007/s12532-009-0002-8.
+[36] Stuart P. Lloyd. Least squares quantization in PCM.
+IEEE Trans. Inf. Theory, 28(2):129–136, 1982. doi:
+10.1109/TIT.1982.1056489.
+[37] S. Marshall and J. G. Griffiths. A survey of cutter path construction techniques for milling machines.
+The International Journal of Production Research,
+32(12):2861–2877, 1994.
+[38] Joseph S. B. Mitchell and Christos H. Papadimitriou.
+The weighted region problem: Finding shortest paths
+through a weighted planar subdivision. J. ACM,
+38(1):18–73, 1991. doi:10.1145/102782.102784.
+[39] Jalil Modares, Farshad Ghanei, Nicholas Mastronarde,
+and Karthik Dantu. UB-ANC planner: Energy efficient coverage path planning with multiple drones.
+In 2017 IEEE International Conference on Robotics
+and Automation, ICRA 2017, Singapore, Singapore,
+May 29 - June 3, 2017, pages 6182–6189. IEEE, 2017.
+
+doi:10.1109/ICRA.2017.7989732.
+[40] Ghulam Murtaza, Salil S. Kanhere, and Sanjay K. Jha.
+Priority-based coverage path planning for aerial wireless sensor networks. In 2013 IEEE Eighth International Conference on Intelligent Sensors, Sensor Networks and Information Processing, Melbourne, Australia, April 2-5, 2013, pages 219–224. IEEE, 2013.
+doi:10.1109/ISSNIP.2013.6529792.
+[41] An Nguyen, Dominik Krupke, Mary Burbage, Shriya
+Bhatnagar, Sándor P. Fekete, and Aaron T. Becker.
+Using a UAV for destructive surveys of mosquito
+population. In 2018 IEEE International Conference
+on Robotics and Automation, ICRA 2018, Brisbane,
+Australia, May 21-25, 2018, pages 7812–7819. IEEE,
+2018. doi:10.1109/ICRA.2018.8463184.
+[42] Timo Oksanen and Arto Visala. Coverage path planning algorithms for agricultural field machines. J.
+Field Robotics, 26(8):651–668, 2009. doi:10.1002/
+rob.20300.
+[43] Christos
+Papachristos,
+Kostas
+Alexis,
+Luis
+Rodolfo Garcia Carrillo, and Anthony Tzes. Distributed infrastructure inspection path planning for
+aerial robotics subject to time constraints. In 2016
+international conference on unmanned aircraft systems
+(ICUAS), pages 406–412. IEEE, 2016.
+[44] Per-Olof Persson and Gilbert Strang. A simple mesh
+generator in MATLAB. SIAM Rev., 46(2):329–345,
+2004. doi:10.1137/S0036144503429121.
+[45] Borzou Rostami, Federico Malucelli, Pietro Belotti,
+and Stefano Gualandi. Quadratic TSP: A lower bounding procedure and a column generation approach. In
+Maria Ganzha, Leszek A. Maciaszek, and Marcin Paprzycki, editors, Proceedings of the 2013 Federated
+Conference on Computer Science and Information Systems, Kraków, Poland, September 8-11, 2013, pages
+377–384, 2013. URL: https://ieeexplore.ieee.org/
+document/6644028/.
+[46] Neil C. Rowe and Robert S. Alexander. Finding
+optimal-path maps for path planning across weighted
+regions. Int. J. Robotics Res., 19(2):83–95, 2000. doi:
+10.1177/02783640022066761.
+[47] Nico Schlömer, Antonio Cervone, G. D. McBain, tryfon mw, Bin Wang, Nate, Filip Gokstorp, Ruben van
+Staden, toothstone, Jørgen Schartum Dokken, Andrew Micallef, Dominic Kempf, Juan Sanchez, Keurfon Luu, anzil, Matthias Bussonnier, Raul Ciria Aylagas, Fred Fu, ivanmultiwave, Nils Wagner, Siwei
+Chen, tayebzaidi, Tomislav Maric, Amine Aboufirass,
+and Yuan Feng. nschloe/pygmsh: None, aug 2021.
+doi:10.5281/zenodo.5196231.
+[48] Nico Schlömer and Adam Dobrawy. nschloe/optimesh:
+None, apr 2021. doi:10.5281/zenodo.4728056.
+[49] Nico Schlömer and J. Hariharan. nschloe/dmsh: None,
+jun 2021. doi:10.5281/zenodo.5019221.
+[50] Gokarna Sharma, Ayan Dutta, and Jong-Hoon Kim.
+Optimal online coverage path planning with energy
+constraints. In Edith Elkind, Manuela Veloso, Noa
+Agmon, and Matthew E. Taylor, editors, Proceedings
+
+of the 18th International Conference on Autonomous
+Agents and MultiAgent Systems, AAMAS ’19, Montreal, QC, Canada, May 13-17, 2019, pages 1189–1197.
+International Foundation for Autonomous Agents and
+Multiagent Systems, 2019. URL: http://dl.acm.org/
+citation.cfm?id=3331820.
+[51] Daniel E. Soltero, Mac Schwager, and Daniela Rus.
+Decentralized path planning for coverage tasks using gradient descent adaptive control.
+Int. J.
+Robotics Res., 33(3):401–425, 2014. doi:10.1177/
+0278364913497241.
+[52] Jozef Vörös. Mobile robot path planning among
+weighted regions using quadtree representations. In
+Franz Pichler, Roberto Moreno-Dı́az, and Peter
+Kopacek, editors, Computer Aided Systems Theory EUROCAST’99, Vienna, Austria, September 29 - October 2, 1999, Proceedings, volume 1798 of Lecture
+Notes in Computer Science, pages 239–249. Springer,
+1999. doi:10.1007/10720123_20.
+[53] John Ware and Nicholas Roy. An analysis of wind
+field estimation and exploitation for quadrotor flight
+in the urban canopy layer. In Danica Kragic, Antonio
+Bicchi, and Alessandro De Luca, editors, 2016 IEEE
+International Conference on Robotics and Automation,
+ICRA 2016, Stockholm, Sweden, May 16-21, 2016,
+pages 1507–1514. IEEE, 2016. doi:10.1109/ICRA.
+2016.7487287.
+[54] Xiaoming Zheng, Sven Koenig, David Kempe, and
+Sonal Jain. Multirobot forest coverage for weighted
+and unweighted terrain.
+IEEE Trans. Robotics,
+26(6):1018–1031, 2010.
+doi:10.1109/TRO.2010.
+2072271.
+
+A
+
+Advanced Problem Definition
+
+The implementation actually has a more complex problem definition in mind as the page limit allows us to
+discuss. In the following, we discuss the full underlying
+problem definition and the motivation behind it, as well
+as some more details on the discretization. This section
+should not be required to understand the paper, but
+it sheds some more light on the intentions behind the
+implementation.
+
+all kinds of tools like milling machines or UAVs are
+included. We model the robot as a circle of radius r > 0,
+and its position p ∈ R2 is defined by its middle point.
+The robot immediately covers everything below it, i.e.,
+if it is at position p, Cov(p) = {p′ ∈ R2 | ||p−p′ || ≤ r} is
+covered. This makes the robot rotational invariant and
+simplifies many computations. The circular coverage
+may seem unrealistic at first glance for, e.g., a mower;
+but in a tour, the coverage of a line perpendicular to
+the trajectory is nearly identical to that of a circle.
+The environment, e.g., walls or obstacles, can restrict the robot’s movement. We denote the feasible
+area F ⊂ R2 as the set of all feasible positions of the
+robot and approximate it by a (non-simple) polygon.
+In the examples and evaluations, we start with a larger
+polygon representing, e.g., a room, and shrink it by removing the parts too close to the boundaries. F does
+not need to coincide with the coverable area, which allows us to separate the robot’s shape from its coverage.
+We define the trajectory T of the robot as a closed
+chain of waypoints w0 , w1 , . . . w|T |−1 ∈ F . The robot
+moves in straight lines between the waypoints. We denote the corresponding segments by Segments(T ) =
+w0 w1 , w1 w2 , . . . , w|T |−1 w0 and demand that all segments s ∈ Segments(T ) are fully contained in the feasible area F . The trajectory in the following part is
+also called tour. An intermediate solution of multiple
+(closed) trajectories that still have to be connected to a
+tour is called a cycle cover, and its elements are cycles
+or subtours.
+Additional to the feasible area F , we have valuable areas and expensive areas. Valuable areas Q =
+Q0 , Q1 , . . . ⊂ R2 with weights t(Qi ) ∈ R+ represent
+the parts we want to cover. Expensive areas E =
+E0 , E1 , . . . ⊂ F with weights m(Ei ) ∈ R+ represent
+areas with increased touring costs. Both types of areas are again approximated by polygons to simplify the
+computations.
+The objective is to compute a feasible tour that
+maximizes the coverage value and minimizes the touring costs. To combine maximizing the coverage and
+minimizing the costs, we convert the maximization of
+the coverage into a minimization. This is achieved by
+considering the opportunity loss, i.e., the value of the
+missed area. 1
+
+A.1 Geometric Model We evaluate our optimization approach on a simplified, but still generic twodimensional geometric model, which we define in this
+section. This model can be adapted to many realistic
+scenarios, and many specifications are not due to algoCoverageLossQ,r (T ) + TourCostE (T )
+rithmic limitations but only used to simplify the evalu- (A.1) min
+T
+ation. While a simulation based evaluation would yield
+s.t. s ⊆ F ∀s ∈ Segments(T )
+more realistic results, it would be less generic and require a large set of realistic instances, which is hard to The advantage of this objective over others is that its
+lower bound is zero, which allows a better comparison.
+come by.
+Let us first discuss how we model the robot. In the
+1 We use |Q| to denote the size (area) of a polygon Q and the
+following, we primarily speak of robots, but generally
+pure Q to denote the set of all contained points.
+
+We define the coverage loss and touring costs in the
+25
+25
+25
+20
+20
+20
+following.
+15
+15
+15
+2
+′
+Let Cr (T ) = {p ∈ R |∃s ∈ Segments(T ), p ∈ s :
+10
+10
+10
+5
+5
+5
+′
+p ∈ Cov(p )} denote the covered area of a tour. Note
+0
+0
+0
+5
+5
+5
+that the inclusion of a point in a segment is defined
+10
+10
+10
+20
+10
+0
+10
+20
+10
+0
+10
+20
+10
+0
+10
+as lying anywhere on the segment and not just on its
+endpoints. This allows us to define the coverage loss (a) Square grid.
+(b) Triang. grid.
+(c) Mesh.
+formally by the maximally achievable coverage value
+minus the actually achieved value.
+Figure 17: Different grids for transforming a polygonal
+instance to a graph instance that can be solved with
+X
+CoverageLossQ,r (T ) =
+|Q| · t(Q)
+a variation of the approximation algorithm. The green
+Q∈Q
+area is the area to be covered but due to the robot’s
+X
+radius, we can only place waypoints inside the dashed
+−
+|Q ∩ Cr (T )| · t(Q)
+area. We can rotate a regular grid to fit especially
+Q∈Q
+the interior area nicely. Alternatively, we can use an
+The touring costs consist of weighted distances and irregular grid created by a meshing algorithm. It can
+turn angles.
+better adapt to the shape (especially the boundary)
+of the area, but its irregularity can also make it more
+(A.2)
+TourCostE (T ) =λ0 · DistCostE (T )
+expensive for coverage inside the polygon.
++ λ1 · TurnCostE (T )
+The two weights λ0 , λ1 ≥ 0 allow weighting the distance
+and tour costs, and we vary them in our experiments.
+Let µE : R2 → R+ define the cost multiplier at a tool
+position, which allows us to model local cost changes
+induced
+by the environment. It is computed by µE (p) =
+Q
+E∈E,p∈E m(E).
+The distance costs are now defined as
+Z
+X
+(A.3) DistCostE (T ) =
+µE (p) dp
+s∈Segments(T )
+
+p∈s
+
+P
+For E = ∅, this becomes s∈Segments(T ) ||s||. The turn
+costs only occur at waypoints and are also subject to
+the multiplier.
+(A.4)
+|T |−1
+X
+TurnCostE (T ) =
+µE (wi ) · Turn(wi−1 , wi , wi+1 )
+i=0
+
+Turn(p0 , p1 , p2 ) denotes the turn angle at p1 while
+traversing p0 → p1 → p2 . The indices of the waypoints
+are taken modulo |T | to form a cycle.
+A.2 Discretization Before we can apply our approximation technique, we have to convert the polygonal area into a graph of potential waypoints. Instead
+of a complex geometric problem, we then just have to
+find a tour in a graph where each vertex yields some
+coverage, and the touring costs are based on the used
+edges and edge transitions.
+The simplest and most common strategy is to place
+a regular square grid over the feasible area. The
+points and edges that are fully contained, become our
+
+graph. This would also directly allow us to use the
+algorithm of Fekete and Krupke [25]. However, this is
+not always optimal. Other options are to use regular
+triangular grids or irregular generated meshes. To keep
+the computational costs low, it is generally better to
+have fewer vertices and a low edge degree at the vertices.
+Not only the computational costs increase, also the
+quality of the relaxation decreases at vertices with more
+neighbors. Examples with various grids can be seen in
+Fig. 17.
+Computing the edge costs and the turn costs at
+the vertices is straight-forward and can directly use the
+definition in Eq. (A.2). The graph is just a subset of the
+actual solution space, and so we can simply precompute
+the costs of the individual parts used by the graph.
+The value of covering a vertex is more complicated.
+We can simply assign the value that the robot covers
+when being at this point, but this can easily over- or
+underestimate the real value. It can underestimate the
+value if the real coverage actually happens when moving
+to and from the vertex. It can overestimate the value
+if other vertices are close by, and the coverage areas
+are overlapping. Generally, it is good if the sum of
+values in the graph also equals the maximal value in
+the original instance. We could simply scale all the
+values to achieve this but as the graph can have a
+heterogeneous distribution, using a Voronoi diagram is
+a better option. The Voronoi diagram is a classical
+method from Computational Geometry which partitions
+the area such that each vertex gets the area assigned
+closest to it. Using the value of these areas gives us a
+value assignment that equals the original values and is
+
+10
+
+10
+
+5
+
+10
+
+5
+
+0
+
+5
+
+0
+
+5
+
+0
+
+5
+
+5
+
+10
+
+10
+10
+
+0
+
+10
+
+10
+
+0
+
+10
+
+10
+10
+
+(a) Instance with
+graph.
+
+0
+
+10
+
+(b) Voronoi cells.
+
+(c) Robot’s coverage at waypoints.
+
+Figure 18: Computing the value of a vertex, especially
+when using irregular grids, should use Voronoi diagrams
+or similar techniques to obtain a nice partition of the
+area, as seen in (b). Using only the area covered at
+the corresponding waypoint yields under- and overestimation due to ignored area that would indirectly be
+covered by using edges and intersecting ranges, as seen
+in (c). The corresponding instance with the graph is
+shown in (a). Underestimating the value of a waypoint
+can result in the algorithm skipping it. Overestimating the value of a waypoint can result in the algorithm
+including it at a high cost.
+
+sensitive to the neighborhood of the vertices. This can
+be seen in Fig. 18.
+In the following, we denote the resulting graph by
+G = (P, E) and call P (potential) waypoints. Every
+tour T on G consists of segments in E, which are fully
+contained in the feasible area, and is, thus, a feasible
+tour in the original polygon. We denote the coverage
+value assigned to a waypoint p ∈ P by val(p), and it
+corresponds to the coverage value of p’s Voronoi cell.
+The distance Rcost of an edge pp′ ∈ E is defined by
+dist(p, p′ ) = x∈pp′ µE (x) dx, according to Eq. (A.3).
+The turn cost of passing p through the neighbors n
+and n′ ∈ N (p) is defined by turn(n, p, n′ ) = µE (p) ·
+Turn(n, p, n′ ) according to Eq. (A.4).
+Obtaining a good graph is a fundamental problem,
+and the whole Appendix C is focused on it.
+B
+
+Implementation Details of Step 3
+
+In this step, we convert the instance such that we can
+use a minimum-weight perfect matching to compute an
+integral cycle cover, i.e., a solution, that is allowed
+to consist of multiple tours. Without turn costs,
+an optimal cycle cover can actually be computed in
+polynomial time because the costs of the edges are
+independent. With turn costs, the cost of an edge
+depends on orientation of the preceding edge, making
+the problem NP-hard even in grid graphs [24]. We
+use the fractional solution of the previous step to
+predict the corresponding orientation and make the
+costs independent again.
+
+Figure 19: Segments (black) can be connected to a cycle
+cover via a minimum-weight perfect matching (gray)
+on the end points. Because of the fixed joints, we can
+charge the turn costs to the edge weights.
+
+We can imagine this procedure as replacing every
+waypoint by an epsilon-length segment, as in Fig. 5.
+Computing a minimum-weight perfect matching on the
+endpoints, as in Fig. 19, yields the optimal cycle cover
+that includes all these segments. The necessary turns at
+the joints are fixed for every connecting edge, and can
+therefore be accounted for in the edge weights together
+with the distance. We are calling these epsilon-length
+segments atomic strips. The possibility of skipping
+a waypoint can be implemented by adding an edge
+between the two endpoints of its atomic strip with the
+weight of the missed coverage.
+The orientations of the atomic strips are of fundamental importance: If we guess them correctly, the
+minimum-weight perfect matching actually corresponds
+to an optimal cycle cover on the waypoints. If we guess
+the orientation of an atomic strip badly, the minimumweight perfect matching may perform expensive turns
+to integrate it.
+Luckily, the exact orientation is less important if
+we make turns at a waypoint, as the range of optimal
+orientations increases with the turn angle, as shown in
+Fig. 20. For a U-turn, every orientation is optimal.
+The straighter a passage, the more important a good
+orientation becomes; but often these cases are easy to
+guess from the fractional solution.
+This observation allows us to limit the orientations
+to the orientations of incident edges, i.e., neighbors. In
+the following, we represent the available orientations for
+the atomic strip of a waypoint p ∈ P by the adjacent
+waypoints N (p). If the atomic strip of p has the
+orientation n ∈ N (p), one of its endpoints heads at n.
+A waypoint may need to be crossed multiple times,
+as we are limited to passages within the grid G = (P, E).
+This can easily be implemented by transitive edges, i.e.,
+
+increases the computational complexity, we limit the
+number of atomic strips to a constant k, and allow for
+every waypoint p ∈ P at most one atomic strip per
+neighbor n ∈ N (p). The task is to select a subset
+A ⊆ N (p) with |A| ≤ k as atomic strips and determine
+the dominant one.
+If k ≥ |N (p)|, we can simply choose A = N (p). This
+allows us to use any passage twice without overhead,
+because any waypoint passage has either two neighbors
+with each having an optimal atomic strip or the passage
+is a U-turn. If k < |N (v)|, things get more complicated
+Figure 20: The orange and the green atomic strips because we want to optimize three often opposing
+represent the turn equally well. Only the assignment objectives:
+of the turn costs to the weight of the matching edges
+• We want to improve the expected case, i.e., the
+changes. Also, all atomic strips in between are equally
+passages with the highest likelihood should be as
+good.
+cheap as possible.
+• We want to minimize the cost overhead of the
+average case, i.e., the average overhead of any
+passage.
+0
+
+p
+
+Neutralize atomic strip
+
+p
+
+Figure 21: The waypoints p and p′ each have two
+horizontal and two vertical atomic strips. The tour
+induced by a matching (blue) only uses one atomic strip
+of each, and skips the other by edges connecting both
+endpoints. These edges are usually zero-weight, except
+for one carefully-selected one that has the weight of the
+opportunity loss val(p) resp. val(p′ ).
+
+two successive edges uv and vw ∈ E automatically
+create an edge uw with the combined costs. However,
+we learned in [25] that introducing optional atomic
+strips and only allowing direct connections scales much
+better. An optional atomic strip can be implemented
+by simply adding an edge with zero weight between its
+endpoints, see Fig. 21. We call the non-optional atomic
+strip of a waypoint the dominant one.
+In a square grid as in Fekete and Krupke [25], we
+obtain a 4-approximation if we add an atomic strip
+for every neighbor and declare the most used one in
+the fractional solution as dominant. In a triangular
+grid, there can be waypoints that are passed a linear
+number of times, as in Fig. 6, but this is an artificial
+instance. In our instances, every waypoint is usually
+only covered once or twice. As every atomic strip
+
+• We want to minimize the worst case, i.e., the cost
+of the worst unexpected passage.
+Our strategy for this case consists of two phases.
+First, we select atomic strips based on edge usages in
+the fractional solution. This optimizes the expected
+case. Second, we fill up the remaining atomic strips by
+minimizing the sum of squared overheads of passages
+not used in the fractional solution. This optimizes
+the average and worst case scenarios (using a higher
+exponent would shift the focus to the worst case).
+P The precise strategy is given in Alg. 1; FS(v, w) =
+u∈N (v) xuvw denotes the usage of the edge vw ∈ E
+in the fractional solution, and OH(uvw, A) denotes the
+minimal overhead if the passage uvw has to use an
+atomic strip in A ⊆ N (v). The overhead corresponds
+to the additional turn costs needed to accommodate a
+(possibly misaligned) atomic strip.
+If a waypoint v ∈ P has a coverage value, i.e.,
+val(v) > 0, we still have to select the dominant strip
+that can only be skipped at the cost of the opportunity
+loss. For very straight passages, there may be no atomic
+strip that can be used without overhead (this can also
+be due to numeric issues). Thus, we propose a more
+dynamic approach.
+The selection of the dominant strip a out of the set
+A is performed by the usage of the atomic strips, as
+defined in the following function:
+SelectDominant(v, A) =
+X
+argmaxa∈A
+xuvw · Usage(uvw, a)
+u,w∈N (v)
+
+Input: A waypoint v and number k.
+Output: A selection of at most k atomic
+strips, identified by N (v).
+A←∅
+C0 ← {n ∈ N (v) | FS(v, n) ≥ ε}
+C1 ← N (v) \ C0
+/* 1. Select by usage in fractional
+solution.
+*/
+while C0 \ A ̸= ∅ do
+A ← A + argmaxv∈C0 \A FS(v, w)
+if |A| = k then return A
+end
+/* 2. Select by overhead.
+*/
+while C1 \ A ̸= ∅ do
+A←
+P
+A + argminn∈C1 \A u,w∈N (v) OH(uvw, A) ·
+
+et al. [13]. Especially in the presence of turn costs,
+orientating a square grid in 45◦ to a straight boundary
+will result in many turns, because all vertices at the
+boundary will need to make a turn. Even if we would
+be able to compute an optimal tour for this grid, the
+gap to the optimal solution independent of the grid can
+be nearly arbitrarily large, see Fig. 22. Choosing a good
+
+10
+0
+10
+
+2
+
+OH(uvw, A + n)
+if |A| = k then return A
+end
+return A
+Algorithm 1: Atomic strip selection
+Overhead
+
+Usage
+
+0◦
+1◦
+2◦
+5◦
+10◦
+30◦
+50◦
+
+1.00
+0.93
+0.85
+0.68
+0.46
+0.10
+0.02
+
+Table 1: Usage for λ = 0.1 and ϕ = 30◦
+
+0
+10
+0
+
+0
+
+10
+
+20
+
+30
+
+40
+
+Figure 22: An example that allows arbitrary high turn
+costs for an unsuitable alignment. The upper image
+shows the area to be covered in green. The middle
+image shows a well-aligned grid, and the lower image
+an unsuitable grid that requires many turns. The blue
+area is the covered area, and the black lines show a tour
+computed by the algorithm.
+
+Let Turna (u, v, w) be the turn angle if the passage uvw
+is forced to use the atomic strip a. The usage depends
+on the turning overhead induced by forcing a passage grid, hence, is as important as finding a good solution
+to use it. If there is no overhead, the usage is 1.0, and within this grid.
+if there is overhead, the usage drops exponentially.
+In this section, we focus purely on how to convert
+the polygonal instance into a graph-based instance.
+(Turna (u,v,w)−Turn(u,v,w))/ϕ
+Usage(uvw, a) = λ
+The reason for separating this from the algorithm
+λ is the usage at an additional turning angle of ϕ, see evaluation is that this section can be applied to all
+Table 1 for an example. Higher values allow more gap, grid-based coverage path planning algorithms. While
+which is necessary if the grid is not regular. We use we use our algorithmic approach for evaluation, most
+observations can be transferred to general coverage
+λ = 0.25 and ϕ = 45◦ in the experiments.
+path optimizations. More specifically, we evaluate the
+An example for different k can be seen in Fig. 7.
+following questions:
+C
+
+Grids and Meshes
+
+An essential point for the grid-based methods is to
+choose a good grid. Choosing an unsuitable grid, or even
+just the wrong orientation for it, can drastically reduce
+the achievable performance as also noted by Bormann
+
+• How well do regular square and triangular grids
+perform in terms of touring costs and coverage?
+• What is the optimal edge length in terms of touring
+costs and coverage?
+
+Figure 23: With a distance of 2r, the middle of a square
+is not fully covered (red). However, we minimize turns
+such that these scenarios are also minimized. If these
+scenarios happen, they can be fixed with reasonably
+small costs by moving the turning points slightly to the
+inside. Depending on how the subtours are connected,
+changing the connections can also be useful to obtain
+smaller turns.
+
+trajectories to be perfectly apart, we need a distance of
+√4 r. In this case, we again can lose coverage at turns,
+3
+which we may need to fix.
+For square and triangular grids, we denote the
+denser version that covers the interior area at the
+vertices as point-based. The other version, which can
+miss area at turns, but covers everything between two
+parallel lines, as line-based. This results in four regular
+grids: point-based square grids, line-based square grids,
+point-based triangular grids, and line-based triangular
+grids. Examples with covered area from the vertices
+and tours can be seen in Fig. 25. In those, we can
+also see that the greatest loss of coverage happens at
+the boundary. The point-based grids have a small
+advantage here because they can place more points due
+to their finer resolution. An easy solution to increase the
+coverage is to simply sweep once along the boundary,
+but this can be expensive for curvy boundaries. We will
+look into other solutions with irregular grids later.
+
+• How can we create good triangular and quadrilateral meshes to approximate the area?
+• How do regular grids and meshes perform for full
+coverage and partial coverage?
+We start with regular grids, as many algorithms
+only support regular grids, and then continue to irregular grids, i.e., meshes.
+C.1 Regular Grids Before we go to the lawless
+meshes, let us take a look at regular grids.
+The most common grid is the square grid, which
+essentially partitions the area into small squares. There
+are two options for the edge lengths, i.e., the distance
+between two adjacent
+vertices, for a circular tool with
+√
+radius r: 2r or 2r. The first option reflects the optimal
+distances between two parallel trajectories, while the
+second option already provides a full coverage by simply
+visiting all vertices. In case of turns, a length of 2r
+will leave out a portion of the area, as can be seen in
+Fig. 23. Luckily, when minimizing turns, these cases
+are also minimized but not completely eliminated. The
+remaining cases can be fixed by slightly moving the
+waypoints, as shown to the right, but we leave this
+technique to future work.
+Another common grid is the triangular grid. These
+are also known as hexagonal grids, because the dual
+graph consists of hexagons but the graph itself consists
+of triangles. Here, every vertex has six neighbors, which
+makes its optimization more challenging but also allows Figure 24: Examples of the used (full-coverage) inmore complex turns. For achieving a full coverage by stances.
+only visiting the vertices, we need a distance of √33 r to
+reach the center of each triangle. If we want two parallel
+For comparing the different grids, we focus on poly-
+
+gons that can be reasonably well covered, i.e., that do
+not have narrow corners. We do not consider (integral)
+orthogonal instances, inspired by simple rooms, as these
+can clearly be converted to a square grid and pose no serious challenge. Instead, we create instances that are in
+the shape of more complicated architecture with many
+non-parallel lines. Additionally, we add obstacles for
+some instances. The instances are generated by merging multiple distorted rectangles and adding some holes
+with the same procedure. During this process, only
+steps that do not lead to narrow corners, bottlenecks,
+or even disconnection are chosen. By using a set of
+different random parameters for repetitions, sizes, and
+distortion strength, we generated a set of 200 instances.
+Examples of these instances can be seen in Fig. 24. The
+weight for the turn costs is 1.0, 5.0, 50.0 (measured in
+radian), and the tool-radius is uniformly set to 1.0. For
+simplicity, we focus on full coverage and only compare
+the touring costs and the coverage (aiming for 100 %).
+Partial coverage instances have many more parameters
+and are more difficult to compare.
+Because an unsuitable alignment can make most
+grids very expensive, we try 20 random alignments of
+each grid, plus one which we rotate such that the sum
+of the minimal passage costs per vertex are minimal. Of
+these, we choose the alignment with the minimal touring
+costs.
+Let us first take a look into the touring costs on
+each of the grids. Of course, they can differ for different
+algorithms, but it still gives a good indication of the
+quality of the grid. For comparing the touring costs
+of the different instances and solutions, we need to
+normalize the objectives. This is done by putting the
+objective in relation to the best of the corresponding
+instances. A value of 50 % means that the tour is 50 %
+more expensive than the least expensive solution. The
+plots in Fig. 27 show that the line-based grids result
+in the least expensive tours by a significant margin of
+over 30 %. The triangular grid has a small advantage
+of less than ∼ 7 % over the square grid. The pointbased square grid performs worst and is on average 50 %
+more expensive than the line-based triangular grid. The
+results are relatively stable also for larger instances.
+When comparing based on the turn cost weights, the
+triangular grids are very stable, while the square grids
+become slightly worse for higher turn costs. This can be
+explained by the reduced turning abilities (only having
+90◦ and 180◦ ) of the square grid.
+Tours on line-based grids are, thus, less expensive
+than point-based grids, but how much does the coverage
+suffer? If the coverage is too reduced, the lower touring
+costs are of little comfort. Fortunately, the data in
+Fig. 26 shows that the point-based triangular grid only
+
+35
+30
+25
+20
+15
+10
+5
+
+35
+30
+25
+20
+15
+10
+5
+0
+
+10
+
+20
+
+30
+
+40
+
+35
+30
+25
+20
+15
+10
+5
+
+0
+
+10
+
+20
+
+30
+
+40
+
+0
+
+10
+
+20
+
+30
+
+40
+
+0
+
+10
+
+20
+
+30
+
+40
+
+0
+
+10
+
+20
+
+30
+
+40
+
+35
+30
+25
+20
+15
+10
+5
+0
+
+10
+
+20
+
+30
+
+40
+
+35
+30
+25
+20
+15
+10
+5
+
+35
+30
+25
+20
+15
+10
+5
+0
+
+10
+
+20
+
+30
+
+40
+
+35
+30
+25
+20
+15
+10
+5
+
+35
+30
+25
+20
+15
+10
+5
+0
+
+10
+
+20
+
+30
+
+40
+
+Figure 25: Square and triangular grids with pointbased (denser) and line-based (sparser) distances. The
+blue areas on the left indicate the covered area from
+the vertices of the grid. The blue areas on the right
+indicate the covered area of a corresponding tour (blue
+trajectory). While the line-based grids do have an
+insufficient coverage from the vertices alone, the tour
+only leaves few gaps at turns but is much shorter. The
+white area enclosed by the dashed boundary describes
+the feasible tool positions.
+
+For the experiments in the following sections, regular grids will be line-based triangular grids oriented by
+our heuristic. This heuristic, as also explained above,
+80
+rotates the grid such that the sum of minimal passing
+costs for all vertices is minimal. The idea behind this is
+60
+that we minimize the number of ‘staircase’-boundaries
+that can be observed in the bad alignments in Fig. 29.
+Grid
+40
+This heuristic performs reasonably well, and is on avTriangular, Point-based
+Triangular, Line-based
+erage only 2.7 % more expensive than the best grid in
+20
+Square, Point-based
+the previous experiment. In comparison, the best of 20
+Square, Line-based
+random grids was only 0.6 % more expensive, still show0
+ing some room for improvement for our heuristic. For
+0
+5000
+10000
+the other grid types, the best of 20 random grids was
+Area ±5%
+also slightly better than our heuristic but only minimally (e.g., 10 % vs. 9.2 % for line-based square grids.).
+Figure 26: The covered area of the various grid types. Overall, the heuristic works reasonably well and is much
+Point-based instances only have a small advantage.
+faster than computing the solution on 20 random alignments and returning the best solution.
+
+Higher is better
+
+Coverage (%)
+
+100
+
+covers on average less than 4.2 % more than the linebased triangular grid. Considering also that the pointbased grids miss a few percent of the coverage even
+for the larger instances, this is sufficient for many
+applications. The missed coverage that is especially
+high for smaller instances can be primarily attributed
+to the boundary. For larger instances, the boundary
+ratio gets smaller and, thus, the coverage gets better
+for all grids. In the end, we can decide between a 4.2 %
+higher coverage using point-based grids, or a ∼ 25 %
+less expensive tour.
+We selected the best alignment out of 20 random
+alignments and one optimized alignment, which is,
+of course, a deceptive selection. As optimizing a
+tour in a grid takes some time, simply trying many
+random alignments is not very efficient. The natural
+question that comes to mind is, how well the average
+random alignment performs. This question can be
+answered by the plot in Fig. 28: for some instances
+not very well. The higher the weight of the turn costs,
+the worse is the average alignment. While for many
+instances, the random alignments of the line-based
+triangular grids are still reasonably good, there is a high
+deviation with many outliers. For the square grids,
+the random alignment is most of the time unsuitably
+aligned, implying that it needs a more careful alignment
+than triangular grids.
+Examples for good, bad, and median alignments can
+be seen in Fig. 29. The selection only considers the
+touring costs. The concrete instance has a high turn
+cost weight of 50, which leads to the high redundancy
+for the worse alignments, as the tour tries to only
+make turns at corner points where it has to make turns
+anyway.
+
+C.2 Meshes We have seen how to approximate a
+polygonal area using a square or triangular grid. These
+regular grids are much easier to work with and are
+therefore very common for coverage path planning.
+However, the approximation can be very crude, not only
+missing large parts of the boundary but also being badly
+aligned to it. Luckily, we are not the only ones with the
+desire to approximate an area by a grid-like structure,
+and we can make use of the many results in the field of
+mesh generation. In this section, we consider the use of
+meshes instead of regular grid graphs.
+The field of mesh generation (also known as grid
+generation, meshing, or gridding) considers the partition of a surface or geometric object into simpler elements, such as triangles or quadrilaterals (or threedimensional counterparts). This is a fundamental task
+in computer graphics, physics simulation, geography,
+and cartography to deal with the more complex objects.
+The concrete specifications of a good mesh differ for
+some tasks, but import properties often are:
+• Angles should not be too small or too wide. A
+primary motivation for this is due to numerical
+issues.
+• The mesh should have a low complexity, i.e., minimize the number of introduced vertices and edges.
+• The mesh should be as regular as possible, i.e.,
+low variance in size and shape. Most algorithms
+allow the user to specify a desired or maximal edge
+length.
+To find out more about the general subject of mesh
+generation, you can take a look into the surveys [11, 10]
+that are part of Computational Geometry books.
+
+Triangular, Point-based
+Triangular, Line-based
+Square, Point-based
+Square, Line-based
+
++125%
++100%
++75%
++50%
++25%
++0%
+0
+
+2500 5000 7500 10000 12500
+
+Area ±5%
+
+(a) Area.
+
+Lower is better
+Touring cost (% above best)
+
+Touring cost (% above best)
+
+Lower is better
++125%
++100%
++75%
+
+Triangular, Point-based
+Triangular, Line-based
+Square, Point-based
+Square, Line-based
+
++50%
++25%
++0%
+1
+
+5
+
+50
+
+Optimization weight of turn cost
+(b) Turn costs.
+
+Figure 27: Touring costs for the different regular grids. To counter unsuitable alignments, only the best alignment
+is used. The value shows how many percent the touring costs are on average higher than the least expensive tour
+among the solutions for the corresponding instance. Line-based grids yield clearly less expensive tours, and this
+effect is stable also for larger instances. The triangular grid only has a small advantage over the square grid of
+less than 7 %. The right plot (b) shows that square grids become worse for higher turn costs.
+
+Touring cost (% above best)
+
+Triangular, Point-based
+Triangular, Line-based
+Square, Point-based
+Square, Line-based
+
+Lower is better
+
+200
+150
+100
+50
+0
+1
+
+5
+
+50
+
+Optimization weight of turn cost
+Figure 28: Average touring costs for the random alignment compared to the best solution.
+
+Many mesh generators are very sensitive to close
+points on the boundary and react by placing equally
+close points that result in a high density in this area, see
+Fig. 30. This high density is, of course, bad for coverage
+path planning and yields tours with much redundant
+coverage. Close points on the boundary are frequently
+created by concave corners in the room, around which a
+circular robot has to make a circular turn, approximated
+by polygon with many segments. There are two steps
+we should perform, as shown in Fig. 31: First, we
+can simplify the polygon and remove close points, e.g.,
+
+by the usage of the Douglas-Peucker algorithm [21].
+Because the connecting lines at the boundary can now
+intersect the unreachable boundary area, we have to
+move the points slightly inwards. Second, we can simply
+shrink the boundary by the robot radius, instead of
+computing the feasible area by a Minkowski sum. The
+resulting coverage path may miss some small area at
+this corner, but the underlying mesh allows a much
+better tour. We still need to perform a simplification
+for complicated boundary parts not created by curve
+approximations.
+One does not need smooth meshes for all applications, and therefore many mesh generators only yield
+very rough grids out of the box. In combination
+with smoothing and optimization methods, these generators can still provide us with smooth meshes, see
+Fig. 32. The classical algorithm of Du et al. [22] tries
+to achieve a centroidal Voronoi tessellation (CVT) by
+moving the points to the centroid of their Voronoicells (Lloyd’s method [36]). Instead of the Voronoi diagram, one can also work on the dual Delaunay graph,
+as proposed by Chen and Holst [16]. The optimeshlibrary [48] implements these algorithms as well as some
+variants. The corresponding GitHub-page (https://
+github.com/nschloe/optimesh) gives a great overview
+with animations and also some experimental analyzes.
+Based on this experimental analysis, verified on some
+instances, we use the implemented CVT-variant cvt-full
+for all triangular meshes with a tolerance of 1 × 10−5
+and 1000 iterations.
+To compare all mesh generators is beyond the scope
+
+Triangular, Line-Based
+Triangular, Point-Based
+Square, Line-Based
+
+Cost: 3566.44, Coverage: 89.4%
+
+Cost: 4517.36, Coverage: 88.6%
+
+Cost: 6679.58, Coverage: 92.7%
+
+Cost: 4938.91, Coverage: 92.0%
+
+Cost: 6101.36, Coverage: 91.8%
+
+Cost: 6434.57, Coverage: 92.2%
+
+Cost: 3700.51, Coverage: 88.7%
+
+Cost: 5297.15, Coverage: 89.5%
+
+Cost: 7227.68, Coverage: 92.4%
+
+Cost: 5236.76, Coverage: 92.0%
+
+Cost: 6779.06, Coverage: 92.7%
+
+Cost: 8465.62, Coverage: 93.0%
+
+10
+
+10
+
+10
+
+20
+10
+0
+10
+20
+
+20
+10
+0
+10
+20
+
+20
+10
+0
+10
+
+Square, Point-Based
+
+20
+
+20
+10
+0
+10
+20
+0
+
+10
+
+Best
+
+20
+
+30
+
+0
+
+10
+
+Median
+
+20
+
+30
+
+0
+
+10
+
+Worst
+
+20
+
+30
+
+Figure 29: Examples for tours on the four grid types with different alignments. In the first column, the best
+alignment is shown. In the middle, an alignment that yielded an average tour; and on the right, the worst
+alignment for the grid type on this instance. The high weight on the turn costs produces lots of redundant
+straight coverages if the boundary is badly aligned to the grid.
+
+25
+20
+15
+10
+5
+0
+5
+10
+
+19
+
+19
+
+19
+
+19
+
+18
+
+18
+
+18
+
+18
+
+17
+
+17
+
+17
+
+17
+
+16
+
+16
+
+16
+
+16
+
+15
+
+15
+
+15
+
+14
+
+14
+0
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+1
+
+(a)
+
+20
+
+10
+
+0
+
+10
+
+Figure 30: A quadrilateral mesh that is sensitive to the
+close points on the boundary and reacts with a very
+dense grid in these areas. Generated with gmsh [28]
+using the Frontal-Delaunay for Quads algorithm with
+recombination.
+of this thesis, therefore we focus on a small selection
+of seven algorithms that seemed promising based on
+documentation and samples:
+
+15
+
+14
+0
+
+2
+
+3
+
+4
+
+5
+
+6
+
+14
+0
+
+1
+
+(b)
+
+2
+
+3
+
+4
+
+5
+
+6
+
+0
+
+1
+
+(c)
+
+2
+
+3
+
+4
+
+5
+
+6
+
+(d)
+
+Figure 31: Concave corners (a) in the area result in
+circular curves, under the assumption of a circular
+robot. Approximating such a curve results in many
+close boundary points (b) that are problematic for many
+mesh generation methods. To circumvent this problem,
+we should simplify the resulting boundary (c) by using,
+e.g., the Douglas-Peucker algorithm [21]. Because this
+can result in intersecting the boundary, the points
+should be moved slightly inwards. Additionally, we can
+work on a shrank boundary polygon (d) instead of the
+feasible area (which potentially leaves a small part of
+the area uncovered).
+
+25
+20
+15
+10
+5
+0
+5
+10
+
+20
+
+10
+
+0
+
+10
+
+25
+20
+15
+10
+5
+0
+5
+10
+
+20
+
+10
+
+0
+
+10
+
+(a) Without smoothing.
+(b) With smoothing.
+• The MeshAdapt (∆MA), Frontal-Delaunay (∆FD),
+Frontal-Delaunay for Quads (∆FDQ), and Packing
+Figure 32: Many mesh generators only yield good
+of Parallelograms (∆PP) methods of gmsh [28] for
+meshes after smoothing.
+triangular meshes.
+
+• The Frontal-Delaunay for Quads (□FDQ), and
+Packing of Parallelograms (□PP) methods with re- full coverage allows us to focus more attention onto
+combination of gmsh [28] for quadrilateral meshes. the coverage quality and the density of the meshes.
+The plots in Fig. 34 show the average touring costs
+• The dmsh-algorithm [49] that is inspired by
+and coverage of the different meshes. The touring cost
+distmesh [44].
+is measured in how much more expensive a tour is
+To apply the same conditions to all algorithms, we compared to the least expensive tour we found for this
+use the same polygon shrinking and simplification for instance. A value of 20 % would indicate that the mesh
+all mesh generators, even if they can handle complex, yields tours that are on average 20 % more expensive
+curved boundaries reasonably well, such as dmsh.
+than the least expensive tour. The coverage is measured
+The algorithms of gmsh often have problems with regarding the whole area (note that not all of the area is
+holes, see Fig. 33. To fix this problem, we replace long always reachable). A value of, e.g., 95 % would indicate
+segments in holes with shorter ones that approximate that the mesh yields tours that cover on average 95 %
+the desired edge length. If p0 p1 is a long segment and d of the whole area.
+is the desired edge length with d < ||p0 −p1 ||, we replace
+Area is left uncovered not only due to turns and
+p0 p1 with ≈ ||p0 −p1 ||/d + 1 equal sub-segments.
+boundaries (as for regular grids) but also because the
+We compare the meshes on the same full coverage meshes do not always match the desired distances and
+instances as the regular grids (Fig. 24). The focus on can be too sparse in some areas. This especially
+
+50
+
+50
+
+50
+
+40
+
+40
+
+40
+
+30
+
+30
+
+30
+
+20
+
+20
+
+20
+
+10
+
+10
+
+10
+
+0
+
+0
+
+0
+
+10
+
+10
+
+10
+
+20
+
+20
+
+20
+
+30
+
+20
+
+0
+
+20
+
+(a) gmsh has problems with holes.
+
+30
+
+20
+
+0
+
+30
+
+20
+
+(b) Fixed with workaround.
+
+20
+
+0
+
+20
+
+(c) Resulting tour.
+
+Figure 33: The meshing algorithms of gmsh often have problems with holes in the polygon (at least using the
+pygmsh interface [47]). The boundary of the hole and the area surrounding it does not get populated enough.
+This can be fixed by enforcing fixed points on the hole boundary by replacing long segments with shorter ones.
+Using this fix, we can compute a good tour despite some artifacts in the mesh. This example uses Packing of
+Parallelograms with recombination.
+happens for dmsh and Packing of Parallelograms, thus,
+we also reduced their mesh size by 90 % and 95 % to
+increase the coverage for these cases. dmsh failed to
+create a grid in 5 of the 200 instances because the
+internal geometric routines threw exceptions, likely due
+to numerical issues. These results are therefore ignored
+in analysis. One additional instance resulted in some
+disconnected areas after the polygon processing and is
+likewise ignored for all meshes.
+The dmsh and Packing of Parallelogramsalgorithms yield the least expensive tours on average,
+with dmsh having an advantage for higher turn cost
+ratios. However, when taking a closer look into the
+data, most meshes can achieve good grids for specific
+instances. For example, relatively rectangular instances
+work very well with the quadrilateral mesh of Packing of
+Parallelograms. The coverage quality is nearly inverse
+to the touring costs. The triangular Frontal-Delaunay
+mesh performs best in coverage, and is on average
+around 25 % more expensive than the least expensive
+tour (that potentially has a lower coverage). Therefore,
+reducing the desired edge length for dmsh and Packing
+of Parallelograms results in better coverage at a small
+cost increase.
+The mean runtime, as shown in Table 2, for some
+meshes can differ quite a lot with a mean runtime of
+146.2 s for ∆dmsh(90%) and only 89.5 s for □PP. Interestingly, the quadrilateral meshes are not necessarily faster despite much smaller auxiliary graphs. This
+is likely due to the overhead induced by inefficient implementations of auxiliary steps, while the already optimized steps of the linear program and the matching
+
+Mesh
+□FDQ
+□PP
+∆FD
+∆FDQ
+∆MA
+∆PP
+∆PP(90%)
+∆PP(95%)
+∆dmsh
+∆dmsh(90%)
+∆dmsh(95%)
+
+Runtime (s)
+129.7
+89.5
+137.6
+113.1
+120.7
+94.1
+127.4
+106.6
+114.6
+146.2
+123.3
+
+Table 2: Mean runtime with different meshes.
+
+algorithm are expected to be faster. Meshes created
+by dmsh are relatively slow but, contrary to the gmshalgorithms, it is written in pure Python and, thus, not
+optimized for runtime. Otherwise, the triangular Packing of Parallelograms meshes are relatively fast. Note
+that the runtime refers to the whole solution process and
+not just the grid generation. The square grids are usually generated within one second and for the triangular
+grids, the optimization process of optimesh (in Python
+with NumPy and SciPy) can take up to a few seconds.
+When looking onto which instances have been
+solved well on which mesh in Figs. 35 and 36, no clear
+pattern is visible. The only observations that can be
+made are that MeshAdapt performs well on instances
+with many or larger holes, and the Frontal-Delaunay
+
+Meshing Algorithm
+
+Meshing Algorithm
+
+Lower is better
+
+FDQ
+PP
+FD
+FDQ
+MA
+PP
+PP(90%)
+PP(95%)
+dmsh
+dmsh(90%)
+dmsh(95%)
+0
+
+50
+
+100
+
+150
+
+Cost (% above cheapest)
+
+(a) Touring costs (lower is better).
+
+Higher is better
+
+FDQ
+PP
+FD
+FDQ
+MA
+PP
+PP(90%)
+PP(95%)
+dmsh
+dmsh(90%)
+dmsh(95%)
+75
+
+80
+
+85
+
+90
+
+Coverage (%)
+
+95
+
+100
+
+(b) Coverage (higher is better).
+
+Figure 34: Cost and coverage of tours in various meshes. The □ and ∆ indicate quadrilateral resp. triangular
+meshes. We can see low costs for dmsh and triangular Packing of Parallelograms, and a good coverage for the
+Frontal-Delaunay.
+seems only to perform well on simpler instances. In
+the next sections, we will use dmsh with a 95 % point
+distance. In case of numerical issues, we will fall back
+on Packing of Parallelograms, also with 95 % point distance. The coverage of these meshes is on average sufficiently high with 96.9 % resp. 96.3 %.
+C.3 Comparison We now compare the performance
+of meshes and regular grids for partial and full coverage.
+For this, we generate instances as before based on
+the union of not-too-narrow quadrilaterals. We do
+the same for valuable and expensive areas. For the
+expensive areas, we combine all overlapping areas into
+a single area and do not allow overlap. Otherwise, we
+can easily get extremely high factors. The valuable
+areas are not multiplicative but additive and, thus,
+do not present this problem. The unsteadiness of
+overlapping valuable areas can even make the instances
+more realistic. Finding the right set of parameters such
+that we get well-balanced instances is difficult. Using
+purely random parameters, one often ends up with full
+coverage because the values are too high, or no coverage
+because the touring costs are too high. Thus, a careful
+fine-tuning of parameters is necessary to obtain diverse
+but interesting instances. See Fig. 2 for a set of example
+instances with tours.
+We evaluate the quality of the tours based on the
+objective, as described in Eq. (A.1), which combines
+touring costs and coverage value. To make the objectives comparable over all instances, we divide every objective by the minimal objective known for the corresponding instance. We use the dmsh-algorithm with
+95 % edge length as representative of mesh-based cov-
+
+erage, and a regular triangular grid with line-based distances for grid-based coverage. To directly show the advantage of the partial-coverage technique, we also compare the approaches with enforced full coverage.
+In Fig. 37, we can see that
+• The partial mesh approach achieves the best objectives by a clear margin, independent of the weight
+of the turn costs. A deeper look into the data shows
+that the touring costs of the mesh are slightly worse
+than of the regular grid, but this method covers
+much more valuable area.
+• The performance of the meshes drops for higher
+turn costs, while the performance of the regular
+grids improves.
+• The full-coverage tours are much more expensive
+than the partial-coverage tours. Using only partialcoverage for the evaluated instances provides a
+significant advantage. Note that some drastic
+outliers have been removed from the plot. They
+can be explained by small valuable areas that can
+be covered by a small tour which is obviously better
+than a full-coverage tour. However, many instances
+have larger valuable areas, and even the partial
+tours often cover much of the area.
+When considering only the touring costs for full
+coverage, regular grids show to yield less expensive
+tours but with a lower coverage, as can be seen in
+Fig. 39. Even when using point-based edge lengths
+for the regular grids, the coverage cannot compete with
+meshes while the costs are even higher. The significantly
+worse coverages often appear in complicated, small
+
+Figure 35: Only Packing of Parallelograms yielded good quadrilateral meshes, shown here. The trajectory is
+displayed in black, the covered area in blue.
+instances like in Fig. 38. A regular grid cannot fit to
+the complex and narrow environment while a mesh can.
+Such instances also result in much higher touring costs
+for meshes because they do not skip the difficult areas.
+However, the meshes also leave more area uncovered
+than in less narrow areas. Because the mesh only tries
+to fit an average distance, the density in narrow areas
+can become too low, resulting in gaps.
+For the further experiments, we focus on meshes
+because they achieve a more reliable coverage even for
+difficult instances.
+
+(a) MeshAdapt (∆)
+
+(b) Frontal-Delaunay (∆)
+
+(c) Frontal-Delaunay for Quads (∆)
+
+(d) Packing of Parallelograms (∆)
+
+(e) dmsh (∆)
+
+Figure 36: Instances and tours with at least 95 % coverage on which the corresponding mesh performed well
+(within 5 % of the best). MeshAdapt performs well on instances with large hole areas, while the two FrontalDelaunay versions perform primarily well for rather simple instances. By reducing the edge length in dmsh, we
+improve the coverage while only slightly increasing the costs. We consider dmsh with 95 % edge length as our
+favorite, as it achieves a good performance and a sufficient coverage on average. If a more thorough coverage is
+necessary, we recommend simply to reduce the edge length of dmsh.
+
+Lower is better
+Mesh (Full)
+
+Turn Cost
+
+Regular (Full)
+
+1
+5
+50
+
+0
+
+100
+
+200
+
+300
+
+400
+
+500
+
+Objective (% above best)
+
+600
+
+Figure 37: Relative objectives for partial coverage
+computed with meshes and regular grids. Additionally,
+we compare partial with full coverage. The results are
+split for different turning cost weights, with 50 having
+a higher focus on turns than the traveled distance.
+We can see that the ability of partial coverage has a
+significant advantage. The pure touring costs of the
+partial-coverage tours on the mesh as well as the regular
+grid are similar, but the coverage on the mesh is much
+better.
+
+Coverage: 89.6%
+10
+
+0
+
+0
+
+10
+
+10
+30
+
+20
+
+10
+
+0
+
+(a) Mesh
+
+10
+
+20
+
+30
+
+20
+
+10
+
+0
+
+10
+
+Mesh (Full)
+Regular (Full)
+Regular (Full, PB)
+
+200
+100
+0
+0
+
+5000
+
+10000
+
+Area (±5%)
+
+Higher is better
+
+100
+95
+90
+85
+80
+75
+70
+
+solver
+
+Mesh (Full)
+Regular (Full)
+Regular (Full, PB)
+0
+
+5000
+
+10000
+
+Area (±5%)
+
+Figure 39: Meshes often yield slightly more expensive
+tours for full coverage, but also achieve a much better
+coverage. When using point-based (PB) edge lengths,
+the regular grid performs worse for full and partial
+coverage. The coverage generally increases for larger
+instances. The outliers are often small and complicated
+instances that a regular grid cannot cover properly but
+a mesh can. This results in high touring costs for the
+mesh and a low coverage for the regular grid.
+
+Coverage: 67.0%
+
+10
+
+Lower is better
+solver
+
+300
+
+Coverage (%)
+
+Regular (Partial)
+
+Touring cost (% above best)
+
+Mesh/Grid
+
+Mesh (Partial)
+
+20
+
+(b) Regular Grid
+
+Figure 38: An example for a difficult instance for which
+a mesh still achieves a reasonable coverage, but a regular
+grid does not. A regular grid is too rigid to fit into the
+narrow passages.
+
+

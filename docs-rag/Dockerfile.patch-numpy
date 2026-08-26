@@ -1,0 +1,21 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Local patch image for rag-bootstrap-api 0.8.3.
+#
+# WHY THIS EXISTS: the stock single-KB image built by `rag build --api-only`
+# from rag-bootstrap 0.8.3 CANNOT START. app/similarity_report.py line 31 does
+# an unconditional top-level `import numpy as np`, and numpy is NOT in
+# app/requirements.txt (it appears only in the optional requirements-rerank.txt
+# and requirements-benchmark.txt). Import chain:
+#   main.py -> admin_api.py -> doc_health.py -> similarity_report.py -> numpy
+# so uvicorn dies with ModuleNotFoundError: No module named 'numpy' and the api
+# container restart-loops. Observed 2026-08-25 on this host.
+#
+# We may not edit ~/exudeai/rag-bootstrap, so we add the one missing dependency
+# in a derived image tagged 0.8.3-sys301 (pinned <2 to match the pin the
+# template itself uses in requirements-rerank.txt).
+#
+# DELETE THIS FILE once upstream adds numpy to app/requirements.txt: rebuild
+# with `rag build --api-only`, set RAG_IMAGE_TAG back to the plain version.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM rag-bootstrap-api:0.8.3
+RUN pip install --no-cache-dir "numpy<2"

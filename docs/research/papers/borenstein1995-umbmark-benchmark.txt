@@ -1,0 +1,1136 @@
+Presented at the 1995 SPIE Conference on Mobile Robots, Philadelphia, October 22-26, 1995
+
+UMBmark: A Benchmark Test for Measuring
+Odometry Errors in Mobile Robots
+by
+
+Johann Borenstein and Liqiang Feng
+The University of Michigan
+Advanced Technologies Lab
+1101 Beal Ave.
+Ann Arbor, MI 48109-2110
+Corresponding author:
+Johann Borenstein
+Ph.: (313) 763-1560
+Fax: (313) 944-1113
+Email: johannb@umich.edu
+
+ABSTRACT
+This paper introduces a method for measuring odometry errors in mobile robots and for expressing these
+errors quantitatively. When measuring odometry errors, one must distinguish between (1) systematic errors,
+which are caused by kinematic imperfections of the mobile robot (for example, unequal wheel-diameters),
+and (2) non-systematic errors, which may be caused by wheel-slippage or irregularities of the floor.
+Systematic errors are a property of the robot itself, and they stay almost constant over prolonged periods
+of time, while non-systematic errors are a function of the properties of the floor.
+Our method, called the University of Michigan Benchmark test (UMBmark), is especially designed to
+uncover certain systematic errors that are likely to compensate for each other (and thus, remain undetected)
+in less rigorous tests. This paper explains the rationale for the UMBmark procedure and explains the
+procedure in detail. Experimental results from different mobile robots are also presented and discussed.
+Furthermore, the paper proposes a method for measuring non-systematic errors, called extended UMBmark.
+Although the measurement of non-systematic errors is less useful because it depends strongly on the floor
+characteristics, one can use the extended UMBmark test for comparison of different robots under similar
+conditions.
+
+Keywords: mobile robots, dead-reckoning, odometry, errors, error correction, systematic errors, UMBmark,
+encoders
+
+D:\WP\PAPERS\P60.PS, November 17, 1995
+
+Page 1
+
+1. INTRODUCTION
+Odometry is the most widely used method for determining the momentary position of a mobile robot. In
+most practical applications odometry provides easily accessible real-time positioning information in-between
+periodic absolute position measurements. The frequency at which the (usually costly and/or time-consuming)
+absolute measurements must be performed depends to a large degree on the accuracy of the odometry
+system. It is therefore important for practical mobile robot applications to be aware of the actual odometric
+accuracy of the platform, in order to space the absolute position updates optimally.
+The well known disadvantage of odometry is that it is inaccurate with an unbounded accumulation of
+errors. Typical odometry errors will become so large that the robot's internal position estimate is totally
+wrong after as little as 10 m of travel [Caterpillar, 1991; Gourley and Trivedi, 1994]. For this reason, many
+researchers develop algorithms that estimate the position uncertainty of a odometry robot (e.g., [Crowley
+and Reignier, 1992; Tonouchi et al., 1994; Komoriyah and Oyama, 1994; Rencken [1994]). With this
+approach each computed robot position is surrounded by a characteristic "error ellipse," which indicates a
+region of uncertainty for the robot's actual position [Tonouchi et al., 1994; Adams et al., 1994]. Typically,
+these ellipses grow with travel distance, until an absolute position measurement reduces the growing
+uncertainty and thereby "resets" the size of the error ellipse. These error estimation techniques must rely on
+error estimation parameters derived from observations of the vehicle's odometry performance. Clearly, these
+parameters can take into account only systematic errors, because the magnitude of non-systematic errors
+is unpredictable.
+This paper introduces a method for the quantitative measurement of systematic odometry errors. This
+method, called the University of Michigan Benchmark test (UMBmark), prescribes a simple testing
+procedure designed to quantitatively measure the odometric accuracy of a mobile robot with just an ordinary
+tape measure. Section 2 presents a brief review of key-properties of typical odometry errors . Section 3
+describes a commonly used but flawed calibration method, here called the "uni-directional square path."
+Section 3 then discusses how these shortcoming can be overcome with the "bi-directional square path test,"
+which is the basis of UMBmark. Also discussed in Section 3 is a method for measuring non-systematic
+errors, although this method is of limited use for practical applications. Section 4 presents experimental
+results for both methods.
+
+Page 2
+
+2. CHARACTERISTICS OF ODOMETRY ERRORS
+In this paper we will focus on differential-drive vehicles like the LabMate platform manufactured by [TRC] (see Fig. 1). Other kinematic
+arrangements, such as Ackerman steering (i.e., the typical configuration of almost all automobiles) or the synchro-drive (used in the
+Cybermotion K2A and K3A platforms, as well as the Denning robots) may have different sources of errors.
+In the differential-drive design of Fig. 1 incremental encoders are mounted onto the two drive motors to count the wheel revolutions.
+Using simple geometric equations, it is straight-forward to compute the momentary position of the vehicle relative to a known starting
+position. This computation is called odometry. The basic odometry equations are given, for example, in [Crowley and Reignier, 1992] and
+in our companion paper included in these Proceedings, [Borenstein and Feng, 1995].
+When investigating odometry errors, one should realize that there are two substantially different categories: (1) systematic and (2) nonsystematic error sources. Below we list all relevant sources of odometry errors according to these two categories.
+
+I. Systematic errors are caused by:
+a. Unequal wheel diameters
+b. Average of both wheel diameters differs from nominal diameter
+c. Misalignment of wheels
+d. Uncertainty about the effective wheelbase (due to non-point wheel contact with the floor)
+e. Limited encoder resolution
+f. Limited encoder sampling rate
+II. Non-systematic errors are caused by:
+a. Travel over uneven floors
+b. Travel over unexpected objects on the floor
+c. Wheel-slippage due to:
+• slippery floors
+• over-acceleration
+• fast turning (skidding)
+• external forces (interaction with external bodies)
+• internal forces (e.g., castor wheels)
+• non-point wheel contact with the floor
+
+deadre05.ds4, .wmf, 10/19/94
+
+Figure 1: A typical differential-drive mobile robot.
+Systematic errors are particularly grave because they accumulate
+constantly. On most smooth indoor surfaces systematic errors contribute much more to odometry errors than non-systematic errors.
+However, on rough surfaces with significant irregularities, non-systematic errors may be dominant.
+Systematic errors are usually caused by imperfections in the design and mechanical implementation of a mobile robot. In the course
+of over 12 years of experimental work with mobile robots we observed that in differential-drive robots, the two most notorious systematic
+error sources are unequal wheel diameters and the uncertainty about the effective wheelbase. This opinion is reflected in the literature,
+where these two error sources are named most often [Borenstein and Koren, 1985; Crowley, 1989; Komoriya and Oyama, 1994; Everett,
+1995]. We will denote these errors Ed and Eb, respectively.
+1) Unequal wheel diameters. Most mobile robots use rubber tires to improve traction. These tires are difficult to manufacture to exactly
+the same diameter. Furthermore, rubber tires compress differently under asymmetric load distribution. Either one of these effects can
+cause substantial odometry errors.
+2) Uncertainty about the wheelbase. The wheelbase is defined as the distance between the contact points of the two drive wheels of
+a differential-drive robot and the floor. The wheelbase must be known in order to compute the number of differential encoder pulses
+that correspond to a certain amount of rotation of the vehicle. Uncertainty in the effective wheelbase is caused by the fact that rubber
+tires contact the floor not in one point, but rather in a contact area. The resulting uncertainty about the effective wheelbase can be on
+the order of 1% in some commercially available robots.
+An additional potentially significant error is what we call the scaling error Es. Es is the error caused by the average wheel-diameter Davrg
+differing from the nominal wheel-diameter Dnom. The effect of Es during straight line motion is quite clear: if, for example, Davrg is larger
+than Dnom, then the robot will always travel further than programmed. Similarly, when turning on the spot, the robot will turn too much if
+D a v r g is larger than Dnom. Interestingly, we could not find reference to the scaling error Es in the literature — perhaps because this error is
+so obvious.
+Page 3
+
+However, even though Es can be a significant error, Es is exceedingly easy to
+measure with just an ordinary tape measure. For this reason we will assume that E s
+has been measured and corrected in software before any of the procedures
+described in this paper is performed. Once corrected in software, E s is not a
+dominant error, because Es can be measured and corrected with an accuracy of 0.30.5% of full scale, even with an unsophisticated tape measure.
+
+Reference wall
+
+Robot
+
+93 o
+
+3. MEASUREMENT OF SYSTEMATIC ODOMETRY ERRORS
+In this section we introduce methods for isolating and measuring odometry
+errors. We discuss two test sequences (benchmark tests), which allow the
+experimenter to draw conclusions about the systematic odometric accuracy of the
+robot. A third variation, designed for non-systematic errors, is discussed at the end
+of this section.
+The first benchmark test is called the "uni-directional square path" test. This test,
+or some variations of this test, have been mentioned in the literature [Cybermotion,
+1988; Komoriya and Oyama, 1994], but we will show that this test is unsuitable for
+differential drive vehicles. An "unsuitable" test in this context is a test that might
+produce a "perfect" score, even though the robot has potentially huge odometry
+errors. To overcome the shortcomings of the uni-directional square path test, we
+introduce in Section 3.2 the "bi-directional square path test," called "UMBmark."
+
+\designer\doe94\deadre30.ds4, deadre31.wmf, 06/21/95
+
+Figure 2: The effect of the two dominant
+systematic odometry errors Eb and Ed . Note
+how both errors may cancel each other out
+when the test is performed in only one
+direction.
+Reference wall
+Robot
+
+3.1 The Uni-directional Square Path as a benchmark?
+Figure 2a shows a 4×4 m uni-directional square path. The robot starts out
+at a position x0, y0, 0, which is labeled START. The starting area should be
+located near the corner of two perpendicular walls. The walls serve as a fixed
+reference before and after the run: measuring the distance between three specific
+points on the robot and the walls allows accurate determination of the robot's
+absolute position and orientation.
+T he robot is programmed to traverse the four legs of the square path. The
+path will return the vehicle to the starting area, but, because of odometry and
+controller errors, not precisely to the starting position. Since this test aims at
+determining odometry errors and not controller errors, the vehicle does not need
+to be programmed to return to its starting position precisely — returning
+approximately to the starting area is sufficient. Upon completion of the square
+path, the experimenter again measures the absolute position of the vehicle, using
+the fixed walls as a reference. These absolute measurements are then compared
+to the position and orientation of the vehicle as computed from odometry data.
+The result is a set of return position errors caused by odometry and denoted x,
+y, and .
+
+Reference wall
+Robot
+
+x = xabs - xcalc
+y = yabs - ycalc
+ = abs - calc
+where
+
+(1)
+
+x, y, 
+— Position and orientation errors due to odometry.
+xabs, yabs, abs — Absolute position and orientation of the robot.
+xcalc, ycalc, calc — Position and orientation of the robot as computed from
+odometry.
+\desi gner\doe94\ deadre20. ds4, . wmf, 07/26/ 94
+
+The path shown in Fig. 2a comprises of four straight line segments and four
+pure rotations about the robot's center point, at the corners of the square. The
+robot's end position shown in Fig. 2a visualizes the dead-reckoning error.
+
+Figure 3: The unidirectional square path
+experiment.
+a. The nominal path.
+b. Either one of the two significant errors Eb or Ed
+can cause the same final position error.
+Page 4
+
+While analyzing the results of this experiment, the experimenter may draw two different conclusions: (1) The odometry error is the result
+of unequal wheel diameters, Ed, as shown by the slightly curved trajectory in Fig. 2b (dotted line); or, (2) the odometry error is the result
+of uncertainty about the wheelbase, E b. In the example of Fig. 2b, E b caused the robot to turn 87 o instead of the desired 90 o (dashed
+trajectory in Fig. 2b).
+As one can see in Fig. 2b, either one of these two cases could yield approximately the same position error. The fact that two different
+error-mechanisms might result in the same overall error may lead an experimenter toward a serious mistake: correcting only one of the two
+error sources in software. This mistake is so serious because it will yield apparently "excellent" results, as shown in the example in Fig. 3.
+In this example, we assume that the experimenter began "improving" performance by adjusting the wheelbase b in the control software. For
+example, it is easy to see that the experimenter needs only to increase the value of b to make the robot turn more in each nominal 90 o turn.
+In doing so, the experimenter will soon have adjusted b to the "ideal" value that will cause the robot to turn 93 o, thereby effectively
+compensating for the 3o orientation error introduced by each slightly curved (but nominally straight) leg of the square path.
+We should note that another popular test path, the "figure-8" path [Tsumura et al., 1981; Borenstein and Koren, 1985, Cox 1991] can
+be shown to have the same shortcomings as the uni-directional square path.
+
+3.2 The bi-directional square path experiment: "UMBmark"
+The detailed example of the preceding section illustrates that the uni-directional square path experiment is unsuitable for testing odometry
+performance, because it can easily conceal two mutually compensating odometry errors. To overcome this problem, we introduce the Bidi recti onal Square Path experiment, called University of Michigan Benchmark (UMBmark). UMBmark requires that the square path
+experiment is performed in both clockwise and counter-clockwise direction. Figure 4 shows that the concealed dual-error from the example
+in Fig. 3 becomes clearly visible when the square path is performed in the opposite direction. This is so because the two dominant
+systematic errors, which may compensate for each other when run in only one direction, add up to each other and increase the overall error
+when run in the opposite direction.
+The result of the bi-directional square path experiment might look similar to the one shown in Fig. 5, which shows actual results with
+an off-the-shelf LabMate robot carrying an evenly distributed load. In this experiment the robot was programmed to follow a 4×4 m square
+path, starting at (0,0). The stopping positions for five runs each in clockwise (cw) and counter-clockwise (ccw) directions are shown in
+Fig. 5. Note that Fig. 5 is an enlarged view of the target area. The results of Fig. 5 can be interpreted as follows:
+
+a. The stopping positions after cw and ccw runs are clustered in two distinct
+areas.
+b. T he distribution within the cw and ccw clusters are the result of nonsystematic errors, as mentioned in Section 2.2. However, Fig. 5 shows that
+in an uncalibrated vehicle, traveling over a reasonably smooth concrete
+floor, the contribution of systematic errors to the total odometry error is
+notably larger than the contribution of non-systematic errors.
+After conducting the UMBmark experiment, one may wish to derive a
+single numeric value that expresses the odometric accuracy (with respect to
+systematic errors) of the tested vehicle. In order to minimize the effect of nonsystematic errors, we suggest to consider the center of gravity of each cluster
+as representative for the odometry errors in cw and ccw directions.
+T he coordinates of the two centers of gravity are computed from the
+results of Eq. (1) as
+
+M
+n
+
+xc .g .,cw / ccw 1 xi ,cw / ccw
+ni 1
+
+M
+n
+
+yc .g .,cw / ccw
+
+(2)
+
+1 y
+n i 1 i ,cw / ccw
+
+where n = 5 is the number of runs in each direction.
+
+Reference wall
+
+\designer\doe94\deadre30.ds4, deadre32.wmf, 09/28/94
+
+Figure 4: The effect of the two dominant systematic
+odometry errors Eb and Ed : When the square path is
+performed in the opposite direction one may find that
+the errors add up.
+
+T he absolute offsets of the two centers of gravity from the origin are
+denoted rc.g., cw and rc.g., ccw (see Fig. 5) and are given by
+
+Page 5
+
+rc .g .,cw
+
+(xc .g .,cw )2  (yc .g .,cw )2
+and
+
+rc .g .,ccw
+
+(3)
+
+(xc .g .,ccw )2(yc .g .,ccw )2
+
+Finally, we define the larger value among rc.g., cw and rc.g., ccw as the measure of odometric accuracy for systematic errors
+Emax,syst = max(rc.g.,cw ; rc.g.,ccw)
+
+(4)
+
+The reason for not using the average of the two centers of gravity r c.g.,cw and r c.g.,ccw is that for practical applications, one needs to worry
+about the largest possible odometry error. Note that the final orientation error  is not considered explicitly in the expression for E max,syst.
+T his is so because all systematic orientation errors are implied by the final position errors, as has been shown in [Borenstein and Feng,
+1995].
+
+3.3 Measuring Non-Systematic Errors
+Some limited information about a vehicle’s susceptibility to non-systematic errors can be derived from the spread of the return position
+errors that was shown in Fig. 5, above. When running the UMBmark procedure on smooth floors (e.g., a concrete floor without noticeable
+bumps or cracks), an indication of the magnitude of the non-systematic errors can be obtained from computing the estimated standard
+deviation, ). We will specify ) in Section 4 (Experimental Results), but only with the disclaimer that all runs were performed on the same
+floor, which was fairly smooth and guaranteed free of large irregularities.
+We caution that there is only limited value to knowing ), since ) reflects only on the interaction between the vehicle and a certain floor.
+Furthermore, it can be shown that from comparing the ) from two different robots (even if they traveled on the same floor), one cannot
+necessarily conclude that the robots with the larger ) showed higher susceptibility to non-systematic errors. In real applications it is
+imperative that the largest possible disturbance be determined and used in testing. For example, the ) of the test in Fig. 5 gives no
+indication at all as to what error one should expect if one wheel of the robot inadvertently traversed a large bump or crack in the floor.
+For the above reasons it is difficult (perhaps impossible) to design a generally applicable quantitative test procedure for non-systematic
+errors. However, we would like to propose an easily reproducible test that would allow to compare the susceptibility to non-systematic
+errors between different vehicles. This test, here called the extended
+UMBmark, uses the same bi-directional square path as UMBmark,
+Y [mm]
+but, in addition, introduces artificial bumps. Artificial bumps are
+introduced by means of a common, round, electrical household-type
+cable (such as the ones used with 15 Amp. 6-outlet power strips).
+100 xc.g.,cw
+Such a cable has a diameter of about 9-10 mm. It’s rounded shape
+and plastic coating allow even smaller robots to traverse it without too
+much physical impact. In the proposed extended UMBmark test the
+50
+cable is placed 10 times under one of the robot’s wheels, during
+X [mm]
+motion. In order to provide better repeatability for this test, and to
+avoid mutually compensating errors, we suggest that these 10 bumps
+50
+100
+150
+200
+250
+be introduced as evenly as possible. The bumps should also be -50
+-50
+introduced during the first straight segment of the square path, and
+always under the wheel that faces the inside of the square. It can be
+shown [Borenstein, 1995a] that the most noticeable effect of each
+-100
+bump is a fixed orientation error in the direction of the wheel that
+encountered the bump. In the TRC LabMate, for example, the
+orientation error resulting from a bump of height h= 10 mm is roughly
+-150
+ = 0.6o [Borenstein, 1995a].
+Next, we need to discuss which measurable parameter would be
+xc.g.,ccw
+-200
+the most useful one for expressing the vehicle’s susceptibility to nonsystematic errors. Consider, for example, Path A and Path B in Fig.
+6. If the 10 bumps required by the extended UMBmark test were
+-250 DEADRE41.DS4, DEADRE41.WMF, 11/25/94
+concentrated at the beginning of the first straight leg (as shown in
+Figure 5: Typical results from running UMBmark (a square
+exaggeration in Path A), then the return position error would be very
+path run in both cw and ccw directions) with an uncalibrated
+small. Conversely, if the 10 bumps were concentrated toward the end
+vehicle.
+of the first straight leg (Path B in Fig. 6), then the return position
+Page 6
+
+error would be larger. Because of this sensitivity of the return position errors to the exact location of the bumps it is not a good idea to
+use the return position error as an indicator for a robot’s susceptibility to non-systematic errors. Instead, we suggest to use the return
+ori entati on error, . Although it is more difficult to measure small angles, we found measurement of  to be a more consistent
+quantitative indicator for comparing the performance of different robots. Thus, we measure and express the susceptibility of a vehicle to
+non-systematic errors in terms of the its average absolute orientation error defined as
+
+M
+
+M
+
+n
+
+nonsys
+
+avrg
+
+n
+
+1
+1
+nonsys
+sys
+nonsys
+sys
+avrg,cw | 
+|i,cw
+|i,ccw avrg,ccw |
+ni 1
+ni 1
+
+(5)
+
+where n = 5 is the number of experiments in cw or ccw direction, superscripts “sys” and “nonsys” indicate a result from either the regular
+UMBmark test (for systematic errors) or from the extended UMBmark test (for non-systematic errors). Note that Eq. (5) improves on the
+accuracy in identifying non-systematic errors by removing the systematic bias of the vehicle, given by
+
+sys
+avrg,cw
+sys
+avrg,ccw
+
+
+
+M
+M
+n
+
+1
+sys
+i,cw
+ni 1
+n
+1
+sys
+i,ccw
+ni 1
+
+(6)
+
+Note that the arguments inside the Sigmas in Eq. (5) are absolute values
+of the bias-free return orientation errors. This is so because we want to avoid
+the case in which two return orientation errors of opposite sign cancel each
+other out. For example, if in one run  = 1o and in the next run  = -1o,
+nonsys
+
+then we should not conclude that avrg
+
+0.
+
+Using the average absolute return error as computed in Eq. (5) would
+nonsys
+
+correctly compute avrg
+
+1 . By contrast, in Eq. (6) the actual
+
+arithmetic average is computed, because we want to identify a fixed bias.
+de adre 21.ds4, .wmf, 6/22/95
+
+3.4 Summary of the UMBmark Procedure
+
+Figure 6: The return position of the extended
+UMBmark test is sensitive to the exact location where
+1. At the beginning of the run, measure the absolute position (and, option- the 10 bumps were placed. The return orientation is
+ally, orientation) of the vehicle and initialize to that position the starting not.
+point of the vehicle's odometry program.
+2. Run the vehicle through a 4×4 m square path in cw direction, making sure to
+ stop after each 4 m straight leg;
+ make a total of four 90o-turns on the spot;
+ run the vehicle slowly to avoid slippage.
+In summary, the UMBmark procedure is defined as follows:
+
+3. Upon return to the starting area, measure the absolute position (and, optionally, orientation) of the vehicle.
+Compare the absolute position to the robot's calculated position, based on odometry and using Eqs. (1).
+Repeat steps 1-4 for four more times (i.e., a total of five runs).
+Repeat steps 1-5 in ccw direction.
+Use Eqs. (2) and (3) to express the experimental results quantitatively as the measure of odometric accuracy for systematic errors,
+Emax,syst .
+8. Optionally, use a plot similar to Fig. 5 to represent xi and yi graphically.
+9. If an estimate for the vehicle’s susceptibility to non-systematic errors is needed, then perform steps 1-6 again, this time placing a round
+10 mm diameter object (for example, an electrical household cable) under the inside wheel of the robot. The object must be placed there
+10 times, during the first leg of the square path.
+4.
+5.
+6.
+7.
+
+10. Compute the average absolute orientation error, avrg according to Eqs. (5) and (6).
+nonsys
+
+Page 7
+
+Table I: Summary of properties and UMBmark results for the six different vehicles tested
+Name of vehicle
+or configuration
+
+Tested Platform
+Platform Name
+
+1. TRCnomod/nocal
+
+TRC LabMate
+
+2. TRC3loop/nocal
+
+TRC LabMate
+
+3. TRCnomod/docal
+
+TRC LabMate
+
+4. TRC
+3loop/docal
+
+TRC LabMate
+
+5. CLAPPER
+
+6.Cybermotion
+
+Result in [mm]
+
+Modification
+none
+
+Calibration
+none
+(b=340.0, DR/DL=1)
+
+3 loops of masking tape
+on right wheel
+none
+
+none
+(b=340.0, DR/DL=1)
+
+yes
+(b=337.2,
+DR/DL=1.00121)
+
+3 loops of masking tape
+on right wheel
+
+yes
+
+University of
+Michigan
+CLAPPER
+
+4-DOF vehicle, made
+from 2 TRCs
+with compliant link
+
+yes
+
+Cybermotion
+K2A
+
+Slightly worn-out, in
+service since 1987
+
+Original, from
+manufacturer
+
+(b=337.1,
+DR/DL=1.00203)
+
+Emax,syst
+
+)
+
+310
+
+50
+
+423
+
+31
+
+26
+
+32
+
+20
+
+49
+
+22
+
+11
+
+63
+
+60
+
+4. EXPERIMENTAL RESULTS
+In this section we present experimental results from testing three different mobile robot platforms with the UMBmark procedure. The
+platforms were the TRC LabMate, the Cybermotion K2A, and a unique 4-degree-of-freedom (4-DOF) platform developed at the University
+of Michigan, called CLAPPER [Borenstein, 1994, 1995a, 1995b]. The TRC platform was modified in four different ways, resulting in four
+different odometry characteristics. We will treat these four different characteristics as though they were different vehicles. Table I below
+summarizes the properties of the six different vehicles that were tested, and the following sections discuss each vehicle and result in detail.
+4.1 TRC-nomod/nocal
+This configuration represents the basic TRC LabMate, without kinematic modifications and without any special calibration (i.e., using
+the nominal wheelbase b=340 mm and a wheel diameter ration of D R/D L = 1.000). The LabMate shown in Fig. 7 is equipped with ultrasonic
+sensors that were not used in this experiment. An onboard 486/50 MHZ PC compatible single board computer controls the LabMate. On
+our LabMate platforms we bypass TRC's original onboard control computer completely. This is done by means of a set of two HCTL
+1100 [Hewlett Packard] motion control chips that connect our 486 computer directly to the motors' PWM amplifiers. Generally we do this
+in order to achieve a very fast control loop, one that is not impeded by the relatively slow serial interface required by the original onboard
+computer. In the particular case of the UMBmark experiments described here, the bypass assures that the measurements are not affected
+by the manufacturer's odometry method and, possibly, software-embedded calibration factors. However, we emphasize that our bypass
+of the original onboard computer is in no way necessary for performing the UMBmark procedure.
+In the 4×4 m square path experiments, the robot traveled at 0.2 m/s
+during the four 4 m straight legs of the path and stopped before turning.
+During the four on-the-spot turns the robot's wheels had a maximum linear
+speed of ±0.2 m/s. Figure 10a shows the return position errors (defined in
+Section 3.1.) for the unmodified/ uncalibrated TRC LabMate. In this test
+Emax,sys = 310 mm and ) = 50 mm.
+4.2 TRC-3loop/nocal
+In this configuration we modified the kinematic characteristics of the
+original LabMate by winding three loops of masking tape around the right
+wheel. T he tape increased the diameter of the wheel and may or may not
+have changed the effective wheelbase of the vehicle. Figure 10b shows the
+return position errors for the TRC-3loop/nocal configuration. In this test
+Emax,sys = 423 mm and ) = 31 mm.
+
+Figure 7: One of the four TRC LabMates at the
+University of Michigan. The system shown here is
+equipped with 8 ultrasonic sensors that were not used
+in the UMBmark experiment.
+
+Page 8
+
+4.3 TRC-nomod/docal
+In this configuration the LabMate's two main odometry parameters (i.e., the wheel-diameter ratio, and the effective wheelbase) had been
+calibrated before the run. As we mentioned above, such calibration is often performed in a trial-and-error fashion, in an attempt to improve
+overall odometry performance. In our case here, we used the calibration technique described in our companion paper included in these
+Proceedings [Borenstein and Feng, 1995]. The correction factors used for calibration were b=337.2 mm (instead of the nominal b nom = 340
+mm) and DR/DL=1.00121. Note that a vehicle with properly implemented calibration factors acts (with respect to odometry) like a totally
+different vehicle. The results of the UMBmark test with this configuration are shown in Fig. 10c. In this test E max,sys = 26 mm and
+) = 32 mm.
+4.4 TRC-3loop/docal
+In this configuration we used the same modification as in Section 4.2 above: 3 loops of masking tape wound onto the right wheel.
+However, this time the vehicle was calibrated, using the procedure described in [Borenstein and Feng, 1995]. The correction factors used
+for calibration were b=337.1 mm (instead of the nominal 340 mm) and
+DR/DL=1.00203. The results of the UMBmark test with this configuration are shown in Fig. 10d. In this test E max,sys = 20 mm and ) = 49 mm.
+4.5 CLAPPER
+T he Compliant Linkage Autonomous Platform with Position
+Error Recovery (CLAPPER) is a 4-Degree-of-Freedom (4DOF)
+vehicle developed and built at the University of Michigan (see Fig. 8).
+The CLAPPER comprises two off-the-shelf TRC LabMates (here
+called "trucks") connected by a so-called compliant linkage. The
+vehicle is instrumented with two rotary absolute encoders that measure
+the rotation of the trucks relative to the compliant linkage. And a linear
+encoder measures the relative distance between the centerpoints of the
+two trucks. The CLAPPER has the unique ability to measure and
+correct non-systematic odometry errors during motion. The system
+also corrects the systematic odometry errors discussed in this paper
+(i.e., unequal wheel-diameters and uncertainty about the effective
+wheelbase). However, the CLAPPER also introduces some new
+systematic errors related to its unique configuration [Borenstein, 1994; Figure 8: The CLAPPER is a unique 4-DOF mobile robot
+1995a, 1995b]. These new systematic errors were reduced by extensive developed at the University of Michigan. The CLAPPER can
+trial-and-error calibration before running the UMBmark test. Figure 10e measure and correct non-systematic odometry errors during
+shows the results of the UMBmark test with the CLAPPER. In this
+motion.
+test E m a x , sy s = 22 mm and ) = 11 mm . Note that ) = 11 mm is
+substantially lower than the results for the other vehicles. This fact
+demonstrates the successful correction of non-systematic errors.
+We should note that the test path for the CLAPPER was of rectangular
+shape with 7×4 m dimensions. The vehicle also made some additional maneuvers
+in order to approach the stopping position properly (see [Borenstein, 1995] for
+details). The CLAPPER's average speed was 0.45 m/s and the vehicle did not
+come to a complete halt before turns. These deviations from the UMBmark
+specifications are of little impact for a well calibrated system, and they did
+probably not improve the CLAPPER's UMBmark performance.
+4.6 Cybermotion
+T he Cybermotion K2A platform is a very smart implementation of the
+synchro-drive (see [Everett, 1995] for a more detailed discussion on synchrodrives). We believe that the implementation of the synchro-drive on the
+Cybermotion K2A provides the inherently best odometry performance among
+all commonly used mobile robot drive kinematics. This is especially true with
+regard to non-systematic errors. For example, if the K2A encounters a bump on
+the ground, then the wheel in contact with the bump would have to turn slightly
+more than the other two wheels. However, since all the wheels are powered by
+the same motor and have the same speed, the wheel on the bump will slip (at
+least, this is more likely than to assume that both other wheels on the ground will
+slip). T hus, if slippage occurs in the wheel that is "off," then the odometry
+information from the "correct" wheels remains valid, and only a small error (if at
+all) is incurred.
+T he Cybermotion K2A platform shown in Fig. 9 is called CARMEL.
+CARMEL was the first robot to be placed into service at the University of
+
+Figure 9: CARMEL, the University of Michigan's
+oldest mobile robot, has been in service since
+1987.
+Page 9
+
+Michigan's Mobile Robotics Lab when the lab was created in 1987. Since then, CARMEL has had many collisions, was disassembled
+several times, and has survived generally rough treatment. For these reasons, one should regard CARMEL's UMBmark performance, shown
+in Fig. 10f, with caution. In our test, we found Emax,sys = 63 mm and ) = 60 mm. Although we have not studied in depth the kinematics of
+the K2A with regard to systematic errors, we believe that it is susceptible to some of the same systematic errors as differential-drive mobile
+robots. This is evident from the clearly defined separate clusters for the cw and ccw runs in Fig. 10f. CARMEL traveled at 0.2 m/s during
+the four 4 m straight legs of the path and stoped before turning.
+4.7 Measurement of Non-Systematic Errors
+
+Y [mm]
+
+Y [mm]
+X [mm]
+
+-100
+
+-50
+
+50
+
+100
+
+150
+
+200
+
+250
+
+X [mm]
+-100
+
+-50
+
+50
+
+-50
+
+-50
+
+-100
+
+-100
+
+-150
+
+a
+
+-200
+
+Platform: Labmate
+Modification:
+none
+
+-250
+
+200
+
+150
+
+-150
+
+b
+
+-200
+
+Platform: Labmate
+Modification:
+3 loops of masking
+tape on right wheel
+Calibration: none
+
+-250
+
+Calibration: none
+
+-300
+
+100
+
+-300
+
+Y [mm]
+50
+
+X [mm]
+
+X [mm]
+-50
+
+50
+
+100
+
+150
+
+200
+
+250
+
+-100
+
+-50
+
+50
+
+100
+
+150
+
+200
+
+250
+
+300
+
+-50
+
+-50
+
+c
+
+-100
+-250
+
+Platform: Labmate
+Modification:
+none
+
+-300
+
+Calibration: yes
+
+-100
+
+Legend:
+-250
+-300
+
+Y [mm]
+
+d
+Platform: Labmate
+Modification:
+3 loops of masking
+tape on right wheel
+Calibration: yes
+
+Y [mm]
+
+50
+
+50
+X [mm]
+
+X [mm]
+-100
+
+300
+
+Y [mm]
+
+50
+-100
+
+250
+
+50
+
+-50
+-50
+-100
+-250
+-300
+
+100
+
+150
+
+200
+
+e
+Platform: UM CLAPPER
+Modification:
+4DOF vehicle with active
+dead-reckoning correction
+Calibration: yes
+
+250
+
+-100
+
+-50
+
+50
+-50
+
+-100
+-250
+-300
+
+100
+
+150
+
+200
+
+250
+
+300
+
+f
+Platform: Cybermotion K2A
+Modification:
+Slightly worn out,
+in service since 1987
+Calibration: by manufacturer
+
+umb_all.ds4, wmf, 11/20/94
+
+Figure 10: A plot of the return position errors shows the results of the UMBmark test applied to six different
+vehicles/configurations. The test comprised five runs each in cw and ccw direction on a 4×4 m square path.
+
+Page 10
+
+In this section we present results of measurements of non- Table II: Experimental results of non-systematic error measurements
+systematic errors using the extended UMBmark test (explained in with the extended UMBmark test.
+Section 3.3). Table II lists the results for the three robots that
+Return Orientation Errors [o]
+were tested. As explained in Section 3.3, ten 10-mm bumps were
+introduced during the first leg of each run. The resulting return
+TRC
+CyberU of M
+nonsys
+ori entation errors i,cw/ccw (5 each in cw and ccw direction)
+LabMate
+motion
+CLAPPER
+are shown in Table II. The average return orientation error
+nonsys
+
+avrg was computed according to Eq. (5). Note that this
+computation requires the average of the systematic return
+sys
+
+sys
+
+orientation errors, avrg,cwand avrg,ccw, in order to remove
+the systematic bias from the result of the non-systematic error
+tests, as shown in Eq. (5). The results in Table II show that the
+Cybermotion with its inherently resilient synchro-drive is only half
+as sensitive to non-systematic errors than the LabMate. However,
+the CLAPPER with active error correction is one order of
+magnitude less sensitive than the Cybermotion.
+
+avrg ,cw
+
+sys
+
+0.28
+
+3.77
+
+-0.2
+
+sys
+avrg ,ccw
+
+-2.03
+
+0.97
+
+-0.14
+
+cw 1
+
+7.10
+
+7.78
+
+0.10
+
+cw 2
+
+6.40
+
+4.17
+
+0.10
+
+cw 3
+
+5.60
+
+1.72
+
+0.10
+
+cw 4
+
+6.60
+
+4.23
+
+-0.70
+
+cw 5
+
+5.90
+
+3.55
+
+0.20
+
+ccw 1
+
+-7.50
+
+-11.35
+
+-0.60
+
+ccw 2
+
+-8.80
+
+-2.48
+
+-0.40
+
+ccw 3
+
+-6.60
+
+-4.61
+
+-0.50
+
+ccw 4
+
+-8.80
+
+-6.34
+
+0.10
+
+ccw 5
+
+-8.70
+
+-2.31
+
+0.20
+
+8.35
+
+3.91
+
+0.35
+
+nonsys
+
+i,cw
+
+5. CONCLUSIONS
+T his paper proposes a benchmark test for the quantitative
+measurement of odometry errors in mobile robot. This test, called
+UMBmark, assures that different dead-reckoning errors don't
+compensate for each other, as may be the case with other
+odometry tests. The UMBmark procedure yields a single numeric
+value, Emax,sys, that represents a quantitative measure of a vehicle's
+systematic odometry errors. This makes the UMBmark test an
+effective tool for evaluating or tuning different odometry parameters of a vehicle, and for the comparison of odometry performance between different mobile robots.
+
+nonsys
+
+i,ccw
+
+nonsys
+avrg
+
+Six different vehicles (or vehicle configurations) were tested
+with the UMBmark test and the results were discussed. The
+UMBmark test clearly shows how well each vehicle performed with respect to odometry. Results of the UMBmark test are meaningful
+— whether presented as a graph of return position errors or as a single numeric quantity, Emax,sys. The standard deviation ) of each
+of the two sets (cw and ccw) of raw-data collected from the UMBmark test can be used as a rough indicator for a vehicle's
+susceptibility to non-systematic odometry errors. However, because of the nature of non-systematic errors one should not use ) as
+an estimate for non-systematic errors, except when relatively smooth floors without major irregularities can be assumed.
+An additional test, called the extended UMBmark test, was also discussed in this paper. The extended UMBmark test is designed
+to measure a vehicle’s susceptibility to non-systematic errors. This test is of limited utility, because non-systematic errors depend to
+a large degree on floor characteristics. However, the extended UMBmark test can be used to compare the performance of different
+vehicles under the same test conditions.
+
+Acknowledgments:
+T his research was funded in part by NSF grant # DDM-9114394 and in part by Department of Energy Grant DE-FG0286NE37969.
+
+6. REFERENCES
+1.
+
+Adams, M. et al., 1994, "Control and Localization of a Post Distributing Mobile Robot." 1994 International Conference on
+Intelligent Robots and Systems (Laos '94). München, Germany, September 12-16, pp. 150-156.
+
+2.
+
+Borenstein, J. and Koren, Y., 1985, "A Mobile Platform For Nursing Robots." IEEE Transactions on Industrial Electronics,
+Vol. 32, No. 2, pp. 158-165.
+
+Page 11
+
+3.
+
+Borenstein, J., 1994, "The CLAPPER: a Dual-drive Mobile Robot With Internal Correction of Dead-reckoning Errors."
+Proceedi ngs of the 1994 IEEE International Conference on Robotics and Automation, San Diego, CA, May 8-13, pp. 30853090.
+
+4.
+
+Borenstein, J., 1995a, "Internal Correction of Dead-reckoning Errors With the Compliant Linkage Vehicle." Journal of Robotic
+Systems, vol. 12, no. 4, April, pp. 257-273.
+
+5.
+
+Borenstein, J., 1995b, "The CLAPPER: A Dual-drive Mobile Robot With Internal Correction of Dead-reckoning Errors." Video
+Proceedings of the 1995 IEEE International Conference on Robotics and Automation, Nagoya, Japan, May 21-27.
+
+6.
+
+Borenstein, J. and Feng. L, 1995, "Correction of Systematic Odometry Errors in Mobile Robots." Proceedings of the 1995
+International Conference on Intelligent Robots and Systems (IROS '95), Pittsburgh, Pennsylvania, August 5-9, pp. 569-574.
+
+7.
+
+CATERPILLAR, 1991, Product Literature, SGV-1106/91, Caterpillar Self Guided Vehicle Systems, Mentor, OH.
+
+8.
+
+Cox, I. J., 1991, "Blanche — An Experiment in Guidance and Navigation of an Autonomous Robot Vehicle." IEEE Transactions
+on Robotics and Automation, vol. 7, no. 2, April, pp. 193-204.
+
+9.
+
+Crowley, J. L., 1989, "Asynchronous Control of Orientation and Displacement in a Robot Vehicle." Proceedings of the 1989
+IEEE International Conference on Robotics and Automation. Scottsdale, Arizona, May 14-19, pp. 1277-1282.
+
+10. Crowley, J.L. and Reignier, P., 1992, "Asynchronous Control of Rotation and Translation for a Robot Vehicle." Robotics and
+Autonomous Systems, Vol. 10, 1992, pp. 243-251.
+11. Cybermotion, 1987, "K2A Mobile Platform." Commercial Sales Literature, 5457 JAE Valley Road, Roanoke, VA 24014.
+12. Everett, H.R., 1995, "Sensors for Mobile Robots," A K Peters, Ltd., Wellesley, MA.
+13. Gourley, C. and Trivedi, M., 1994, "Sensor Based Obstacle Avoidance and Mapping for Fast mobile Robots." Proceedings
+of the 1994 IEEE International Robotics and Automation, San Diego, CA, May 8-13, pp. 1306-1311.
+14. Hewlett Packard, "Optoelectronics Designer's Catalog, 1991-1992."
+15. Komoriya, K. and Oyama, E., 1994, "Position Estimation of a Mobile Robot Using Optical Fiber Gyroscope (OFG)."
+International Conference on Intelligent Robots and Systems (IROS '94). München, Germany, September 12-16, pp. 143-149.
+16. Rencken, W. D., 1994, "Autonomous Sonar Navigation in Indoor, Unknown, and Unstructured Environments."1994
+Internati onal Conference on Intelligent Robots and Systems (IROS '94). München, Germany, September 12-16, pp. 431-438.
+17. Tonouchi, Y., Tsubouchi, T., and Arimoto, S., 1994, "Fusion of Dead-reckoning Positions With a Workspace Model for a
+Mobile Robot by Bayesian Inference." International Conference on Intelligent Robots and Systems (IROS '94). Munich,
+Germany, September 12-16, pp. 1347-1354.
+18. TRC (Transition Research Corporation), Shelter Rock Lane, Danbury, CT, 06810-8159.
+19. T sumura T ., Fujiwara, N., Shirakawa, T. and Hashimoto, M., 1981, "An Experimental System for Automatic Guidance of
+Roboted Vehicle Following the Route Stored in Memory." Proc. of the 11th Int. Symp. on Industrial Robots, Tokyo pp. 180193.
+
+Page 12
+
+

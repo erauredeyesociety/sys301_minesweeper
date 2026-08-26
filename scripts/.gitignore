@@ -1,0 +1,6 @@
+# Local tunnel state written by rh-tunnel.sh. Machine-specific and volatile — never committed.
+# (The discovered ResearchHub port is documented in docs/runbooks/researchhub-tunnel.md;
+#  this cache is just so `discover` does not have to run every time.)
+.rh-port
+.rh-tunnel.pid
+.rh-tunnel.local

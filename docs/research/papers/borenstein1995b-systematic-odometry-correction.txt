@@ -1,0 +1,779 @@
+Proceedings of the 1995 International Conference on Intelligent Robots and Systems (IROS '95), Pittsburgh, Pennsylvania, August 5-9, pp. 569-574.
+
+Correction of Systematic Odometry Errors in Mobile Robots
+Johann Borenstein and Liqiang Feng, The University of Michigan
+E-mail: johannb@umich.edu, Feng@engin.umich.edu
+
+Abstract
+Thi s paper describes a practical method for reducing
+odometry errors caused by kinematic imperfections of a mobile
+robot. These errors, here referred to as "systematic" errors, stay
+almost constant over prolonged periods of time. Performing an
+occasional calibration as described here will increase the
+robot's odometric accuracy and reduce operation cost because
+an accurate mobile robot requires fewer absolute positioning
+updates. Many manufacturers or end-users calibrate their
+robots — usually in a time-consuming and non-systematic trial
+and error approach. By contrast, our method is systematic,
+provides near-optimal results, and can be performed easily and
+without complicated equipment.
+Experimental results are presented that show a consistent
+improvement of at least one order of magnitude in odometric
+accuracy (with respect to systematic errors) for a mobile robot
+calibrated with the procedure described in this paper.
+
+1. Introduction
+In most mobile robot applications two basic positionestimation methods are employed together: absolute and relative
+positioning [Chenavier and Crowley, 1992; Evans, 1994].
+Relative positioning is usually based on odometry, that is,
+computing a vehicle's relative motion from the measurement of
+wheel revolutions and/or steering angles [Everett, 1995]. In most
+mobile robots, odometry is implemented by means of optical
+encoders that monitor the wheel revolutions and/or steering angle
+of the robot's wheels. The encoder data is then used to compute
+the vehicle's offset from a known starting position. Odometry is
+simple, inexpensive, and easy to accomplish in real-time. The
+disadvantage of odometry is its unbounded accumulation of
+errors.
+Because of the accumulation of errors, absolute position
+corrections are often necessary after as little as 10 m of travel,
+and they are usually based on external measurements from
+beacon systems or landmarks (see [Feng et al., 1994] for a
+detailed discussion of such systems). These systems require
+installation and perhaps maintenance, and their cost increases
+with the number of beacons or landmarks needed. Therefore,
+improving the odometric accuracy of a mobile robot can
+dramatically reduce the cost for installation of a mobile robot
+systems because fewer absolute corrections are required.
+
+2. Properties of Odometry Errors
+In a typical differential drive mobile robot incremental
+encoders are mounted onto the two drive motors to count the
+wheel revolutions. After a short sampling interval I the left and
+right wheel encoders show a pulse increment of NL and NR ,
+respectively. Now, suppose that
+cm = %Dn/nCe
+
+(1)
+
+where
+cm - Conversion factor that translates encoder pulses into
+linear wheel displacement.
+Dn - Nominal wheel diameter (in mm).
+Ce - Encoder resolution (in pulses per revolution).
+n - Gear ratio of the reduction gear between the motor and
+the drive wheel.
+One can then compute the incremental travel distance for the
+left and right wheel, ∆UL, I and ∆UR, I , according to
+∆UL/R, I = cm NL/R, I
+
+(2)
+
+From Eq. (2) it is easy to derive the equations of odometry,
+which express the horizontal displacement and rotation of the
+robot (as shown, for example, in [Feng et al., 1994]).
+
+2.1 Systematic and Non-systematic Odometry Errors
+Odometry is based on simple equations that are easily
+implement and that utilize data from inexpensive incremental
+wheel encoders. However, odometry is based on the assumption
+that wheel revolutions can be translated into linear displacement
+relative to the floor. This assumption is only of limited validity.
+One extreme example is wheel slippage: If one wheel was to slip
+on, say, an oil spill, then the associated encoder would register
+wheel revolutions even though these revolutions would not
+correspond to a linear displacement of the wheel.
+Besides this extreme case of total slippage, there are several
+other, more subtle reasons for inaccuracies in the translation of
+wheel encoder readings into linear motion. All of these error
+sources fit into one of two categories: (1) systematic errors and
+(2) non-systematic errors.
+Non-systematic errors are those that are not directly caused
+by the kinematic properties of the vehicle (for example: wheelslippage or irregularities of the floor). On rough surfaces with
+significant irregularities, non-systematic errors are likely to be the
+dominant source of odometry errors. On the other hand,
+systematic errors are particularly grave, because they accumulate
+Page 1
+
+constantly. On most smooth indoor surfaces systematic errors
+contribute much more to odometry errors than non-systematic
+errors.
+In most mobile robots systematic errors can be reduced to
+some degree by careful mechanical design of the vehicle and by
+vehicle-specific calibration. In this paper we introduce a new
+method for finding and implementing such calibration factors.
+
+2.2 Definition of Systematic Odometry Errors
+The scientific literature, as well as our own experimental
+experience, indicate that in differential-drive mobile robots there
+are two dominant systematic error sources: unequal wheel
+di ameters and the uncertainty about the effective wheelbase.
+We will denote these errors Ed and Eb, respectively. These errors
+are vehicle-specific and don't usually change during a run
+(although different load distributions can change some systematic errors quantitatively). Thus, odometry can be improved
+generally (and in our experience, significantly) by measuring the
+individual contribution of these two dominant errors sources,
+and then counter-acting their effect in software.
+It is important to note that Eb has an effect only when
+turning, while Ed affects only straight line motion, as was shown
+by Borenstein and Feng [1995b]. Ed and Eb are dimensionless
+values, expressed as fractions of the nominal value. Specifically,
+we define
+Ed = DR/DL
+
+(3)
+
+where DR and DL are the actual wheel diameters of the right and
+left wheel, respectively. The nominal ratio between the wheel
+diameters is of course 1. We also define
+Eb = bactual/bnominal
+
+where
+x, y,
+xabs, yabs
+xcalc, ycalc
+
+— Position errors due to odometry.
+— Absolute position of the robot.
+— Position of the robot as computed from odometry.
+T his experiment and the associated measurements are
+performed five times in clockwise (cw) and five times in counterclockwise (ccw) direction. The rationale for the UMBmark
+procedure is explained in detail in [Borenstein and Feng, 1995a].
+After performing the UMBmark procedure, the experimenter
+will have gathered five sets of return position errors (εx i, εy i) for
+the cw runs, and five sets (εxi, εyi ) for the ccw runs. If plotted,
+these data points might look similar to the ones shown in Fig. 1.
+Note that the return positions are clustered in two distinct areas.
+Averaging the x and y components according to
+
+M
+n
+
+xc .g .,cw / ccw 1 xi ,cw / ccw
+ni 1
+and
+
+(6)
+
+M
+n
+
+yc .g .,cw / ccw 1 yi ,cw / ccw
+ni 1
+
+yields the center of gravity (x c.g., y c.g.) of both the cw and the ccw
+cluster. Averaging reduces the random effect of non-systematic
+errors, which cause the spread of the return position errors
+within each cluster.
+
+Y [mm]
+
+(4)
+
+where b is the wheelbase of the vehicle.
+
+100 xc.g.,cw
+
+3. Correction of Systematic Odometry Errors
+In this section we describe a method for measuring and
+correcting systematic odometry errors. This method requires
+two steps: (1) a set of well defined experimental runs, called
+UMBmark, and (2) analysis of the experimental data by means
+of a set of equations, developed below.
+
+3.1 The experimental procedure "UMBmark"
+
+X [mm]
+-50
+
+50
+
+100
+
+150
+
+200
+
+250
+
+-50
+-100
+
+The University of Michigan Benchmark test for mobile
+robots (UMBmark) is a set of test runs in which the robot is
+programmed to traverse the four legs of a 4×4 m square path.
+The path will return the vehicle to the starting area, but, because
+of odometry and controller errors, not precisely to the starting
+position. The experimenter measures the absolute position (xabs,
+yabs) of the robot before and after each run, using the fixed walls
+as a reference. These absolute measurements are then compared
+to the position and orientation of the vehicle as computed from
+odometry. The result is a set of return position errors caused by
+odometry and denoted x, y.
+
+x = xabs - xcalc
+y = yabs - ycalc
+
+50
+
+-150
+-200
+-250
+
+xc.g.,ccw
+
+DEADR E41.DS4, DEADR E41.WMF , 11/25/94
+
+Figure 1: Typical results from running UMBmark (a square path run
+in both cw and ccw directions) with an uncalibrated vehicle.
+
+(5)
+
+Page 2
+
+3.2 The analytical procedure
+One interesting aspect of the error distribution pattern in the
+UMBmark experiment (see Fig. 1) is the fact that one can
+analytically derive correction factors from the experimental
+results. Before we do so, let us first define two new error
+characteristics that are meaningful only in the context of the
+UMBmark test. These characteristics, called Type A and Type
+B, represent odometry errors in orientation. Type A is defined as
+an orientation error that reduces (or increases) the total amount
+of rotation of the robot during the square path experiment in
+both cw and ccw direction. By contrast, Type B is defined as
+an orientation error that reduces (or increases) the total amount
+of rotation of the robot during the square path experiment in one
+direction, but increases (or reduces) the amount of rotation
+when going in the other direction. Examples are shown in Fig. 2.
+Figure 2a shows a case where the robot turned four times for a
+nominal amount of 90o per turn. However, because the actual
+wheelbase of the vehicle was larger than the nominal value, the
+vehicle actually turned only 85 o in each corner of the square path.
+In the example of Fig. 2 the robot will actually turn only
+θtotal = 4×85( = 340(, instead of the desired θnominal = 360(. We
+observe that in both the cw and the ccw experiment the robot
+ends up turning less than the desired amount , i.e.,
+|θtotal, cw| < |θnominal | and |θtotal, ccw | < |θnominal |. Thus, the orientation
+error is of Type A.
+In Fig. 2b the trajectory of a robot with unequal wheel
+diameters is shown. This error expresses itself in a curved path
+that adds to the overall orientation at the end of the run in ccw
+direction, but it reduces the overall rotation in the ccw direction,
+i.e.,
+|θtotal, ccw| > |θnominal| but |θtotal,cw| < |θnominal|. Thus, the orientation
+error in Fig. 2b is of Type B.
+In an actual run Type A and Type B errors will of course
+occur together. The problem is therefore how to distinguish
+between Type A and Type B errors, and how to compute
+correction factors for these errors from the measured final
+position errors of the robot in the UMBmark test.
+
+xc.g.,cw + xc.g.,ccw
+(180o)
+——————— ———
+%
+-4L
+
+α=
+
+solves for α in [degrees], and
+xc.g.,cw - xc.g.,ccw
+———————
+-4L
+
+β=
+
+(180o)
+———
+
+(8)
+
+%
+
+solves for β in [degrees].
+Using simple geometric relations, the radius of curvature R
+of the curved path of Fig. 2b can be found as
+L/2
+R = ————
+sin(β/2)
+
+(9)
+
+Once the radius R is computed, it is easy to determine the
+ratio between the two wheel diameters that caused the robot to
+travel on a curved, instead of a straight path
+DR
+——
+=
+DL
+
+Ed =
+
+R + b/2
+———
+R - b/2
+
+(10)
+
+T he ratio of Eq. (10) can be used to correct Type B errors
+as will be explained in Section 3.3.
+Similarly we can compute the wheelbase error Eb. Since the
+wheelbase b is directly proportional to the actual amount of
+rotation, we can use the proportion:
+bactual
+bnominal
+———
+= ———
+(11)
+90o
+90o - α
+so that
+bactual=
+
+90o
+———
+bnominal
+90o - α
+
+(12)
+
+α
+
+ccw
+
+ccw
+
+3.3 Analysis of Type A and Type B errors
+
+Nominal square path
+
+Figure 2a shows the contribution of Type A errors. We
+recall our assumption that Type A errors are caused mostly by
+E b . We also recall that Type A errors cause too much or too
+little turning at the corners of the square path. The (unknown)
+amount of erroneous rotation in each nominal 90 o turn is
+denoted as  and measured in [rad].
+Figure 2b shows the contribution of Type B errors. We
+recall our assumption that Type B errors are caused mostly by
+the ratio between wheel diameters, E d. We also recall that Type
+B errors cause a slightly curved path instead of a straight one
+during the four straight legs of the square path. Because of the
+curved motion, the robot will have gained an incremental
+orientation error, denoted β, at the end of each straight leg.
+We omit here the derivation of expressions for α and β,
+which can be found from simple geometric relations in Fig. 2
+(see [Borenstein and Feng, 1995b] for a detailed derivation).
+Here we just present the results:
+
+(7)
+
+Nominal square path
+
+Robot
+
+β/2
+
+β
+
+β/2
+
+β
+
+Robot
+
+Nominal square path
+
+Nominal square path
+
+cw
+
+cw
+α
+
+a
+
+y
+x
+
+\d esi g ner\do e9 4\de adre 53.ds 4, .w mf, 06 /15/9 5
+
+b
+
+Figure 2: Type A and Type B errors in ccw and cw direction. (a) Type A
+errors are caused only by the wheelbase error E b. (b) Type B errors are
+caused only by unequal wheel diameters (E d).
+
+Page 3
+
+where, per definition of Eq. (4)
+
+cR =
+
+o
+
+90
+———
+90o - α
+
+Eb =
+
+Once we know the quantitative values of Ed and Eb, it is easy
+to compensate for these errors in software. The correction for
+the wheelbase error Eb is trivial: the wheelbase b is redefined in
+software according to Eq. (12). The correction for the unequal
+wheel diameters, Ed, is slightly more complex: After performing
+the UMBmark procedure, we know the actual wheel diameter
+ratio Ed = DR /DL from Eq. (10). However, when applying a
+compensation factor, we must make sure not to change the
+average wheel diameter Da, since one would then have to
+recalibrate that parameter. D a will remain unchanged if we
+consider it as a constraint
+Da = (DR + DL)/2
+
+(14)
+
+Solving Eqs. (33) and (39) as a set of two linear equations
+with two unknowns, DR and DL, yields
+DL =
+
+2
+——— Da
+E
+d+ 1
+
+(15)
+
+DR =
+
+2
+———— D
+(1/E d) + 1 a
+
+(16)
+
+and
+
+We can now define the two correction factors
+2
+cL = ———
+Ed + 1
+
+(17a)
+
+Y [mm]
+100
+50
+X [mm]
+50
+
+100
+
+150
+
+200
+
+250
+
+which can be implemented in the odometry algorithm by
+rewriting Eq. (2) as
+∆UL/R, I = cL/R cm NL/R, I
+
+4. Experimental Results
+In this section we describe experiments that validate the
+above described method for correcting Type A and Type B
+errors by changing the effective wheelbase b and the effective
+wheel-diameter ratio DR/DL. The experiments were performed
+with a TRC LabMate robot equipped with an onboard 486/50
+MHz PC compatible computer.
+To avoid slippage, the robot was traveling slowly, at a speed
+of 0.2 m/s during the straight legs of the square path. At the end
+of each leg the robot came to a complete stop and rotated onthe-spot through 90o. This means that the robot made a fourth
+90o turn after returning to its starting area.
+The difference between the absolute position and the perceived
+position is called the return position error ;  is defined by
+Eqs. (5), above.
+The uncalibrated robot (i.e., DR/DL = 1.0000 and b = bnominal
+= 340.00 mm) made five cw trips and five ccw trips. As
+expected, the return position errors were clearly grouped in a cw
+cluster and a ccw cluster. For each of the two clusters the x and
+y components of the respective centers of gravity were computed according to Eq. (5). The resulting xc.g. and yc.g. were used
+to compute Ed according to Eqs. (8) - (10). Then, correction
+factors cL and cR were computed according to Eqs. (17) and (18)
+and introduced into the dead-reckoning program. Similarly the
+corrected wheelbase bnew was computed according to Eqs. (11) (13) and revised in the robot's odometry program.
+At this time the calibration procedure was complete. In order
+to verify the results we ran the UMBmark experiment for a
+second time, this time with the correction factors in place. Figure
+3 shows the results of both the uncalibrated runs and the runs
+with the calibrated vehicle.
+
+rc .g .,cw
+
+(xc .g .,cw )2  (yc .g .,cw )2
+and
+
+Before correction, cw
+Before correction, ccw
+After correction, cw
+After correction, ccw
+
+-100
+-150
+-200
+
+(18)
+
+We have thus corrected both dominant systematic errors.
+
+-50
+
+-250
+
+(17b)
+
+(13)
+
+3.3 Compensation for Systematic Odometry Errors
+
+-50
+
+2
+————
+(1/Ed) + 1
+
+rc .g .,ccw
+
+(19)
+
+(xc .g .,ccw )2(yc .g .,ccw )2
+
+T o compare the accuracy of the robot before and after
+calibration, we examine the absolute offsets of the two centers
+of gravity from the origin, rc.g., cw and rc.g., ccw (see Fig. 1). We
+define the larger value among r c.g., cw and r c.g., cw as the measure of
+dead-reckoning accuracy for systematic errors
+
+DEADRE8 1.DS4, DEADRE81.WMF, 1 0/08 /9 4
+
+Figure 3: Position Errors after completion of the UMBmark
+Experiment (4 x 4 m bi-directional path).
+Before calibration:
+b=340.00 mm, DR/DL = 1.00000
+After calibration:
+b=336.17 mm, DR/DL = 1.00084
+
+Emax,syst = max(rc.g.,cw ; rc.g.,ccw)
+
+(20)
+
+Page 4
+
+In the example of Fig. 3, Emax,syst was 317 mm before
+compensation and 21 mm after compensation. This represents
+a 15-fold improvement.
+While developing this method, we performed a total of eight
+carefully monitored experiments. The results are listed in Table
+I.
+Table I: Dead-reckoning Accuracy for Systematic
+Errors, Emax,syst, before and after compensation.
+Experiment #
+
+Emax,syst before
+compensation
+[mm]
+
+)
+†
+)
+*)
+
+‡)
+
+Improvement
+
+1+
+
+317
+
+21
+
+15-fold
+
+2
+
+349
+
+32
+
+11-fold
+
+3†
+
+310
+
+31
+
+10-fold
+
+†
+
+310
+
+14
+
+22-fold
+
+5†
+
+310
+
+26
+
+12-fold
+
+6
+
+403
+
+35
+
+11-fold
+
+7*
+
+423
+
+after 1st comp: 66
+after 2nd comp: 20
+
+21-fold
+
+8‡
+
+232
+
+12
+
+19-fold
+
+4
+
++
+
+Emax,syst after
+compensation
+[mm]
+
+Details shown in Fig. 7
+These 3 experiments used the same set of uncalibrated results and
+identical correction factors.
+In this experiment the diameter of the right wheel was slightly increased
+by winding three loops of masking tape around the wheel perimeter.
+Also: two compensation runs were performed. See explanation in main
+text.
+In this experiment the diameter of the left wheel was slightly increased by
+winding five loops of masking tape around the left wheel perimeter.
+
+T he seemingly large fluctuations in improvement, especially
+among experiments #3, #4, and #5 (which all used the same
+correction factors) are due to the fact that the centers of gravity
+(c.g.s) for the runs after calibration are all very close to the origin
+(as seen in Fig. 3). Thus, the arbitrary spread of return position
+errors caused by non-systematic error sources has greater
+impact on the c.g.s. For example, the c.g. of Experiment 4 is
+only 17 mm (5/8") closer to the origin than the c.g. of Experiment #3 — a difference that is easily attributable to the arbitrary
+spread of non-systematic errors.
+In principle, it is possible to achieve even better results by
+performing the compensation procedure for a second time, "on
+top of" the first compensation. This is so because a compensated robot can be treated as though it was a "new" uncompensated robot, but with different initial parameters. Using the
+standard deviation ()) of the 5 runs in each direction it is easy
+to decide when a second compensation run will be beneficial.
+The ) of the return position errors in the UMBmark experiment
+was about 25 mm. The Standard Error of the Mean (SEM),
+defined as SEM )/ n was 11.2 mm (n is the number of runs).
+As a rule-of-thumb sometimes used in small sample statistics
+[Walpole and Myers, 1985], one can say that if E max,syst <
+3×SEM it is unlikely (here: a likelihood of 5%) that the result can
+be improved by a second compensation. We put this rule-of-
+
+thumb to the test in Experiment #7, where E max,syst = 66 mm was
+notably worse (the improvement over the uncompensated run
+was only 6.4-fold) than in the other experiments. Applying the
+above rule-of thumb, it is evident that 66 mm > 3×SEM = 33.6
+mm, so that a second compensation run was indicated. After the
+second compensation, the vehicle's error was Emax,syst = 20 mm,
+i.e., a 21-fold reduction relative to the uncompensated systematic
+error.
+
+5. Conclusions
+T his paper presents a method for the correction of systematic odometry errors in differential-drive mobile robots. The
+paper investigates specifically the errors due to the wheel
+diameter ratio, Ed, and the uncertainty about the wheelbase, Eb.
+The focus on Ed and Eb is based on our error model, which
+assumes that systematic orientation errors are either of Type A
+or Type B. Type A errors are directly affected by E b and Type
+B errors are directly affected by E d. Other systematic errors may
+also affect the overall Type A and Type B error. However, there
+is no need to worry about this, because, in principle, both Type
+A and Type B errors can be eliminated completely by changing
+the effective wheelbase and wheel-diameter ration in software.
+T he main contribution of this paper is the definition of a
+systematic procedure for correcting Type A and Type B
+odometry errors. The effectiveness of this procedure and the
+validity of its underlying model are supported by the experimental results. The results show that by changing only the effective
+wheelbase and the effective wheel-diameter ratio the vehicle's
+odometric accuracy (with respect to systematic errors only)
+increased by at least one order of magnitude. This improvement
+was consistent when tested repeatedly for the same vehicle and
+when tested on the same vehicle but with artificially altered
+wheelbases and wheel-diameter ratios.
+One should note that odometric calibration factors are used
+by many researchers. However, to date such factors were usually
+found by some form of trial-and-error and some intuition on the
+part of the experimenter. This type of approach is very time
+consuming and yields inferior results. By contrast, the procedure
+described here offers a systematic approach that yields nearoptimal results. The strength of the UMBmark calibration
+procedure lies in the fact that even minute mechanical inaccuracies, such as wheel diameters that differ by as little as 0.1% can
+be isolated and identified..
+Acknowledgments: This research was funded by NSF grant
+# DDM-9114394 and by Department of Energy Grant DEFG02-86NE37969. The authors thank Mr. Brian Costanza
+and Mr. Brad Holt for conducting many of the experiments.
+
+6. References
+1. Borenstein, J. and Feng. L, 1995a, "UMBmark: A Benchmark Test for Measuring Odometry Errors in Mobile
+Robots." To be presented at the SPIE Conference on
+Mobile Robots, Philadelphia, Oct. 22-26.
+2. Borenstein J. and Feng. L, 1995b, "Measurement and
+Correction of Systematic Odometry Errors in Mobile
+
+Page 5
+
+Robots." Accepted for publication in the IEEE Journal of
+Robotics and Automation, May 1995.
+3. Chenavier, F. and Crowley, J., 1992, "Position Estimation
+for a Mobile Robot Using Vision and Odometry." Proceedi ngs of IEEE International Conference on Robotics and
+Automation, Nice, France, May 12-14, pp. 2588-2593.
+4. Evans, J. M., 1994, "HelpMate: An Autonomous Mobile
+Robot Courier for Hospitals." 1994 International Conference on Intelligent Robots and Systems. Munich, Germany,
+September 12-16, pp. 1695-1700.
+5. Everett, H.R., 1995, "Sensors for Mobile Robots," A K
+Peters, Ltd., Wellesley, MA, publ. date: Fall 1995.
+
+6. Feng, L., Borenstein, J., and Everett, B., 1994, "Where am
+I? Sensors and Methods for Autonomous Mobile Robot
+Localization." Technical Report, The University of Michigan,
+available
+via
+anonymous
+FTP
+from
+ftp.eecs.umich.edu/f/people/johannb.
+7. Walpole, R. E. and Myers, R. H., 1985, "Probability and
+Statistics for Engineers and Scientists," 3rd edition.
+Macmillan Publishing Company, New York, New York
+10022.
+
+Page 6
+
+

@@ -1,0 +1,2813 @@
+A Survey on Coverage Path Planning for Robotics
+Enric Galceran and Marc Carreras
+University of Girona
+Underwater Robotics Research Center (CIRS)
+Parc Cientı́fic i Tecnològic de la Universitat de Girona
+Pic de Peguera, 13
+17003 Girona (Catalonia, Spain)
+enricgalceran@eia.udg.edu, marc.carreras@udg.edu
+
+September 24, 2013
+
+Abstract
+
+cleaners (Farsi et al., 1994), just to name a few.
+In one of the earliest works on CPP found in the literature, Cao et al. (1988) defined the requirements a robot
+must meet to perform a coverage operation. Albeit the
+target application in the aforementioned paper is a mobile robot moving in a flat 2-dimensional environment,
+the same criteria are applicable to other coverage scenarios. The requirements are as follows:
+
+The coverage path planning (CPP) problem is the task
+of determining a path that passes over all points of
+an area or volume of interest while avoiding obstacles.
+This task is integral to many robotic applications, such
+as vacuum cleaning robots, painter robots, autonomous
+underwater vehicles (AUVs), demining robots, lawn
+mowers, automated harvesters and window cleaners,
+just to name a few. A considerable body of research
+has addressed the CPP problem. However, no updated
+surveys on CPP reflecting the recent advances in the
+field have been presented in the past ten years. In
+this paper, we present a review of the most successful CPP methods, focusing on the achievements made
+in the past decade. Furthermore, we discuss reported
+field applications of the CPP methods described. This
+work aims to become a starting point for researchers
+who are initiating their endeavors in CPP. Likewise,
+we aim to present a comprehensive review of the recent
+breakthroughs in the field, providing links to the most
+interesting and successful works.
+
+1
+
+1. robot must move through all the points in the target area covering it completely.
+2. robot must fill the region without overlapping
+paths.
+3. continuous and sequential operation without any
+repetition of paths is required.
+4. robot must avoid all obstacles.
+5. simple motion trajectories (e.g., straight lines or
+circles) should be used (for simplicity in control).
+6. an “optimal” path is desired under available conditions.
+
+Introduction
+
+However, it is not always possible to satisfy all these
+criteria in complex environments. Therefore, sometimes a priority consideration is required.
+
+The coverage path planning (CPP) problem is the task
+of determining a path that passes over all points of
+an area or volume of interest while avoiding obstacles. This task is integral to many robotic applications,
+such as vacuum cleaning robots (Yasutomi et al., 1988),
+painter robots (Atkar et al., 2005b), autonomous underwater vehicles (AUVs) (Hert et al., 1996; Englot
+and Hover, 2012), demining robots (Gage, 1994; Najjaran and Kircanski, 2000; Acar et al., 2003), lawn
+mowers (Cao et al., 1988; Bosse et al., 2007), automated harvesters (Ollis and Stentz, 1997) and window
+
+The CPP problem is related to the covering salesman
+problem, a variant of the well-known traveling salesman problem where, instead of visiting each city, an
+agent must visit a neighborhood of each city (Arkin and
+Hassin, 1994). However, in CPP, the agent must pass
+over all points in the target area in contrast to visiting
+all the neighborhoods. Since the traveling salesman
+problem is NP-hard, the computational time required
+to solve the problem increases drastically when the dimension of the problem increases. Actually, finding a
+1
+
+path to cut all the grass of a given region covered by
+grass, which is known as the “lawnmower problem”, is
+proven to be NP-hard (Arkin et al., 2000). Notice that
+the lawnmower problem does not account for obstacles.
+In fact, even the basic path planning problem, known
+as the “piano mover’s problem”, of finding a collisionfree path from a start configuration to a goal configuration is shown to be PSPACE-hard, which implies
+NP-hard (LaValle, 2006; Reif and Sun, 2001). Two
+additional, similar problems related to CPP are the
+art gallery problem and the watchman route problem.
+The art gallery problem calls for the minimum number of guards needed to station in a polygonal gallery
+so that each point in the gallery is visible to at least
+one guard (Shermer, 1992). The watchman route problem calls for the shortest route from a given point back
+to itself so that each point in a given space is visible
+from at least one point along the route (Li and Klette,
+2008). Simple cases of the watchman route problem
+such as covering the interior of simple polygons can be
+achieved in polynomial time (Chin and Ntafos, 1991).
+But, in general, both the art gallery problem and the
+watchman route problem are NP-hard (Shermer, 1992;
+Li and Klette, 2008). Some coverage algorithms we
+discuss in Subsec. 8.6 approach CPP as the art gallery
+problem and the watchman route problem.
+
+erations which deal intrinsically with a 3-dimensional
+space, it is difficult to think that a randomized “algorithm” could be usable, as the cost of operating the
+vehicle (energy and time) would be unaffordable.
+A considerable body of research addressing the CPP
+problem can be found in the literature. Choset (2001)
+presented a survey on the field. However, no updated
+surveys on CPP reflecting its recent advances have
+been presented in the past ten years. In this paper,
+we present a review of the most successful CPP methods, focusing in the achievements made in the past
+decade. Furthermore, we discuss reported field applications of the CPP methods described. This work aims
+to become a starting point for researchers who are initiating their endeavors in CPP. Likewise, we aim to
+present a good review of the recent breakthroughs in
+the field, providing links to the most interesting and
+successful works.
+Since most CPP algorithms decompose the target
+space in sub-regions (called cells) to achieve coverage,
+Choset (2001) classified coverage algorithms according
+to the type of decomposition used. Hence, his taxonomy comprises heuristic and randomized approaches
+(which typically do not use a representation of the environment and therefore neither use a decomposition),
+and approximate, semi-approximate and exact cellular decompositions. However, we argue that qualitatively different approaches can be distinguished among
+these categories. Thus, the outline of this article does
+not bear a one-to-one correspondence with Choset’s
+taxonomy, but rather reflects the common underlying
+ideas used in the discussed approaches. Nonetheless,
+Choset’s taxonomy is commonly used throughout the
+literature, and hence we also provide the corresponding
+Choset’s classification for the methods reviewed.
+
+Coverage algorithms can be classified as heuristic or
+complete depending on whether or not they provably
+guarantee complete coverage of the free space. Independently, they can be classified as either off-line
+or on-line. This classification was originally proposed
+by Choset (2001). Off-line algorithms rely only on stationary information, and the environment is assumed
+to be known in advance. However, assuming full prior
+knowledge of the environment might be unrealistic in
+many scenarios. On the other hand, on-line algorithms
+do not assume full prior knowledge of the environment
+to be covered and utilize real-time sensor measurements to sweep the target space. Thus, these later
+algorithms are also called sensor-based coverage algorithms.
+
+Resulting from these considerations, the remainder of
+this article is organized as follows. Sec. 2 reviews classical cellular decomposition algorithms which set the
+fundamentals of the cellular decomposition approach.
+Sec. 3 discusses the cellular decomposition based on
+critical points of Morse functions, which can deal with a
+more general class of obstacles. Sec. 4 presents a coverage approach based on detection of natural landmarks.
+A coverage algorithm for robots equipped with only
+contact sensors operating in rectilinear environments
+is discussed in Sec. 5. Methods based on a grid representation of the space are reviewed in Sec. 6. Work
+addressing the coverage problem in environments that
+can be represented as a graph, such as a street or road
+network, is briefly reviewed in Sec. 7. In Sec. 8 several methods for covering 3-dimensional environments
+are presented. Sec. 9 reviews some methods for achiev-
+
+In certain scenarios, a valid approach to solve the
+problem is to randomize. This is an approach that
+some floor-cleaning robots rely on: if the floor is swept
+randomly for long enough, it should become cleaned.
+Examples of commercial floor-cleaning robots based
+fully or partially on this strategy are the RC3000
+by Karcher, Trilobite by Electrolux and Roomba by
+iRobot (Palacin et al., 2005). There are advantages to
+this approach, the main one being that no complex
+sensors for localization nor expensive computational
+resources are needed. However, for covering vast areas, and especially for underwater or aerial robotics op2
+
+ing optimal coverage, and Sec. 10 focuses on methods
+that intend to reduce the accumulation of localization
+error while planning a coverage path. In Sec. 11 several multi-robot CPP methods are reviewed. Finally,
+concluding remarks including a summary table and directions for further research are given in Sec. 12.
+
+2
+
+sition generates a coverage path in two steps. First, it
+decomposes the free space into cells and stores the decomposition as an adjacency graph. Next, it computes
+an exhaustive walk through the adjacency graph (i.e.,
+a sequence that visits each node in the graph exactly
+once). It is worth noting that the exhaustive walk obtained is a sequence of nodes (i.e., a sequence of cells),
+and not an actual coverage path. Therefore, an explicit path for covering each cell must be derived using
+simple motions as discussed above.
+
+Classical Exact Cellular Decomposition Methods
+
+Next, two popular off-line cellular decomposition approaches (Subsec. 2.1 and Subsec. 2.2) that laid down
+Exact cellular decomposition methods break the free the foundations for more advanced methods are disspace (i.e., the space free of obstacles) down into sim- cussed.
+ple, non-overlapping regions called cells. The union
+of all the cells exactly fills the free space. These regions, which contain no obstacles, are “easy” to cover 2.1 Trapezoidal Decomposition
+and can be swept by the robot using simple motions.
+For instance, each cell could be covered using a zigzag,
+One of the simplest exact cellular decomposition tech“mowing the lawn” pattern like the one shown in Fig. 1.
+niques which can yield a complete coverage path is
+Generation of these zigzag motions, also called seedthe trapezoidal decomposition (Latombe, 1991; Choset
+spreader motions, is well documented in the literaet al., 2005), which handles only planar, polygonal
+ture (Lumelsky et al., 1990; Choset and Pignon, 1997;
+spaces. Given that it uses no sensor information, this
+Acar et al., 2002).
+method can be classified as off-line. In the trapezoidal
+decomposition, each cell is a trapezoid, as shown in
+Fig. 2. Thereby, simple back-and-forth motions can be
+used to cover each cell. Complete coverage is guaranteed by finding an exhaustive walk through the adjacency graph associated to the decomposition (overlaid
+on the decomposition in Fig. 2). Finally, a specific
+zigzag path to cover each cell is generated. The exhaustive walk determines the order in which the cells
+are visited to achieve complete coverage. Finally, specific paths to cover each cell are generated, typically
+using back-and-forth motions in a “mowing the lawn”
+manner.
+Figure 1: Typical “mowing the lawn” path. The
+shaded area indicates the area already covered (darker)
+c2 c4 c6
+and the area that will be covered (lighter) when the
+c9 c11
+robot finishes following the path.
+Two cells are said to be adjacent if they share a comc1
+c8
+12
+mon boundary. An adjacency graph can be used to
+represent the cellular decomposition, where a node represents a cell and an edge represents an adjacency relationship between two cells (see Fig. 2). Exact cell
+c10
+c3 c5 c7
+decompositions can be generated by sweeping a line
+through the space (e.g. from left to right). The cell
+boundaries are then formed when some event is encountered by the sweep line. For instance, a change Figure 2: Trapezoidal decomposition of an example
+on the number of times the sweep line intersects with workspace with its corresponding adjacency graph.
+obstacle boundaries can be used as an event.
+As an application example, Oksanen and Visala (2009)
+Typically, a planner based on exact cellular decompo- proposed an off-line algorithm based on the trapezoidal
+
+c
+
+3
+
+decomposition for coverage path planning in the case
+of agricultural fields. Their algorithm applies a trapezoidal decomposition of the field followed by a cell
+merging procedure. The resulting cells are similar to
+those produced by the boustrophedon decomposition,
+introduced in the next section (2.2). To optimize the
+path, they use a path-based cost function to assess the
+largest cell arising in six different trapezoidal decompositions obtained by using a sweep line inclined at
+(a)
+30◦ intervals. Then, the three most favorable directions are selected and the process is repeated, with
+additional decompositions at 15◦ either side of the selected headings. The process continues iteratively until the improvement per step falls below a threshold,
+which for their application was achieved after 5 steps
+(about 1◦ accuracy), requiring 36 separate decompositions. Then, the largest cell in the minimum-cost decomposition is removed from the target area, and the
+process is repeated for the remainder of the field until
+(b)
+all the area is covered by the path. This scheme produces effectively optimal coverage paths for a convex Figure 3: A decomposition with less cells allows for
+field and high-quality paths for a field whose bound- shorter coverage paths. Note how an extra strip is
+aries consist of long, straight segments as well.
+needed in the trapezoidal decomposition in 3(a) with
+respect to the boustrophedon decomposition in 3(b).
+
+2.2
+
+Boustrophedon Decomposition
+
+3
+
+A drawback of the trapezoidal decomposition is that it
+generates many cells that, intuitively, can be merged
+together to form bigger cells. This is clearly inconvenient, as the more cells are present, the longer the
+final coverage path becomes, as shown in Fig. 3. This
+happens because the trapezoidal decomposition creates
+only convex cells. However, non-convex cells can also
+be completely covered by simple motions. To overcome
+this limitation, Choset & Pignon proposed the boustrophedon cellular decomposition (Choset and Pignon,
+1997; Choset et al., 2000a). The word “boustrophedon” comes from ancient Greek, and literally means
+“the way of the ox”, signifying the pattern in which an
+ox drags a plow back and forth. The boustrophedon
+decomposition is similar to the trapezoidal decomposition introduced above, but it only considers vertices in
+the environment where a vertical segment can be extended both above and below the vertex. The vertices
+where this occurs are called critical points.
+
+Morse-based Cellular Decomposition
+
+Later, Acar et al. (2002) generalized the boustrophedon
+decomposition by proposing a novel cellular decomposition approach based on critical points of Morse functions (Milnor, 1963). In fact, they show that the boustrophedon decomposition is a particular case of Morse
+decomposition. With respect to the original boustrophedon decomposition, the Morse-based decomposition has the advantage of handling also non-polygonal
+obstacles. By choosing different Morse functions, different cell shapes are obtained, e.g. circular or spiked
+cells. Theoretically, Morse-decompositions can be applied to any n-dimensional space. Moreover, they presented a method to perform coverage of planar spaces
+by detecting the critical points using sensory range
+information, and a motion-template-based algorithm
+that ensures to encounter all the critical points in the
+target area. Therefore, this method allows complete
+coverage on-line (Acar and Choset, 2001, 2002a).
+
+By adhering to this strategy, the boustrophedon decomposition effectively reduces the number of cells in
+trapezoidal decomposition. Hence, shorter coverage
+paths are obtained. Notice that, as the trapezoidal
+decomposition, this method assumes polygonal obstacles and the terrain to be known a priori, and thus
+classifies as an off-line method.
+
+The Morse decomposition is based on a roadmap
+method for start-to-goal path planning proposed by
+Canny (Canny, 1988, 1993). Critical points of a Morse
+function restricted to the obstacle boundaries are used
+to determine the cell decomposition. Recall that, given
+4
+
+a real-valued function h : Rm → R, its differential at
+∂h
+∂h
+p ∈ Rm is dh(p) = [ ∂x
+(p) . . . ∂x
+(p)]. A critical point
+1
+m
+m
+is a value p ∈ R where either the function is not
+differentiable or all its partial derivatives are 0, i.e.,
+∂h
+∂h
+∂2h
+∂x1 (p) = . . . = ∂xm (p) = 0, and its Hessian ( ∂xi ∂xj (p))
+is non-singular. For instance, in the case of a single
+variable function, a critical point corresponds either to
+a local maximum, a local minimum or an inflection.
+A Morse function is one whose critical points are nondegenerate (Milnor, 1963). Practically speaking, this
+means that critical points are isolated from one another.
+
+Sweep direction
+
+Surface
+normal
+
+Critical
+point
+
+Sweep line
+
+Figure 4: Cell boundaries in Morse decomposition are
+placed at critical points, where the surface normal of
+the obstacle is perpendicular to the sweep slice, and
+parallel to the sweep direction.
+
+To determine the cell decomposition, a slice is swept
+through the target space. Formally, the slice is a codimension one manifold defined in terms of the preimage
+of a real-valued Morse function, h : W → R, where
+W is the robot’s workspace, i.e., the space to be covered. For instance, in the plane (W = R2 ), choosing
+h(x, y) = x will make the slice be effectively a vertical
+line. Changes on the connectivity of the slice occur at
+critical points of the Morse function restricted to the
+obstacle boundaries. To put it more simply, at a critical point the sweep line encounters an obstacle whose
+surface normal is perpendicular to the sweep line, as
+shown in Fig. 4. Morse theory guarantees that, between critical points, the connectivity of the slice remains unchanged. Thus, as no obstacles lay between
+critical points, the space between them can be covered
+easily by simple motions, and critical points can be
+used to determine the cell boundaries.
+
+slice pieces are merged into larger pieces (the connectivity of the slice in the free space decreases). The
+points where these connectivity changes occur are the
+critical points. (Recall that critical points are always
+located on the obstacle boundaries.) Thus, at critical
+points, the slice is used to determine the cells in the
+decomposition. Notice that within a cell, the slice connectivity remains constant. Fig. 5(a) shows how, at
+the critical point, the connectivity of the slice changes
+from one to two, and hence the old cell is closed and
+two new cells are created. In Fig. 5(b), at the critical
+point, the connectivity of the slice changes from two to
+one, and hence two old cells are closed and a new cell
+is created.
+
+Choosing different Morse functions produces different
+slice shapes and hence different cell decomposition patterns. For simplicity, we will describe the Morse-based
+boustrophedon decomposition (Choset, 2000), which
+happens in the plane. Later, we will give examples
+of different decomposition patterns obtained using different Morse functions.
+
+Once the cell decomposition is constructed, an exhaustive walk through its associated adjacency graph is determined by the planner. Then, it generates the explicit coverage path in each cell. The coverage pattern
+within each cell has three parts: motion along a slice,
+motion orthogonal to the slice, and motion along the
+cell boundary, as shown in Fig. 6. First, the robot laps
+along the current slice, Wλ . Then the robot steps outward of the slice by going orthogonally to it by an interlap distance, typically by a distance of one robot sensor
+range; λ is also increased by this distance to form a new
+slice. If the robot encounters an obstacle (i.e., the cell
+boundary) while moving along the slice, the planner
+directs the robot to follow the obstacle boundary until
+it has moved an inter-lap distance and then a new lap
+along a new slice is started. The process repeats until
+the cell is completely covered.
+
+In the boustrophedon decomposition, a vertical slice,
+defined in terms of the Morse function h(x, y) = x, is
+swept from left to right in the workspace, i.e., along the
+abscissae axis. Thus, the vertical slice is determined by
+the pre-image of this Morse function, Wλ = h−1 (λ).
+The slice is parametrized by λ ∈ R, which fixes its
+location in the target space. Increasing the value of
+the slice parameter, λ, sweeps the slice from left to
+right through the workspace.
+
+As the slice sweeps the space it intersects (or stops intersecting) obstacles, which divide it into smaller pieces
+as the slice first encounters an obstacle, that is, the con- Fig. 7 shows the Morse-based boustrophedon cell denectivity of the slice in the free space increases. Also, composition of an example workspace with its associimmediately after the slice leaves an obstacle, smaller ated adjacency graph overlaid.
+5
+
+c5
+
+c2
+
+c8
+
+Sweep direction
+
+c1
+New cell 1
+
+Surface
+normal
+
+Critical
+point
+Sweeping slice
+
+Old cell
+
+c4
+
+c3
+
+c7
+
+c9
+
+c6
+
+Figure 7: Morse decomposition of an example
+workspace with its associated adjacency graph.
+
+New cell 2
+
+(a)
+
+A key point of Morse decompositions is that, by choosing different Morse functions to define the slice that
+is swept through the space, different decomposition
+and coverage path patterns can be generated, like the
+spiral pattern (Acar et al., 2002). Figure 8 shows
+a spiral pattern
+obtained using the morse function
+p
+h(x, y) = x2 + y 2 . Allowing different coverage patterns is useful for vehicles with kinematic constraints.
+For instance, a spiral path can be easily followed by
+an underactuated car-like vehicle unable to make hard
+turns (Bosse et al., 2007).
+
+Sweeping slice
+
+Sweep direction
+
+Old cell 1
+
+Critical
+point
+
+Surface
+normal
+
+Old cell 2
+
+(b)
+
+Motion along
+the slice
+Motion orthogonal
+to the slice
+
+Figure 8: Spiral Morse decomposition
+obtained using
+p
+the Morse function h(x, y) = x2 + y 2 .
+
+λ+2δ
+
+λ+δ
+
+λ
+
+Figure 5: Cell determination with the Morse-based
+boustrophedon cell decomposition method.
+
+A limitation of the Morse decomposition method is
+that it cannot handle rectilinear environments. This
+is because it is not possible to determine critical points
+in those environments which correspond to a change in
+the topology of the space (the critical points are said
+to be degenerate in this case (Milnor, 1963)).
+
+Motion along
+the boundary
+
+δ
+
+(Galceran and Carreras, 2012) presented a CPP
+method based on Morse decomposition to minimize reFigure 6: Boustrophedon path construction process, dundant coverage for AUVs and autonomous surface
+where δ is the inter-lap spacing and λ is the slice pa- vehicles (ASVs) imaging the ocean floor. To this aim,
+rameter
+this method determines a sweep direction on each cell
+of the decomposition and adjusts the inter-lap spacing
+of the boustrophedon path on a lap by lap basis according to the ocean depth. The efficacy of the method is
+6
+
+demonstrated in simulation using a real-world dataset.
+
+3.1
+
+On-line Morse-based Boustrophedon Decomposition
+Sweep direction
+
+To face the sensor-based coverage problem, Acar and
+Choset (2002a, 2000) gave a method to detect the critical points of a Morse-based boustrophedon decompoc0
+sition on-line using range sensor information. Furtherrdi(x)
+x
+more, they presented an algorithm that ensures to endi(x)
+counter all the critical points while performing coverage. To detect the critical points, they use an omnidirectional range sensor to look for points where the
+surface normals ∇m(x) of obstacles and the sweep diSweep line
+rection are parallel. Given a robot located at point x,
+let c0 be the closest point to x on the surface of obstacle
+Ci :
+Figure 9: Critical point detection occurs on the side
+of the range sensing robot, whose heading is indicated
+by the rectangular mark on the circle representing the
+c0 = argmin ||x − c|| ,
+(1)
+robot.
+c∈Ci
+and let di (x) be the distance between point x and the
+obstacle Ci . Now, the gradient of di (x), ∇di (x) can be
+calculated as
+∇di (x) =
+
+x − c0
+.
+||x − c0 ||
+
+(2)
+
+Recall that, by definition, a gradient is a unit vector
+normal to a surface at a given point. In Eq. 2, as c0 is
+a point laying on the surface of the obstacle Ci , x − c0
+is a vector pointing outward from c0 towards x. Given
+that c0 is the closest point to x on the obstacle surface,
+the vector x − c0 is hence normal to the surface of the
+obstacle. By dividing by its norm, ||x − c0 ||, the result
+is turned into a unit vector.
+A detection of a critical point occurs when ∇di (x) is
+parallel to the sweep direction. Or, in other words,
+when the sweep direction and the obstacle surface normal are parallel. Fig. 9 graphically shows this situation.
+
+Missed critical points
+
+Figure 10: With Morse decomposition, a range sensing
+robot following a simple zigzag path will miss the critical points in the figure unless it performs wall following
+both on the top and the bottom of a cell.
+
+Notice the fact that critical points can only be detected
+when they are the closest point on the obstacle surface
+from the robot compared to all other points on the
+obstacle surface. This implies that they can only be
+detected when the robot is performing wall following.
+Therefore, using a simple zigzag can result in some
+critical points being missed, as those shown in Fig. 10.
+To address this issue, (Acar et al., 2002) presented an
+algorithm that uses repeated rectangular motion cycles
+7
+
+with wall following on both ends of a lap, as shown in
+Fig. 11. The algorithm is termed “Cycle Algorithm”.
+Notice that this cyclic path includes retracing, and
+hence is longer than the simple zigzag path.
+
+In order to store and incrementally construct the
+Morse decomposition on-line, it is stored as a Reeb
+graph (Reeb, 1946). The Reeb graph is dual to the adjacency graph in that the nodes of the Reeb graph are
+the critical points and the edges connect neighboring
+critical points, i.e., correspond to cells. An example
+Morse decomposition with its associated Reeb graph is
+shown in Fig. 13.
+
+Cp5
+Cp1
+Cp2
+
+Cp4
+Cp3
+
+Cp6
+
+Critical points detected
+Figure 11: A path composed of rectangular cycles allows detection of all the critical points. This pattern
+is used in on-line Morse decomposition and the CCR
+algorithm as well.
+
+Figure 13: Morse decomposition of an example
+workspace with its associated Reeb graph. Cp1 ...Cp6
+are the critical points.
+Whenever a critical point is encountered, the robot updates the Reeb graph. When a cycle path where critical
+points were found is finished, the robot looks for uncovered cells at the last encountered critical point. If the
+critical point is associated with two uncovered cells, the
+robot picks one of the cells associated as the next cell
+to cover. If there are no uncovered cells associated with
+the last encountered critical point, a depth-first search
+is performed on the Reeb graph. To travel to the selected uncovered cell, the robot follows the Reeb graph
+and plans a path that passes through cells and critical
+points. When no uncovered cells (edges) remain in the
+Reeb graph, the environment is completely covered.
+
+The cycle path generation process of their proposed algorithm is shown in Fig 12. Initially (Fig 12(a)), the
+robot starts a forward phase at point Si and moves
+downward. When it encounters an obstacle, it performs wall following until it has reached the next strip
+or until a critical point is detected. If a critical point
+is detected, the robot then enters in a reverse phase
+where it moves upward (see Fig 12(b)). In this phase,
+if an obstacle is detected, the robot wall-follows it. If
+a critical point is detected on the obstacle boundary,
+the next strip is moved to where the critical point is.
+The motion continues until Si is reached again on the
+current strip. Then, the robot starts a new cycle at
+point Si+1 . The algorithm is proven to detect all the
+critical points.
+Current
+strip
+
+Next
+strip
+
+Si
+
+Current
+strip
+
+The Cycle algorithm just described, however, may fail
+to detect critical points on certain non-convex obstacles. In particular, concave critical points such as Cp2
+in Fig. 14 cannot be detected by range data when the
+boundary’s curvature is smaller than the robot’s periphery (Garcia and de Santos, 2004). However, the
+closest convex critical point (Cp3 in the example shown
+in Fig. 14) to a critical point like Cp2 in Fig. 14 will
+indeed be detected. This leads to adding a spurious
+edge to the Reeb graph that does not correspond to
+any existing cell. As a result, the algorithm will fail
+to detect the closing critical point for the newly added
+edge. Garcia and de Santos (2004) proposed a solution to this issue which involves associating each critical point with its obstacle and defining unique entry
+and exit critical points for each obstacle. Additionally,
+their paper discusses several implementation details of
+the Cycle algorithm.
+
+Old next
+strip
+Si+1
+
+New next strip
+
+Si
+
+New critical
+Point detected
+
+(a) Forward phase
+
+(b) Reverse phase
+
+Figure 12: Critical point detection using the cycle algorithm.
+8
+
+Cell3
+
+Cell4
+
+step considers the narrow or cluttered spaces where obstacles lie within detector range, and thus the detector
+“fills” the surrounding area. In this case, the robot can
+Cell1
+Cell5
+cover the narrow space by simply following the GenerCp3
+alized Voronoi Diagram (GVD) of that space, which
+Cp1
+are sets of points equidistant to two obstacles (Choset
+Cp4
+and Burdick, 2000; de Berg et al., 2008) (see Fig. 15, on
+Cp2
+the left). The GVD can be constructed on-line using
+Cell2
+range sensor information and has been previously used
+for sensor-based exploration (Choset et al., 2000b) and
+inspection of 3D structures (Choset and Kortenkamp,
+Cp4
+Cp3
+1999). A hierarchical decomposition that combines the
+Cp1
+Morse decompositions and the GVDs is introduced to
+Incorrect edge
+ensure that the robot indeed visits all vast, open, as
+well as narrow, cluttered, spaces. In their article, it
+Figure 14: A concave critical point will not be detected is shown how to construct this decomposition on-line
+if the boundary’s curvature is smaller than the robot’s using sensor data accumulated while the robot covers
+periphery and will lead to an incoherent Reeb graph. the environment.
+This is the case of Cp2 in this example environment,
+which does not get detected and produces an incorrect
+edge emanating from Cp3.
+Acar et al. (2003) discussed coverage path planning in
+relation to a demining application. In this article, they
+show that Morse decomposition overcomes the random
+coverage approach in this task, which used to be considered the state of the art on demining operations.
+
+3.2
+
+Figure 15: Combination of Morse decomposition and
+
+Morse-based Cellular Decomposi- GVD for extended range sensor coverage. In cluttered
+tion Combined with the General- spaces (left) the robot just follows the GVD of that
+space. In vast areas (right), the robot follows the patized Voronoi Diagram
+tern generated using a Morse decomposition scheme.
+
+(Acar et al., 2001, 2006) presented a sensor-based coverage approach with extended range sensors. As they
+point out, “prior work in coverage tends to fall into one
+of two extremes: coverage with an effector the same
+size of the robot, and coverage with an effector that
+has infinite range.” In this work, they consider coverage in the middle of this spectrum: coverage with a
+detector range that goes beyond the robot, and yet is
+still finite in range. They term these sensors extended
+range sensors. In this work, coverage is achieved in
+two steps: the first step considers vast, open spaces,
+where the robot can use the full range of its detector;
+the robot covers these spaces as if it were as big as its
+detector range (see Fig. 15, on the right). Here previous work in using Morse cell decompositions (Acar
+et al., 2002) is employed to cover unknown spaces. As
+explained above, cells in this decomposition can be covered via simple back-and-forth motions, and coverage
+of the vast space is then reduced to ensuring that the
+robot visits each cell in the vast space. The second
+
+4
+
+Landmark-based
+Coverage
+
+Topological
+
+Wong and MacDonald (2003) presented an on-line
+topological coverage algorithm for mobile robots based
+on detection of natural landmarks. This work is intended for simple planar environments. As in Morse
+decomposition, their method also uses concepts introduced by boustrophedon decomposition. However,
+the topological algorithm proposed here uses different
+events to determine cell boundaries. Morse decomposition places cell boundaries on the critical points on
+the obstacles surface. However, as commented before,
+rectilinear environments cannot be handled by Morse
+decomposition, as the critical points in such environments are degenerate. On the other hand, as critical
+9
+
+points can only be discovered on the side of the robot
+while performing wall following, a rectangular coverage
+pattern which includes retracing is needed. In contrast,
+the topological approach presented here uses simpler
+landmarks to determine an exact cellular decomposition termed “slice decomposition”. Due to the use of
+simpler landmarks, slice decomposition can handle a
+larger variety of environments, including those with
+polygonal, elliptical and rectilinear obstacles. Moreover, obstacles can be detected from all sides of the
+robot, allowing a simpler zigzag pattern without retracing to be used. As a result, the generated coverage
+path is shorter with this method.
+
+4.1
+
+Slice Decomposition
+
+The slice decomposition is constructed by sweeping a
+line through the space. It uses five different events to
+determine the cell boundaries:
+
+(a) Split event
+
+(b) Merge event
+
+(c) Lengthen event
+
+(d) Shorten event
+
+1. Split event: A free space segment in the previous
+strip is split into two by the emergence of an obstacle, as in Fig. 16(a).
+2. Merge: Two free space segments in the previous
+strip are merged into one by the disappearance of
+an obstacle, as in Fig. 16(b).
+3. Lengthen: The current strip is much longer than
+the previous strip, as in Fig. 16(c).
+4. Shorten: The current strip is much shorter than
+the previous strip, as in Fig. 16(d).
+5. End : The previous free space segment is the final
+one in the current cell, as in Fig. 16(e).
+All these events or landmarks can be detected using a combination of range measurements thresholding
+(e) End event
+and temporal sequence comparisons (comparing current sensor reading with previous ones) and odometry
+Figure 16: Events (landmarks) in the slice decompo(comparing length of consecutive strips). An alternasition. In all the events shown ci is the current cell
+tive solution that uses a neural network to detect the
+(shaded) and si is the current strip. The dashed arrow
+events is also presented in this work (Wong, 2006).
+indicates the sweep direction.
+Whenever one of the stated events occur, a cell boundary is placed along the sweep line where the event takes
+place. The slice decomposition can be encoded as a
+topological map. A topological map is represented as
+a planar graph, where the nodes represent landmarks
+(i.e., split, merge, end, lengthen or shorten events) and
+edges indicate the types of motion required to travel
+between nodes they are incident upon. For example,
+whether the edge is next to a wall and which side the
+10
+
+wall is on. They also store estimated distances separating the two nodes they connect.
+
+4.2
+
+5
+
+Contact Sensor-based Coverage of Rectilinear Environments
+
+On-line Topological Coverage AlgoButler et al. (1999) proposed CCR , an exact cell derithm
+composition algorithm for contact sensing robots (i.e.,
+
+robots without range sensing capabilities) covering unAn algorithm that constructs the slice decomposition known rectilinear environments on-line. Their motion-line while performing coverage is presented in Wong vating application for coverage of rectilinear environet al.’s work. The algorithm guarantees complete cov- ments is calibration of an automated assembly system
+erage. It iteratively constructs the topological map in which planar linear motors operate on table-like surassociated to the slice decomposition of the environ- faces to transfer products through a factory.
+ment using a finite state machine with three states –
+boundary, normal, and travel. Fig. 17 shows its state In CCR (for contact-based coverage of rectilinear entransition diagram. The algorithm starts in the bound- vironments), the robot follows a cyclic path with reary state, as it is assumed that the robot is initially tracing as shown in Fig. 11. At the same time, it iterlocated in a corner of the environment. This assump- atively constructs a cellular decomposition of the ention is not a shortcoming as it is easy to program a vironment. An example rectilinear decomposition prorobot to look for a corner by following simple forward duced by CCR is shown in Fig. 18. In fact, the decomand wall following motions. In the boundary state, the position constructed by CCR can be seen as the case of
+robot explores the current cell boundary. The aim of Morse decomposition where all the critical points are
+the boundary exploration is to expose all cells neigh- degenerate, as this is the case in rectilinear environboring the current border. Whenever the robot arrives ments.
+at a landmark or at an end of the cell boundary, the
+topological map is updated. When the boundary exploration has finished, the algorithm switches to the
+travel state. In the travel state, the robot searches the
+topological map for an uncovered cell and it is directed
+to that cell. Then, the robot enters the normal state,
+where it follows a zigzag pattern to cover the current
+cell. Again, whenever a landmark is found the topological map is updated and the algorithm switches to
+the boundary state. The algorithm finishes when there
+are no more uncovered cells in the topological map.
+Event occurred
+New landmark reached
+
+Normal
+
+Arrived at
+uncovered
+cell
+
+Figure 18: CCR uses an exact cell decomposition for
+rectilinear environments.
+
+Start
+
+Normally, CCR follows the cyclic path. An event (and
+hence a cell boundary) occurs whenever the robot is
+prevented from successfully executing a full path cycle. When such an event occurs, CCR chooses a new
+trajectory based only the robot’s environment and its
+current position. The next trajectory is determined by
+a list of rules that are designed to continue coverage in
+all possible cases.
+
+Boundary
+
+Boundary
+fully
+explored
+Travel
+All
+covered
+
+Exit
+
+A proof of completeness for CCR is given by creating a
+finite state machine (FSM) that describes all possible
+events encountered by the robot, and demonstrating
+that the FSM has no infinite loops and that it stops
+only when coverage is complete.
+
+Figure 17: State transition diagram of the topological
+coverage algorithm.
+
+11
+
+6
+
+Grid-based Methods
+
+triangles instead. The rationale behind the choice of
+triangular cells is that they offer a higher resolution in
+comparison to rectangular cells of similar size. HowGrid-based methods use a representation of the en- ever, the resolution of the grid can also be augmented
+vironment decomposed into a collection of uniform by using finer-grained squared cells. In mobile robotics,
+grid cells. This grid representation was first proposed field for which the mentioned algorithm is intended,
+by Moravec and Elfes (1985) to map an indoor envi- most mobile robots are not capable of making very fine
+ronment using a sonar ring mounted on a mobile robot. movement adjustments, and hence there is no need for
+In this representation, each grid cell has an associated ultra high resolution in coverage path planning. Therevalue stating whether an obstacle is present or if it is fore, the extra effort devoted to implementing a trianrather free space. The value can be either binary or a gular grid seems not to be worthwhile.
+probability (Elfes, 1987). Typically, each grid cell is a
+square, but also different grid cell shapes can be used,
+such as triangles. As grid representations only approx6.1 Grid-based Coverage using the
+imate the shape of the target region and its obstacles,
+Wavefront Algorithm
+Choset classified grid-based methods as approximate
+cellular decompositions (Choset, 2001). As a result
+of this approximate representation, most grid-based Zelinsky et al. (1993) presented the first grid-based
+methods are “resolution-complete”, that is, their com- method for CPP. In their off-line method, they use
+pleteness depends on the resolution of the grid map. a grid representation and apply a complete coverage
+path planning algorithm to the grid. The method reFig. 19 shows an example grid map.
+quires a start cell and a goal cell. A distance transform
+that propagates a wave front from goal to start is used
+to assign a specific number to each grid element. That
+is, the algorithm first assigns a 0 to the goal and then
+a 1 to all its surrounding cells. Then, all the unmarked
+cells neighboring the marked 1 are labeled with a 2.
+The process repeats incrementally until the start cell
+is reached by the wavefront. Fig 20(a) illustrates this
+procedure on an example environment.
+Once the distance transform is calculated, a coverage
+path can be found by starting on the start cell and seFigure 19: An example grid map. Grid cells with ob- lecting the neighboring cell with the highest label that
+stacles present are shaded.
+is unvisited. If two or more unvisited neighbors share
+the same label, one of them is selected randomly. This
+It is easy to create a grid map, as it can be repre- process to find a coverage path is equivalent to using
+sented as an array where each element contains occu- pseudo-gradient descent from the start point on the
+pancy information associated with a cell. On the other numeric potential function constituted by the labeling,
+hand, it is simple to mark covered areas in a grid map. that is, following the equipotential curves from top to
+As a result, grid-based representations are the most bottom. Fig. 20(b) shows the generated coverage path
+widely used for coverage algorithms. Nonetheless, grid for the example environment on Fig. 20(a). A unique
+maps suffer from exponential growth of memory us- feature of this coverage algorithm is that a start and a
+age because the resolution remains constant regardless goal point can be specified.
+of the complexity of the environment (Thrun, 1998).
+Also, they require accurate localization to maintain Shivashankar et al. (2011) introduced a generalization
+the map’s coherency (Castellanos et al., 1997; Thrun, of the wavefront algorithm to unknown environments
+to achieve on-line coverage with a mobile robot.
+2003).
+For these reasons, grid-based coverage methods are
+suited for indoor mobile robot operations, as the size
+of the area to be covered is typically relatively small.
+
+6.2
+
+Grid-based Coverage using Spanning Trees
+
+Usually, cells in a grid map are square in shape and
+robot-sized. Oh et al. (2004) proposed a coverage al- Gabriely and Rimon (2002) proposed the Spiral-STC
+gorithm that uses a grid map in which the cells are (Spanning Tree Coverage) algorithm, an on-line ap12
+
+S
+
+8
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+8
+
+9
+
+10
+
+9
+
+8
+
+7
+
+6
+
+6
+
+6
+
+6
+
+6
+
+6
+
+6
+
+7
+
+8
+
+9
+
+10
+
+5
+
+5
+
+5
+
+5
+
+5
+
+8
+
+9
+
+10
+
+4
+
+4
+
+4
+
+9
+
+9
+
+9
+
+9
+
+8
+
+8
+
+6
+
+7
+
+8
+7
+6
+
+3
+
+6
+
+5
+
+6
+
+5
+
+4
+
+6
+
+5
+
+4
+
+3
+
+6
+
+5
+
+4
+
+3
+
+10
+
+2
+
+proach for mobile robots which consists in subdividing
+the workspace into a grid map and following a systematic spiral path. This systematic spiral path is generated by following a spanning tree of the partial grid
+map that the robot incrementally constructs using its
+onboard sensors. The robot is able to cover every grid
+cell precisely once, and travel a complete coverage path.
+They validate the proposal in simulation. The SpiralSTC algorithm works as follows. Two different grid cell
+sizes are used. Bigger cells (so called mega cells) are
+divided in four smaller cells, which are the same size
+as the robot. This is shown in Fig 21(a). To perform
+coverage, the robot executes the following procedure.
+Starting at the current cell, the robot chooses a new
+travel direction by selecting the first new mega cell in
+the free space in anti-clockwise direction. Then, a new
+spanning-tree edge is grown from the current mega cell
+to the new one. The algorithm is called recursively.
+The recursion stops only when the current cell has no
+new neighbors (a mega cell is considered old if at least
+one of its four smaller cells is covered, it is considered new otherwise). As a result of this recursion, the
+robot moves along one side of the spanning tree until
+it reaches the end of the tree. At that point, the robot
+turns around to traverse the other side of the tree. It is
+worth noticing that, when coverage is completed, the
+robot returns to the start cell, facilitating its collection and storage. On the other hand, STC never visits
+any small cell twice and thus minimizes the coverage
+time. Fig 21(b) shows an example of a coverage path
+generated by the Spiral-STC algorithm.
+
+7
+
+1
+
+1
+
+1
+
+2
+
+1
+
+G
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+2
+
+1
+
+1
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+(a) Wavefront distance transform for the selection of the start position (S) goal position (G).
+S
+
+8
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+7
+
+8
+
+9
+
+10
+
+9
+
+8
+
+7
+
+6
+
+6
+
+6
+
+6
+
+6
+
+6
+
+6
+
+7
+
+8
+
+9
+
+10
+
+5
+
+5
+
+5
+
+5
+
+5
+
+8
+
+9
+
+10
+
+4
+
+4
+
+4
+
+9
+
+9
+
+9
+
+9
+
+8
+
+8
+
+8
+7
+6
+6
+
+3
+5
+
+10
+
+2
+
+7
+
+An extension to the Spiral-STC is the Backtracking
+Spiral Algorithm (BSA) (Gonzalez et al., 2005), which
+is also an on-line approach intended for mobile robots.
+6
+5
+4
+3
+2
+1
+1
+1
+2
+3
+4
+5
+6
+7
+As an advantage in regard to the Spiral-STC algo(b) Coverage path generated using the waverithm, they proposed an extension to cover not only
+front distance transform with the selection of the
+unoccupied cells, but also the partially occupied ones.
+start position (S).
+This extension is based on the idea that the partiallyFigure 20: Coverage path planning using the wavefront occupied cells are part of the external ring of the spiral path. These cells are covered by a wall-following
+algorithm for an example environment.
+procedure. The proposed extension can be applied to
+most grid-based coverage algorithms. Simulation experiments validate the proposed algorithm.
+6
+
+5
+
+4
+
+6
+
+5
+
+4
+
+3
+
+2
+
+1
+
+1
+
+1
+
+1
+
+G
+
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+6
+
+7
+
+Choi et al. (2009) proposed an on-line complete coverage path planning solution based on the ideas introduced by the Spiral-STC algorithm and the BSA algorithm. They also use systematic spiral paths to achieve
+coverage, based on active wall finding. Nonetheless,
+they introduce a map coordinate assignment scheme
+based on the history of sensor readings to improve the
+time-to-completion by reducing the number of turns
+on the generated path. The generated spiral paths are
+then linked by an inverse distance transform they intro13
+
+duce. This proposal is validated in simulation and also
+with real-world experiments conducted inside a room
+with a mobile robot.
+
+6.3
+
+Neural Network-based Coverage on
+Grid Maps
+
+Luo et al. (2002) and, in a latter work, Yang and Luo
+(2004) propose to use a neural network to achieve CPP
+on-line targeted to a floor cleaning application. They
+discretize a 2D space in a grid map where the diagonal
+length of each grid cell is equal to the robot sweeping
+radius, and then a neuron is associated to each and
+every grid cell. Each neuron has connections to its
+immediate 8 neighbors. These concepts are shown in
+Fig. 22.
+
+(a) Approximate cell decomposition in
+mega cells and robot-sized cells.
+Obstacle neuron
+
+Uncovered area neuron
+
+Covered area neuron
+
+Robot
+
+Figure 22: Schematic of the neural network used by
+Luo, Yang and others to achieve coverage.
+A shunting equation based on the membrane equation
+by Hodgkin and Huxley (1952) determines the dynamics of each neuron in the network. The activity landscape (i.e., the output value of all neurons at a given
+instant) of the shunting model used attracts the robot
+to unclean areas, while the robot is repulsed by already
+cleaned areas and obstacles.
+(b) Coverage path generated with the
+Spiral-STC algorithm.
+
+Figure 21: Coverage path planning using Spiral-STC
+algorithm.
+
+14
+
+The next position of the robot is determined by the current position of the robot and the activity of the neuron associated to its current position, without any prior
+knowledge about the environment. It is assumed that
+the current state of the robot (if it’s in a clean or dirty
+area, or in front of an obstacle, and its location) can be
+determined via sensory information. The state of the
+robot is an input to the neural network. The model
+used has 6 parameters that can be tuned in a wide
+range of values at the neural network design phase,
+and hence coverage is achieved without any learning
+procedures. An advantage of this method is that it can
+handle non-stationary environments (i.e., dynamically
+
+changing obstacles). The proposed neural network approach is validated in simulation. In (Luo and Yang,
+2008) further simulation results are presented as well as
+a method to perform mapping on-line simultaneously
+with coverage navigation. In this later work, they consider a typical grid-based map and also a triangular
+mesh representation of the space, such as the one used
+by Oh et al. (2004).
+
+fold. On one hand, distance does not need to be taken
+into account in the objective functions, because the
+distance from a given cell to its neighboring cells is
+the same. On the other hand, assuming the hexagons
+are small enough, visiting one cell guarantees coverage of two neighboring cells by the side-looking sensor,
+minimizing the amount of partially covered cells. Although the proposed method is able to cover target areas with non-convex shapes, obstacles present amidst
+An application of this neural network-based method the workspace are not considered. The efficacy of this
+to an AUV covering a 2-D workspace in the seabed method is demonstrated in simulation and experimenis proposed in (Yan and Zhu, 2011). The proposal tally on an AUV conducting mine countermeasure opis validated in simulation. However, a 2-D underwa- erations.
+ter workspace is rather unrealistic. Furthermore, discretization in a grid map of a vast environment such
+as the seabed presents a tough challenge in terms of
+7 Graph-based Coverage
+computational burden.
+Qiu et al. (2006) added a local path planning technique on top of the biologically inspired neural network approach discussed above. In their approach, the
+next robot position is not determined immediately but
+rather a local path planning occurs in a window comprising a determined vicinity of the robot. By using
+this technique, they reduce the computational burden
+in comparison with the neural-network-only approach.
+
+Xu (2011) presented coverage algorithms for environments that can be represented as a graph, such as a
+street or road network. In particular, this work addresses the following issues in the coverage problem.
+First, it takes into account that the prior map information provided as a graph might be incomplete. Second, it accounts for environmental constraints in the
+environment, such as restrictions in certain directions
+In a similar approach, Guo and Balakrishnan in the graph (corresponding to a one-way street, for
+(2006) present a neural network-based method to gen- example). Third, it provides strategies for on-line reerate continuous steering control for a robot to com- planning when changes in the graph are detected by
+pletely cover a bounded region over a finite time. First, the robot’s sensors when performing coverage. Finally,
+they discretize the space in a regularly spaced, disk- strategies for coverage using multiple robots are proshaped grid. Then, a neural network based on the vided.
+same biologically inspired shunting equation as in the
+works discussed above is used to provide continuous Graph search algorithms are proposed to solve the covsteering to the robot. The algorithm works for car-like erage problems considered. Optimality is addressed by
+robots which have non-holonomic motion constraints. assigning a cost to each edge in the graph and either
+looking for the optimal solution when deliberation time
+The approach is validated in simulation.
+allows or rather quickly finding an approximated solution when time constraints apply.
+
+6.4
+
+Hexagonal Grid Decomposition for
+Robots Equipped with Side-looking
+8
+Sensors
+
+Paull et al. (2010, 2012) presented an on-line coverage method for robots equipped with side-looking sensors. Their target application is mine countermeasure
+operations using an AUV equipped with a side-scan
+sonar. This coverage method continuously directs the
+vehicle’s heading using multi-objective optimization to
+maximize the information gain produced by the sensor measurements. The optimization procedure uses
+a grid decomposition composed of uniform hexagonal
+cells. The advantage of using a hexagonal grid is two15
+
+3D Coverage
+
+Most coverage path planning methods, and in particular the methods reviewed so far in this article, assume that the environment can be modeled as a simple planar surface. This assumption is valid for floor
+cleaning, land mine detection, lawn mowing, etc. However, some surfaces in nature are 3-dimensional, and
+3-dimensional coverage path planning is required instead to cover these surfaces. This is the case of an
+AUV covering the seabed (Hert et al., 1996) or a robot
+spray-painting vehicle parts (Atkar et al., 2005b), for
+
+instance. Next, we review several 3-dimensional coverage methods. It is worth noticing that, except the algorithm discussed in Subsec. 8.1, the methods discussed
+below actually focus on coverage of a surface of lower
+dimension than the robot’s workspace. Indeed, in 3dimensional coverage, covering 2-dimensional surfaces
+embedded in 3-dimensional space such as the boundaries of automotive parts, the boundaries of buildings,
+the ocean floor, rugged agricultural fields or the boundaries of the in-water part of a ship hull are the main
+focus. This contrasts with the standard CPP problem,
+in which all the free space must be covered.
+
+8.1
+
+by moving along its boundary. After covering a given
+diversion inlet, the robot exits it by resuming its path
+as if the diversion inlet did not exist. When the area to
+be covered is not simply connected and contains islands
+as well as inlets, the same basic procedures are used,
+but with minor modifications to ensure that the area
+surrounding every island is covered. The robot is able
+to convert the part of the area around each island that
+would normally not be covered into an artificial inlet
+by remembering certain points along its path. Artificial
+inlets are covered in the same way that real diversion
+inlets are. Fig. 23 illustrates this procedure. It is worth
+noticing, however, that details on how to detect the
+inlets used by the algorithm using sensor information
+are not provided.
+
+3D Coverage using a Planar Coverage Algorithm in Successive Hori- The work of Hert et al. (1996) was extended later
+zontal Planes
+by Lee et al. (2009) to cover only areas that are close
+
+to the sea bottom surface. In this latter work, it is asHert et al. (1996) presented a 3D coverage algo- sumed that the regions of interest in underwater envirithm that is based on a planar 2-dimensional terrain- ronments are the ones close to the sea bottom. Therecovering algorithm (Lumelsky et al., 1990). Their tar- fore, aiming to make the robot navigate only in arget application is an AUV imaging the sea bottom. eas close to the surface, artificial obstacles (artificial
+Their solution applies to a 3D projectively planar en- islands) are introduced in the robot’s map of the envivironment by applying the planar terrain-covering al- ronment. This way, the volume of water at a certain
+gorithm in the successive horizontal planes laying at distance from the seafloor surface is discarded and a
+different depths. The restriction to projectively planar more exploration of the sea bottom is achieved.
+environments means that elements such as caves are
+A theoretical proof of correctness of the algorithm is
+not handled by this method. Their 2D terrain-covering
+given in (Hert et al., 1996) and the extension proposed
+algorithm uses a partial discretization of the space in
+in (Lee et al., 2009) is validated in simulation.
+where the space is divided in vertical slices of the same
+width, but where the top and bottom of each slice can
+have any shape. This discretization is classified as a
+8.2 3D Cellular Decomposition
+semi-approximate cellular decomposition according to
+Choset’s taxonomy (Choset, 2001). A robot following
+this algorithm may start at an arbitrary point in the en- Atkar et al. (2001) considered the problem of trajecvironment and will zigzag along parallel straight lines tory generation for spray-painting robots. In their ini(grid lines) to cover the given area. Portions of the tial work, they proposed an on-line, 3-dimensional CPP
+3
+area that either would not be covered or would be cov- method for closed, orientable surfaces embedded in R .
+ered twice using the zigzag procedure are detected by The method extended the ideas of Morse decomposithe robot and covered using the same procedure; that tion to non-planar spaces. However, obstacles on the
+is, the procedure is applied recursively. These smaller target surface are not considered in this work. Addressareas, called inlets, are covered as soon as they are de- ing their spray-painting target application, the method
+tected and inlets within inlets are treated in the same does not plan a coverage path on the target surface, but
+way. Hence, the inlets are covered in a depth-first or- the coverage path is rather planned in an offset surface
+der. By requiring the robot to remember the points at from which the end effector will spray the target surwhich it enters and exits every inlet it covers (which face. That is, the path is planned on a “virtual” surface
+define the inlet doorways), the algorithm assures that that wraps the target object at a fixed offset distance.
+The coverage path is generated by intersecting a slice
+each inlet is covered only once.
+plane with the offset surface at equally spaced interWhen entering or exiting a certain type of inlet, the vals. At each interval, the intersection of the slice plane
+robot may cover the same area more than once, or miss with the offset surface forms a closed one-dimensional
+some area at the inlet. Those inlets are called diversion loop around the object. The robot traces this loop
+inlets, and special procedures are necessary for covering and moves to the next slice plane, and iteratively rethem effectively. The robot enters a diversion inlet peats the process. If the target surface is convex, the
+16
+
+described process will achieve complete coverage. However, if the surface is non-convex and includes elements
+such as a bifurcation, the planner will use the critical
+points occurring in such shape changes to divide the
+surface in cells that will be covered individually. As
+in the on-line Morse decomposition for planar spaces,
+a Reeb graph is used to encode the topology of the
+target surface. When all edges in the graph are covered, the coverage task is successfully completed. The
+method was validated in simulation using target surfaces constituted by polyhedra. It is worth noting that
+this method requires a robot equipped with a 2D omnidirectional range sensor in order to detect the critical
+points.
+(a)
+
+In later work (Atkar et al., 2003, 2005a,b), they presented an off-line CPP method specifically targeted for
+spray-painting of automotive parts. They term such
+surfaces pseudo-extruded surfaces. In contrast with
+their initial work, the problem tackled here is the uniform coverage problem, where the target surface not
+only needs to be completely covered but also the resulting paint deposition must meet certain uniformity
+requirements. To achieve uniform coverage, their proposed method takes a CAD model of the target automotive parts as input and segments their surface into
+topologically simple cells of similar curvature. Then,
+individual, optimal paint-deposition coverage paths in
+each cell are determined. Simulations as well as experiments with real robots validate their proposal.
+
+(b)
+
+8.3
+
+3D Urban Structure Coverage
+
+(c)
+
+Figure 23: The path a robot R follows in a non-simply
+connected environment when applying the algorithm
+proposed in (Hert et al., 1996). First (a), the robot
+detects an inlet at d1 and starts to cover it following
+a depth-first order. A second inlet is detected at d2 ,
+and the robot starts covering it likewise. The robot
+continues to cover the rest of the inlets until it goes
+back to d1 (b). Here, the robot continues to cover the
+main region until it detects an inlet at d3 . This inlet
+corresponds to an island, and hence the robot continues
+to circumnavigate it completely (c). Then, the robot
+will eventually pass through d3 again and there it will
+resume the covering of the main area.
+
+17
+
+Cheng et al. (2008) presented an off-line approach
+for planning time-optimal trajectories for unmanned
+aerial vehicles (UAVs) performing 3D urban structure coverage. First, they simplify the structures to
+be covered, namely buildings, into hemispheres and
+cylinders. Then, trajectories are planned to cover
+these simpler surfaces. Their proposal is validated
+in hardware-in-the-loop simulations using a fixed-wing
+aircraft. Fig. 24 illustrates this method.
+
+8.4
+
+Coverage of Bathymetric Surfaces
+
+Bathymetric maps are elevation maps of the ocean
+floor. Such maps are used for planning of ocean survey missions for AUVs. A typical survey consists of
+a lawnmower-like pattern which follows the elevation
+profile of the terrain, imaging the bottom from an overhead point of view with some sensor. However, rugged,
+high-relief terrain cannot be properly imaged from such
+
+erosion cost and the skipped area. The method is
+validated on real-world elevation maps of agricultural
+fields.
+
+8.6
+(a) Simplified model of an urban environment.
+
+(b) Illustration of a coverage path.
+
+Figure 24: Coverage scheme presented in (Cheng et al.,
+2008).
+point of view since the imaging angle is too large on vertical protrusions. In contrast, an imaging angle close
+to the surface normal is desired. To address this issue, Galceran and Carreras (2013) presented a CPP
+method that plans a coverage path on a bathymetric
+map. The method determines regions that cannot be
+properly imaged using a traditional survey according to
+the terrain’s gradient. Then, on each identified region,
+it plans a 3D coverage path that follows the horizontal contours of the surface, in a similar fashion as the
+method discussed in 8.2. On the remaining, effectively
+planar regions, it uses a standard lawnmower-like path
+for coverage. As a result, the entire target bathymetric
+surface is covered and a fair imaging angle is provided
+throughout the coverage path. The method is validated on a real-world bathymetric map comprising a
+large underwater volcanic area at 350 m. depth.
+
+8.5
+
+3D Coverage for Arable Farming
+
+Jin and Tang (2011) presented coverage algorithms for
+arable fields represented as elevation maps. Previous
+work in coverage for agricultural fields dealt with planar terrain, but many fields present 3-dimensional features that have an impact on coverage performance.
+Addressing this issue, this work provides coverage algorithms based on a seed curve that is incrementally
+offset on both sides to generate a coverage path. The
+method optimizes the seed curve selection by taking
+into account its associated number of turns, the soil
+18
+
+Random Sampling-based Coverage
+of Complex 3D Structures
+
+In confined 3-dimensional areas where a robot cannot
+go through the spaces between component structures,
+or where occluded areas are only visible from a reduced
+set of viewpoints, modular approaches such as those
+described above are unsuitable. To handle this family of problems, global path planning strategies, utilizing sampling-based planning (Danner and Kavraki,
+2000) have been applied to find feasible, collision-free,
+paths through confined areas and obtain full coverage
+of a 2-dimensional target structure. Their approach
+is based on the art gallery problem. Building upon
+a similar idea, Englot and Hover (2012) introduce an
+off-line, sampling-based coverage algorithm to achieve
+complete sensor coverage of complex, 3-dimensional
+structures. Their target application is autonomous
+ship hull inspection, in which the robot must cover
+the in-water part of the hull surface using a sensor
+such as a sonar. The sensory data collected in situ
+is later used to construct an accurate 3-dimensional
+model where anomalies in the hull surface can be
+searched for. They consider the planning problem with
+a fully-actuated, six degree-of-freedom hovering AUV
+that uses a bathymetry sonar to inspect the structures
+in the ship hull. The method requires a discrete model
+of the structure to be inspected provided in the form
+of a closed triangular mesh. The planning is performed
+in two steps. First, a graph of feasible paths for the
+robot is constructed using random sampling until the
+set of nodes of the graph allows complete coverage of
+the structure. This is equivalent to solving a variant of
+the art gallery problem. Then, a minimum-cost closed
+walk along the graph which fully covers the structure
+is searched for in the graph. This second step involves
+solving a variant of the traveling salesman problem.
+By favoring a random sampling method, they reduce
+the computational burden necessary to face the highdimensionality of the problem. It should be noted that
+the generated paths cover cluttered spaces where complex structures such as shafts and rudders are present.
+The approach is validated using sensor imagery of real
+vessels and with experiments conducted at sea. Furthermore, a method for smoothing and shortening the
+paths initially generated is provided. This procedure
+can be incrementally applied while computation time
+allows. Fig. 25 shows examples of planned inspection
+paths for a ship hull with and without smoothing.
+
+As discussed above, the approach by Englot and Hover
+(2012) first generates a set of view configurations that
+completely cover the target surface (by solving an instance of the art gallery problem) and then finds a
+path that connects them (by solving an instance of the
+traveling salesman problem). This might pose a problem for robots with differential constraints, given that a
+path connecting to a given view configuration might be
+infeasible. To tackle this problem, Papadopoulos et al.
+(2013) presented a random sampling-based algorithm
+that incrementally explores the robot’s configuration
+space while constructing an inspection path until all
+points on the target surface are guaranteed to be covered. In contrast to the aforementioned approaches,
+which first plan a set of view configurations that cover
+the target environment, their algorithm generates view
+configurations and at the same time validates the feasibility of the path connecting them. Only view configurations reached by feasible paths are incorporated
+in the final coverage path. Additionally, this method
+is probabilistically optimal with respect to a given cost
+function. The method is validated in simulation.
+Given the wide variety of structures that are able to
+handle, these approaches constitute the state of the
+art in coverage of complex 3-dimensional structures.
+
+9
+
+(a) Feasible tour for full coverage of a ship running gear. The
+tour is 176 m in length and contains 121 nodes.
+
+Optimal Coverage
+
+Work addressing the optimality of the planned coverage paths, in terms such as path length and time to
+completion, appears in the CPP literature. Notice that
+it is only possible to find an optimal solution for an a
+priori known environment, or partially known at least,
+since an antagonistic example can always be found for a
+sensor-based approach. Hence optimal coverage methods are classified as off-line methods.
+(b) Tour of (a) after applying the refinement procedure. The
+
+Huang (2001) presented an optimal line-sweep based shortened tour is 102 m in length and contains 97 configurations.
+method for cellular decomposition algorithms in planar spaces. This approach produces an optimal length Figure 25: Full-coverage inspection paths obtained
+coverage path by allowing different sweep directions with the method of Englot and Hover (2012).
+in the lawnmower paths used to cover each cell. The
+main idea is to minimize the number of turns in the
+path, as each turn typically implies the added cost of
+the robot decelerating and accelerating again after the
+turn. This is achieved by allowing a different sweep
+direction in each cell. The number of turns is minimized by sweeping each cell in parallel to its maximal
+altitude axis. That is, the method intends to maximize
+the length of the laps in the zigzag pattern in order to
+minimize the number of turns. However, this approach
+does not take into account the cost of traveling from
+19
+
+cell to cell. The method is validated in simulation.
+
+forming coverage has been only addressed in few work.
+
+Jimenez et al. (2007) proposed to use a genetic algorithm to achieve optimal coverage. In this proposal,
+workspace and obstacles are assumed to be polygonal
+and known beforehand. Then, the free space is divided
+in subregions using the trapezoidal cellular decomposition method (Latombe, 1991; Choset et al., 2005).
+Finally, a genetic algorithm is used to plan an optimal
+path that covers all the subregions. This proposal is
+tested in simulation.
+
+Acar and Choset (2002b) propose to plan the paths of
+their sensor-based Morse decomposition approach by
+relying on the boundaries of each cell, hence minimizing the dead-reckoning error.
+
+Tully et al. (2010) used a fleet of three robots, each
+one of them equipped with a red ball (easily detectable
+using standard computer vision techniques) to follow a
+strategic path in formation to minimize the localization
+error. The mentioned robot fleet is shown in Fig. 26.
+Mannadiar and Rekleitis (2010) proposed an algorithm The path consists of a series of steps, or leaps. In
+based on the Boustrophedon cellular decomposition each leap, two robots are static and serve the third one
+that achieves complete coverage of known spaces while as beacons, and this later one advances. The robots
+minimizing the path of the robot. The algorithm en- successively interchange their roles. Real experiments
+codes the cells to be covered as edges of the Reeb graph. show a minimization of the localization error, reportThen, the optimal solution to the Chinese Postman ing one of the most successful 2-dimensional coverage
+Problem is used to calculate an Euler tour, which guar- experiments to date. However, obstacles are not conantees complete coverage of the available free space sidered in this work.
+while minimizing the coverage path length.
+Xu et al. (2011) presented an application of the
+optimal Morse-based boustrophedon decomposition
+method (Mannadiar and Rekleitis, 2010) for UAVs.
+First, they generate an optimal exhaustive walk
+through the adjacency graph of the cell decomposition
+of the terrain. Then, they cover each cell with zigzag
+motions taking into account the kinematic constraints
+of the vehicle, as the fixed-wing UAV they use has nonholonomic constraints. Extensive experimental results
+in simulation validate the presented system, along with
+data from over 100 kilometers of coverage flights using Figure 26: Three robots used for experimental evaluaa real fixed-wing aircraft.
+tion of the leap-frog localization and coverage strategy.
+
+10
+
+Kim (2012) propose an active SLAM approach to coverage path planning for ship hull inspection in a 3D scenario. The proposed algorithm drives the robot along
+a pre-planned coverage trajectory on the ship hull, and
+during trajectory execution the robot selects candidate locations that, once revisited, can help reduce the
+robot’s pose uncertainty. The algorithm chooses to revisit a candidate location once the pose uncertainty
+surpasses a user-provided threshold, and otherwise follows the pre-planned path.
+
+Coverage under Uncertainty
+
+In many scenarios, the lack of a global localization system such as GPS makes the robot accumulate drift,
+and hence a growing uncertainty about its pose. Although the topological representations such as the adjacency graph are tolerant to localization error, the
+performance of coverage algorithms, even if using such
+representations, is still affected (Mazo and et al., 2004;
+Choset, 2001). This is because the amount of cover- Bretl and Hutchinson (2013) suggest a way to plan
+age within a cell depends on the direction of the zigzag modified coverage paths for a mobile robot whose position and velocity are subject to bounded error. Aspattern.
+suming a worst-case model of uncertainty they are able
+Recent advances in simultaneous localization and map- to guarantee complete coverage. This guarantee comes
+ping (SLAM) have greatly improved robot localization. at the cost of a longer path, since paths generated by
+SLAM uses statistical techniques to correct the robot’s their algorithm include retracing. Nonetheless, this
+pose (position and orientation) estimation. However, work provides the first guaranteed coverage results for
+the problem of correcting the robot’s pose while per- the case of bounded position and velocity error.
+20
+
+In the context of marine robotics, Galceran et al. (2013)
+presented a coverage path planning technique for vast,
+open sea areas which minimizes the robot’s position uncertainty along the path. This technique is especially
+targeted for bathymetric mapping applications and respects application constraints such as the desire to survey in parallel tracks and to avoid turns in the target
+area to maximize sonar measurements quality. The
+method uses the saliency on an a priori map to predict
+how the terrain will affect the robot’s belief at every
+point on the target area. Based on this magnitude, an
+algorithm provided in this work computes the order in
+which to trace parallel tracks to cover the target area
+minimizing the overall uncertainty along the path. A
+particle filter keeps track of the robot’s position uncertainty during the planning process and, in order to find
+useful loop- closures for mapping, crossing tracks that
+visit salient locations are added when the uncertainty
+surpasses a user-provided threshold. The method is
+tested on real-world datasets and results show that it
+offers benefits over a standard lawnmower-type path.
+
+11
+
+nar cellular decomposition as the Boustrophedon single robot coverage algorithm, but provide extensions to
+handle how robots cover a single cell, and how robots
+are allocated among cells. Their solution takes into account communication restrictions among the members
+of the team. To achieve coverage in line-of-sight-only
+communications, the robots take two roles: some members, called explorers, cover the boundaries of the current target cell, while the other members, called coverers, perform simple back-and-forth motions to cover
+the remainder of the cell, as shown in Fig. 27. For
+task/cell allocation among the robots, a greedy auction
+mechanism is used. Experimental results from different simulated and real environments are provided to
+illustrate their proposed approach.
+
+Multi-robot Methods
+
+There are advantages in using multiple robots in a CPP
+task. Using multiple robots clearly decreases the time
+to complete the task due to workload division. But
+a team of robots can go further, for example using
+each other as beacons to minimize localization error.
+Additionally, using multiple robots improves robustness, as failure of some members of the robot team
+can be compensated by others. There exist a number
+of multi-robot CPP proposals in the literature. Most
+approaches extend single-robot ideas presented above
+to multiple robots by using a strategy to divide the
+workload. In this section, we discuss multi-robot coverage methods based on the single-robot boustrophedon
+decomposition, on spanning trees, on the biologically
+inspired neural-network approach and on the graphbased approach. Nonetheless, there are genuine multirobot approaches which are not based in any particular
+single-robot algorithm, which we also discuss below.
+
+Figure 27: Explorer/coverer approach, where two explorer robots outline the top and bottom boundaries
+while the remaining robots (coverers) execute simple
+back-and-forth coverage of the target cell.
+
+11.2
+
+Multi-robot Contact Sensor-based
+Coverage of Rectilinear Environments
+
+A strategy for covering rectilinear environments using
+robots equipped only with contact sensors was proposed by Butler et al. (2000). The strategy is based
+on CCR , discussed in Sec. 5, and is called DCR . DCR
+11.1 Multi-robot Boustrophedon De- decouples
+cooperation and coverage by executing CCR
+composition
+individually on each robot and adding a higher-level
+coordinator, termed the overseer, which is in charge
+Rekleitis et al. (2009) presented a collection of algo- of controlling the cooperation among the robots. The
+rithms for the complete coverage path planning prob- overseer operates in such a way that coverage directed
+lem using a team of mobile robots on an unknown en- by CCR on each robot can continue without CCR bevironment (on-line). Their algorithms aim to minimize ing aware that cooperation is occurring. A proof of
+repeated coverage. The algorithms use the same pla- completeness for DCR is provided in this work.
+21
+
+11.3
+
+Multi-robot Spanning Tree Cover- a 2-dimensional boundary coverage algorithm for multiple robots. It is worth mentioning that, as in the maage
+
+The STC method was generalized to multi-robot teams
+by Hazon and Kaminka (2005) using a heuristic approach. They termed their algorithm MSTC. Zheng
+et al. (2005) presented an improved (with respect to
+MSTC) method to find a coverage tree for a team of
+robots to cover known terrain with a team of robots. In
+this work they also provide an upper bound on the performance of a multi-robot coverage algorithm on known
+terrain, guaranteeing a performance of at most eight
+times the optimal cost. Their reported experimental
+results show their method to perform significantly better than MSTC. Agmon et al. (2006) propose a spanning tree construction algorithm that provides efficient
+paths in terms of distance. The spanning tree construction algorithm can be used as base for MSTC.
+An extension of MSTC to terrain with non-uniform
+traversability (that is, terrain where traversing certain
+areas is costlier than others) was presented by Zheng
+and Koenig (2007). Hazon et al. (2006) presented an
+on-line, robust version of MSTC. They show analytically that the algorithm is robust, guaranteeing coverage as log as a single robot is able to move. Empirical
+results validating the algorithm are reported.
+
+jority of 3-dimensional coverage methods discussed in
+Sec. 8, this work focuses on covering only the boundary
+of the target environment. In the multi-robot boundary coverage problem, introduced in this work, a team
+of robots must inspect all points on the boundary of
+the 2-dimensional target environment. A motivating
+application of the multi-robot boundary coverage problem is inspection of separated blade surfaces inside a
+turbine. The boundary coverage problem is converted
+into an equivalent graph representation where a heuristic search is used to plan the inspection routes of every
+robot. The planned routes provide complete coverage
+of the boundary while balancing inspection load among
+the robots. The algorithm is validated in simulations.
+
+11.6
+
+Bio-inspired Multi-robot Coverage
+
+Several muli-robot coverage path planning proposals
+have been presented which are inspired by behaviors
+found in nature. Many of them are inspired by ant
+behavior, using evaporating traces to achieve an emergent coverage behavior (Wagner et al., 1999, 2008;
+Menezes et al., 2007). In (Batalin and Sukhatme, 2002)
+A more recent off-line spanning tree-based multi-robot two algorithms are presented which are based on the
+coverage method presented by Fazli et al. (2010) deals premise that to achieve coverage the team of robots
+with the case where the robots have a limited visibility must “spread out” over the environment. The authors
+range. This approach is shown to be complete and note that “this premise is loosely inspired by the diffurobust with respect to robot failure.
+sive motion of fluid particles”. Using these algorithms
+robots perform obstacle avoidance and at the same
+time are mutually repelled by each other within their
+11.4 Multi-robot
+Neural-network- sensor range. These bio-inspired works are validated
+in simulation, but their practical application has been
+based Coverage
+very limited up to date.
+Luo and Yang (2002) presented a straightforward adaptation of the biologically inspired neural network ap11.7 Multi-robot Coverage for Aerial
+proach for coverage tasks to multi-robot scenarios
+Robotics
+where the robots see each other as moving obstacles.
+In a later work (Luo et al., 2003), an extension was provided to avoid deadlock situations between the robots. A considerable body of research has addressed multiTheir approach is validated in simulation.
+robot coverage path planning for fleets of aerial robots,
+taking into account the particulars of this domain. Notice that in the works discussed below it is assumed
+11.5 Multi-robot Graph-based and that the vehicles fly at a safe altitude, and as a result
+obstacles are not considered.
+Boundary Coverage
+Extensions of the graph-based techniques discussed in
+Sec. 7 for coverage using multiple robots were provided
+by Xu (2011). In a previous multi-robot graph-based
+coverage approach, Easton and Burdick (2005) discuss
+22
+
+Ahmadzadeh et al. (2006) proposed a coverage algorithm for surveillance using a fleet of UAVs. Their
+proposal takes into account the limited maneuverability of the aerial platforms and visibility constraints on
+the body-fixed cameras imposed by the application at
+
+hand. The problem is posed using the integer programming (IP) formalism, which provides a convenient
+representation for the aforementioned constraints. The
+solution of the IP problem instance produces a control
+policy for the UAV fleet to accomplish the surveillance
+task operating within the constraint limits. The efficacy of this approach is validated by simulation and
+experimental results.
+
+erage patterns, such as spiral patterns, that can simplify the path following to vehicles with motion constraints.
+
+However, the Morse-based cellular decomposition
+method cannot handle rectilinear environments, and
+the cyclic rectangular paths used to detect all the critical points include retracing, which makes them longer
+than a standard zigzag path. This limitations are overMaza and Ollero (2007) proposed a terrain coverage come by the landmark-based topological coverage apstrategy using a heterogeneous fleet of UAVs. First, proach. This method uses a cellular decomposition
+their method generates a polygonal partition of the tar- based on natural landmarks of the environment which
+get area. The partition takes into account the capabili- determine the cell boundaries. An algorithm is given
+ties of each individual vehicle, such as flight endurance to perform coverage on-line on unknown environments
+and range. Each polygon in the partition is assigned using this technique.
+to an UAV which will cover it using a zig-zag pattern.
+Each vehicle plans its zig-zag pattern according to the For the particular case of robots with only contact sengeometric characteristics of its assigned polygonal area sors (i.e., with no range sensing capabilities) operating
+to determine a sweep direction that minimizes the num- in rectilinear environments, the CCR algorithm guarber of turns. An important consideration in this work antees complete on-line coverage.
+is low complexity of the algorithms used, seeking operation in near-real time. The proposed method is vali- Grid-based methods such as the wavefront algorithm,
+dated in simulation.
+the Spiral-STC algorithm and its derivatives, and the
+described neural-network-based and hexagonal decomTargeting remote sensing in agriculture, Barrientos position approaches, provide complete coverage on a
+et al. (2011) presented an approach to area coverage discretized representation of the target environment.
+using fleets of mini aerial robots. Regarding multi- However, the grid representation of the environment
+robot coverage, they first present a task scheduler to used is highly sensitive to localization error and incurs
+partition the global target area into k non-overlapping an exponential memory consumption. On the other
+subtasks for the k UAVs. In contrast with the previous hand, it is easy to create and operate with a grid map.
+work, this partition procedure is based on a negotia- It is worth noticing, as a unique capability among the
+tion process in which each robot claims covering as reviewed methods, that the discussed neural networkmuch area as possible, rather than on geometric con- based methods are able to handle environments with
+siderations. Second, the wavefront algorithm discussed moving obstacles.
+in 6.1 is used to cover each subarea.
+Some methods aimed to cover 3-dimensional environments have been reviewed. Hert’s algorithm can completely cover projectively planar 3-dimensional envi12 Conclusion
+ronments. However, details on how to detect the inlets used by the algorithm using sensor data are not
+In this paper, we have seen that the coverage path plan- provided, making it difficult to implement. Moduning problem has been addressed using many differ- lar approaches, such as the coverage methods targeted
+ent approaches. For planar spaces, the trapezoidal de- for spray-painting tasks proposed by Atkar et al. or
+composition guarantees complete coverage for a known the simplified model of a urban environment used by
+polygonal environment. An improvement to the trape- Cheng et al. can achieve complete coverage of certain
+zoidal decomposition is the “classical” boustrophedon 3-dimensional environments. The method for coverdecomposition, which generates shorter complete cov- age of bathymetric surfaces by Galceran et al. and
+erage paths for the same class of environments. The the coverage algorithm for arable farming by Jin et al.
+Morse-based cellular decomposition provides complete provide coverage of 3-dimensional environments taking
+coverage paths for environments whose obstacle bound- into account application-specific constraints. However,
+aries are differentiable. A method to detect the critical in confined 3-dimensional areas where a robot cannot
+points that determine the cell boundaries using range go through the spaces between component structures,
+sensor information allows to perform Morse-based cel- or occluded areas only visible from a reduced set of
+lular decomposition coverage on-line. Furthermore, viewpoints, these modular approaches do not suffice.
+Morse decomposition allows generation of different cov- To overcome this limitation, Englot et al. introduced a
+23
+
+sampling-based coverage algorithm to achieve complete
+sensor coverage of complex, 3-dimensional structures.
+The paths generated using this method are able to
+cover cluttered spaces where complex structures such
+as shafts and rudders are present. The approach is
+validated using triangular mesh models constructed using sensor imagery of real-world vessels. Also building
+upon the idea of sampling-based coverage, Papadopoulos et al. presented an algorithm that generates coverage paths for complex 3-dimensional structures suitable for vehicles with differential constraints. Furthermore, their algorithm is proven asymptotically optimal
+with respect to a given cost function. This approaches
+constitute the state of the art in coverage of complex
+3-dimensional structures.
+We have discussed several approaches to generate optimal coverage paths in planar spaces and to reduce
+localization error while performing coverage.
+Finally, we have reviewed some multi-robot coverage
+methods in which time to completion is reduced by dividing the workload among the individual robot team
+members, besides providing increased robustness guarantees.
+The features of the most relevant CPP methods reviewed in this article are summarized in Table 1. For
+each method (rows), the table underlines (columns
+from left to right) its category, its approach, its main
+bibliographical reference, whether it can be used online or not, the kind of environments it can handle and
+some remarks.
+Probabilistic sampling-based algorithms have revolutionized the state of the art in path planning in the recent years, and they have proven to be extremely powerful as demonstrated in the work by Englot et al. on
+ship hull inspection. Therefore, exploiting these techniques opens the door to developing algorithms able
+to realize coverage tasks of unprecedented complexity.
+On the other hand, in real-world applications, a robot
+often does not have perfect knowledge about its location. In this situation, incorporating uncertainty in
+future location estimates in the planning phase can significantly improve motion performance. Although several research works have explored taking uncertainty
+into account in path planning problems, few attention
+has been given to incorporating uncertainty in coverage path planning methods. Hence, this remains as an
+open issue for further research.
+
+24
+
+Category
+
+Survey summary
+On/OffEnvironments
+Reference(s)
+line
+Handled
+
+Approach
+Trapezoidal
+composition
+
+De-
+
+Classical Exact Cell
+Decomposition
+Boustrophedon Decomposition
+
+Morse-based Cell
+Decomposition
+
+25
+
+Natural Landmarkbased Topological
+Coverage
+Contact
+Sensorbased Coverage
+
+Grid-based Coverage
+
+Off-line
+
+Polygonal
+
+(Choset
+and
+Pignon, 1997)
+
+Off-line
+
+Polygonal
+Polygonal
+and
+differentiable
+boundaries (nonrectilinear)
+Polygonal
+and
+differentiable
+boundaries (nonrectilinear)
+
+Lays the concept of using events to determine cell divisions, a concept a number of other approaches are based upon.
+Generates less cells and hence shorter
+paths than the trapezoidal decomposition.
+
+Morse Decomposition & Cycle Algorithm
+
+(Acar et al., 2002)
+
+On-line
+
+Morse Decomposition + GVD
+
+(Acar et al., 2006)
+
+On-line
+
+(Wong and MacDonald, 2003)
+
+On-line
+
+Generic planar obstacles
+
+Handles a large variety of environments
+(including rectilinear environments).
+
+(Butler
+1999)
+
+On-line
+
+Rectilinear
+
+Targeted for robots equipped only with
+contact sensors.
+
+Off-line
+
+Grid-discretized
+
+Simple, easy to implement algorithm.
+
+On-line
+
+Grid-discretized
+
+Minimizes repeated coverage by visiting
+each grid cell only once.
+
+On-line
+
+Grid-discretized
+
+Handles dynamic obstacles.
+
+Landmark-based
+Coverage
+Algorithm
+Rectilinear decomposition (CCR algorithm)
+Wavefront
+Algorithm
+Spiral-STC Algorithm
+Neural Network
+
+Graph Coverage
+
+(Choset et al.,
+2005)
+
+Remarks
+
+et
+
+al.,
+
+(Zelinsky et al.,
+1993)
+(Gabriely and Rimon, 2002)
+(Luo et al., 2002;
+Yang and Luo,
+2004; Luo and
+Yang, 2008)
+
+Hexagonal Grid
+
+(Paull et al., 2012)
+
+On-line
+
+Grid-discretized
+
+Various
+graph
+search algorithms
+
+(Xu, 2011)
+
+On-line
+
+Environmental constraints
+
+Allows for generation of different decomposition and coverage path patterns.
+Avoids generation unnecessary zigzag
+paths in narrow environments.
+
+Maximizes information gain along the
+path.
+Applies to environments that can be
+represented as a graph, such as a street
+or road network.
+
+3-dimensional Coverage
+
+26
+Optimal Coverage
+
+Planar terrain covering algorithm applied at successive
+depths
+
+(Hert et al., 1996)
+
+On-line
+
+Projectively planar
+(2.5D)
+
+Theoretically proven, however no details on how to detect the inlets used
+by the algorithm are provided.
+
+3D cellular decomposition
+
+(Atkar et al., 2001)
+
+On-line
+
+Closed, orientable
+surfaces embedded
+in R3
+
+Theoretically proven. Demonstrated in
+simulation for simple 3D surfaces (polyhedra).
+
+Hierarchical
+segmentation
+of
+pseudo-extruded
+surfaces
+
+(Atkar et al., 2009)
+
+Off-line
+
+Car-like
+parts
+(pseudo-extruded
+surfaces)
+
+Specifically targeted for coverage of automotive parts. Generates paths which
+optimize paint deposition uniformity.
+
+Coverage path generation on simplified 3D surfaces
+
+(Cheng
+2008)
+
+Coverage of Bathymetric Surfaces
+Coverage
+for
+Arable Farming
+
+(Galceran and Carreras, 2013)
+(Jin and Tang,
+2011)
+
+Random samplingbased
+
+et
+
+al.,
+
+On-line
+
+Off-line
+
+Urban
+environments simplified as
+hemispheres
+and
+cylinders
+Bathymetric (elevation) maps
+
+Suitable for covering urban structures
+with sufficient clearance between them.
+Provides fair imaging angles on rugged
+terrain.
+
+Off-line
+
+Elevation maps
+
+Minimizes application-specific costs.
+
+(Englot and Hover,
+2012)
+
+Off-line
+
+Complex 3D structures
+
+Allows for coverage of complex 3dimensional structures such as a ship
+propeller.
+
+Random samplingbased with differential constraints
+
+(Papadopoulos
+et al., 2013)
+
+Off-line
+
+Complex 3D structures
+
+Can handle differential constraints and
+probabilistically guarantees optimality.
+
+Cell decomposition
+with variable sweep
+direction
+
+(Huang, 2001)
+
+Off-line
+
+Polygonal
+
+Takes into account “cell height” to select the optimal sweep direction.
+
+Trapezoidal decomposition + genetic
+algorithm
+
+(Jimenez et al.,
+2007)
+
+Off-line
+
+Polygonal
+
+A genetic algorithm quickly finds a specific coverage paths among the cells.
+
+Coverage
+under
+Uncertainty
+
+27
+Multi-robot Coverage
+
+Morse
+decomposition + optimal
+adjacency
+graph
+traversal
+
+(Mannadiar and
+Rekleitis, 2010)
+
+On-line
+
+Exploiting critical
+points
+
+(Acar and Choset,
+2002b)
+
+On-line
+
+Active SLAM
+
+(Kim, 2012)
+
+On-line
+
+Ship hull
+
+Leap-frog strategy
+
+(Tully et al., 2010)
+
+On-line
+
+Obstacles not considered
+
+Modified boustrophedon paths
+Low
+uncertainty
+CPP for marine
+surveys
+
+(Bretl
+and
+Hutchinson, 2013)
+
+Off-line
+
+Planar
+
+(Galceran et al.,
+2013)
+
+Off-line
+
+Marine
+
+Boustrophedonbased
+
+(Rekleitis et al.,
+2009)
+
+On-line
+
+Polygonal
+and
+differentiable
+boundaries (nonrectilinear)
+
+Contact
+based
+
+(Butler
+2000)
+
+On-line
+
+Rectilinear
+
+sensor-
+
+et
+
+al.,
+
+Polygonal
+and
+differentiable
+boundaries (nonrectilinear)
+Polygonal
+and
+differentiable
+boundaries (nonrectilinear)
+
+Spiral-STC-based
+
+(Zheng et al., 2005)
+
+Off-line
+
+Grid-discretized
+
+Spiral-STC-based
+
+(Hazon
+2006)
+
+On-line
+
+Grid-discretized
+
+Neural-networkbased
+
+(Luo et al., 2003)
+
+On-line
+
+Grid-discretized
+
+Boundary coverage
+Bio-inspired
+Aerial
+
+et
+
+al.,
+
+(Easton and BurOff-line
+2D
+dick, 2005)
+(Wagner et al.,
+On-line
+2D
+2008) and others
+(Ahmadzadeh
+Aerial
+et al., 2006) and Off-line
+free)
+others
+Table 1: Survey summary
+
+(obstacle-
+
+Finds an optimal walk through the adjacency graph.
+
+Efficiently increases actual percent coverage achieved.
+Decides when to revisit a salient feature
+when executing coverage to reduce uncertainty.
+Robots in a team use each other as beacons alternatively.
+Guarantees complete coverage under
+bounded position and velocity error.
+Uses saliency to determine parallel
+track order and key salient points to revisit.
+Extension of Morse decomposition to
+multi-robot teams.
+Extension of CCR using a decoupled
+high-level coordinator.
+Extension of Spiral-STC to multi-robot
+teams.
+On-line extension of Spiral-STC to
+multi-robot teams.
+Robots see each other as moving obstacles.
+Focused on coverage of obstacle boundaries.
+Validated in simulation, but of limited
+practical application.
+Account for limited maneuverability
+and for load balancing in heterogeneous
+teams.
+
+References
+
+Arkin, E. M., Fekete, S. P., and Mitchell, J. S. (2000).
+Approximation algorithms for lawn mowing and
+milling. Computational Geometry, 17(12):25 – 50.
+
+Acar, E. and Choset, H. (2002a). Sensor-based coverage of unknown environments: Incremental construction of morse decompositions. International Arkin, E. M. and Hassin, R. (1994). Approximation algorithms for the geometric covering salesman probJournal of Robotics Research, 21(4):345–366.
+lem. Discrete Applied Mathematics, 55(3):197–218.
+Acar, E., Choset, H., and Atkar, P. (2001). Complete
+sensor-based coverage with extended-range detec- Atkar, P., Choset, H., and Rizzi, A. (2003). Towards
+optimal coverage of 2-dimensional surfaces embedtors: a hierarchical decomposition in terms of critical
+ded in ir3: choice of start curve. In Intelligent Robots
+points and voronoi diagrams. In Intelligent Robots
+and Systems, 2003. (IROS 2003). Proceedings. 2003
+and Systems, 2001. Proceedings. 2001 IEEE/RSJ InIEEE/RSJ International Conference on, volume 4,
+ternational Conference on, volume 3, pages 1305 –
+pages 3581 – 3587 vol.3.
+1311 vol.3.
+Atkar, P., Conner, D., Greenfield, A., Choset, H., and
+Rizzi, A. (2009). Hierarchical segmentation of piecewise pseudoextruded surfaces for uniform coverage.
+Automation Science and Engineering, IEEE Transactions on, 6(1):107 –120.
+
+Acar, E. U. and Choset, H. (2000). Critical point sensing in unknown environments. In Proceedings of the
+2000 IEEE International Conference on Robotics &
+Automation.
+Acar, E. U. and Choset, H. (2001). Robust sensorbased coverage of unstructured environments. In
+Proc. IEEE/RSJ International Intelligent Robots
+and Systems Conference, volume 1, pages 61–68.
+
+Atkar, P., Greenfield, A., Conner, D., Choset, H., and
+Rizzi, A. (2005a). Hierarchical segmentation of surfaces embedded in r3 for auto-body painting. In
+Robotics and Automation, 2005. ICRA 2005. ProAcar, E. U. and Choset, H. (2002b). Exploiting critical
+ceedings of the 2005 IEEE International Conference
+points to reduce positioning error for sensor-based
+on, pages 572 – 577.
+navigation. In Proc. IEEE Int. Conf. Robotics and
+Automation ICRA 2002, volume 4, pages 3831–3837. Atkar, P., Greenfield, A. L., Conner, D. C., Choset, H.,
+and Rizzi, A. (2005b). Uniform coverage of automoAcar, E. U., Choset, H., and Lee, J. Y. (2006). Sensortive surface patches. The International Journal of
+based coverage with extended range detectors. IEEE
+Robotics Research, 24(11):883 – 898.
+Transactions on Robotics, 22(1):189–198.
+Atkar, P. N., Choset, H., Rizzi, A. A., and Acar, E. U.
+Acar, E. U., Choset, H., Rizzi, A. A., Atkar, P. N., and
+(2001). Exact cellular decomposition of closed oriHull, D. (2002). Morse decompositions for coverage
+entable surfaces embedded in r3. In Proc. ICRA
+tasks. International Journal of Robotics Research,
+Robotics and Automation IEEE Int. Conf, volume 1,
+21(4):331–344.
+pages 699–704.
+Acar, E. U., Choset, H., Zhang, Y., and Schervish, M. Barrientos, A., Colorado, J., del Cerro, J., Martinez,
+(2003). Path planning for robotic demining: Robust
+A., Rossi, C., Sanz, D., and Valente, J. (2011). Aerial
+sensor-based coverage of unstructured environments
+remote sensing in agriculture: A practical approach
+and probabilistic methods. International Journal of
+to area coverage and path planning for fleets of mini
+Robotics Research, 22(7-8):441–466.
+aerial robots. Journal of Field Robotics, 28(5):667–
+689.
+Agmon, N., Hazon, N., and Kaminka, G. (2006). Constructing spanning trees for efficient multi-robot cov- Batalin, M. A. and Sukhatme, G. S. (2002). Spreaderage. In Robotics and Automation, 2006. ICRA
+ing out: A local approach to multi-robot coverage.
+2006. Proceedings 2006 IEEE International ConferIn Proceedings of the 6th International Symposium
+ence on, pages 1698 –1703.
+on Distributed Autonomous Robotics Systems, pages
+373–382.
+Ahmadzadeh, A., Keller, J., Jadbabaie, A., and Kumar, V. (2006). An optimization-based approach Bosse, M., Nourani-Vatani, N., and Roberts, J. (2007).
+to time critical cooperative surveillance and coverCoverage algorithms for an under-actuated car-like
+age with unmanned aerial vehicles. In International
+vehicle in an uncertain environment. In Proc. IEEE
+Symposium on Experimental Robotics.
+Int Robotics and Automation Conf, pages 698–703.
+28
+
+Bretl, T. and Hutchinson, S. (2013). Robust coverage Choset, H., Acar, E., Rizzi, A. A., and Luntz, J.
+by a mobile robot of a planar workspace. In Proc.
+(2000a). Exact cellular decompositions in terms of
+International Conference on Robotics and Automacritical points of morse functions. In Proc. IEEE Int.
+tion.
+Conf. Robotics and Automation ICRA ’00, volume 3,
+pages 2270–2277.
+Butler, Z. J., Rizzi, A. A., and Hollis, R. L. (1999).
+Contact sensor-based coverage of rectilinear envi- Choset, H. and Burdick, J. (2000). Sensor-based
+ronments. In Proc. IEEE Int Intelligent Conexploration: The hierarchical generalized voronoi
+trol/Intelligent Systems and Semiotics Symposium,
+graph. The International Journal of Robotics Repages 266–271.
+search, 19(2):96–125.
+Butler, Z. J., Rizzi, A. A., and Hollis, R. L. (2000).
+Complete distributed coverage of rectilinear environments. In Proc. of the Workshop on the Algorithmic
+Foundations of Robotics.
+
+Choset, H. and Kortenkamp, D. (1999). Path planning
+and control for aercam, a free-flying inspection robot
+in space. ASCE Journal of Aerospace Engineering,
+12(2):74–81.
+
+Canny, J. F. (1988). Constructing roadmaps of semialgebraic sets i: Completeness. Artificial Intelli- Choset, H., Lynch, K., Hutchinson, S., Kantor, G.,
+Burgard, W., Kavraki, L., and Thrun, S. (2005).
+gence, 37(1-3):203–222.
+Principles of Robot Motion: Theory, Algorithms,
+Canny, J. F. (1993). An opportunistic global path planand Implementation. The MIT Press.
+ner. Algorithmica, 10:102–120.
+Choset, H. and Pignon, P. (1997). Coverage path
+Cao, Z. L., Huang, Y., and Hall, E. L. (1988). Replanning: The boustrophedon cellular decomposigion filling operations with random obstacle avoidtion. In Proceedings of International Conference on
+ance for mobile robotics. Journal of Robotic Systems,
+Field and Service Robotics.
+5(2):87–102.
+Castellanos, J., Tardos, J., and Schmidt, G. (1997). Choset, H., Walker, S., Eiamsa-Ard, K., and Burdick,
+J. (2000b). Sensor-based exploration: Incremental
+Building a global map of the environment of a mobile
+construction of the hierarchical generalized voronoi
+robot: the importance of correlations. In Robotics
+graph. The International Journal of Robotics Reand Automation, 1997. Proceedings., 1997 IEEE Insearch, 19(2):126–148.
+ternational Conference on, volume 2, pages 1053 –
+1059 vol.2.
+Danner, T. and Kavraki, L. (2000). Randomized planning for short inspection paths. In Robotics and AuCheng, P., Keller, J., and Kumar, V. (2008). Timetomation, 2000. Proceedings. ICRA ’00. IEEE Interoptimal uav trajectory planning for 3d urban strucnational Conference on, volume 2, pages 971 –976
+ture coverage. In Intelligent Robots and Systems,
+vol.2.
+2008. IROS 2008. IEEE/RSJ International Conference on, pages 2750 –2757.
+de Berg, M., Cheong, O., v. Kreveldand, M., and
+Chin, W.-P. and Ntafos, S. (1991). Shortest watchman
+Overmars, M. (2008). Computational Geometry.
+routes in simple polygons. Discrete & Computational
+Springer, 3rd edition edition.
+Geometry, 6(1):9–31.
+Easton, K. and Burdick, J. (2005). A coverage alChoi, Y.-H., Lee, T.-K., Baek, S.-H., and Oh, S.-Y.
+gorithm for multi-robot boundary inspection. In
+(2009). Online complete coverage path planning
+Robotics and Automation, 2005. ICRA 2005. Profor mobile robots based on linked spiral paths usceedings of the 2005 IEEE International Conference
+ing constrained inverse distance transform. In Proc.
+on, pages 727–734.
+IEEE/RSJ Int. Conf. Intelligent Robots and Systems
+IROS 2009, pages 5788–5793.
+Elfes, A. (1987). Sonar-based real-world mapping and
+Choset, H. (2000). Coverage of known spaces: the
+boustrophedon cellular decomposition. Autonomous
+Robots, 9(3):247–253.
+Choset, H. (2001). Coverage for robotics–a survey of
+recent results. Annals of Mathematics and Artificial
+Intelligence, 31:113–126.
+29
+
+navigation. Robotics and Automation, IEEE Journal
+of, 3(3):249 –265.
+Englot, B. and Hover, F. (2012). Sampling-based coverage path planning for inspection of complex structures. In International Conference on Automated
+Planning and Scheduling (ICAPS).
+
+Farsi, M., Ratcliff, K., Johnson, J. P., Allen, C. R., Hazon, N., Mieli, F., and Kaminka, G. (2006). Towards
+Karam, K. Z., and Pawson, R. (1994). Robot conrobust on-line multi-robot coverage. In Robotics and
+trol system for window cleaning. In Proc. American
+Automation, 2006. ICRA 2006. Proceedings 2006
+Control Conf, volume 1, pages 994–995.
+IEEE International Conference on, pages 1710 –
+1715.
+Fazli, P., Davoodi, A., Pasquier, P., and Mackworth, A.
+(2010). Complete and robust cooperative robot area Hert, S., Tiwari, S., and Lumelsky, V. (1996). A
+coverage with limited range. In Intelligent Robots
+terrain-covering algorithm for an auv. Autonomous
+and Systems (IROS), 2010 IEEE/RSJ International
+Robots, 3:91–119.
+Conference on, pages 5577–5582.
+Hodgkin, L. and Huxley, A. F. (1952). A quantitaGabriely, Y. and Rimon, E. (2002). Spiral-stc: an ontive description of membrane current and its appliline coverage algorithm of grid environments by a
+cation to conduction and exitation in nerve. Journal
+mobile robot. In Proc. IEEE Int. Conf. Robotics and
+of Physics London, 117:500–544.
+Automation ICRA ’02, volume 1, pages 954–960.
+Huang, W. H. (2001). Optimal line-sweep-based deGage, D. W. (1994). Randomized search strategies
+compositions for coverage algorithms. In Proc. ICRA
+with imperfect sensors. In Proc. SPIE, Mobile Robots
+Robotics and Automation IEEE Int. Conf, volume 1,
+VIII–Int. Soc. Optical Engineering, pages 270–279,
+pages 27–32.
+Boston, MA.
+Jimenez, P. A., Shirinzadeh, B., Nicholson, A., and
+Galceran, E. and Carreras, M. (2012). Efficient seabed
+Alici, G. (2007). Optimal area covering using genetic
+coverage path planning for asvs and auvs. In Proc.
+algorithms. In Proc. IEEE/ASME international conIEEE/RSJ International Intelligent Robots and Sysference Advanced intelligent mechatronics, pages 1–
+tems Conference.
+5.
+Galceran, E. and Carreras, M. (2013). Planning coverage paths on bathymetric maps for in-detail in- Jin, J. and Tang, L. (2011). Coverage path planning on
+three-dimensional terrain for arable farming. Journal
+spection of the ocean floor. In Proc. International
+of Field Robotics, 28(3):424–440.
+Conference on Robotics and Automation.
+Galceran, E., Nagappa, S., Carreras, M., Ridao, P., Kim, A. (2012). Active Visual SLAM with Exploration
+for Autonomous Underwater Navigation. PhD theand Palomer, A. (2013). Uncertainty-driven survey
+sis, The University of Michigan.
+path planning for bathymetric mapping. In Proc.
+IEEE/RSJ International Intelligent Robots and SysLatombe, J. C. (1991). Robot motion planning. Kluwer
+tems Conference.
+Academic Publishers.
+Garcia, E. and de Santos, P. G. (2004). Mobile-robot
+navigation with complete coverage of unstructured LaValle, S. M. (2006). Planning Algorithms, chapter
+Chapter 4: The Configuration Sace, pages 130–131.
+environments. Robotics and Autonomous Systems,
+Cambridge University Press.
+46:195–204.
+Gonzalez, E., Alvarez, O., Diaz, Y., Parra, C., and
+Bustacara, C. (2005). Bsa: A complete coverage
+algorithm. In Proc. IEEE Int. Conf. Robotics and
+Automation ICRA 2005, pages 2040–2044.
+
+Lee, T.-S., Choi, J.-S., Lee, J.-H., and Lee, B.-H.
+(2009). 3-d terrain covering and map building algorithm for an auv. In Proc. IEEE/RSJ Int. Conf.
+Intelligent Robots and Systems IROS 2009, pages
+4420–4425.
+
+Guo, Y. and Balakrishnan, M. (2006). Complete coverage control for nonholonomic mobile robots in dy- Li, F. and Klette, R. (2008). An approximate algorithm for solving the watchman route problem. In
+namic environments. In Robotics and Automation,
+Sommer, G. and Klette, R., editors, Robot Vision,
+2006. ICRA 2006. Proceedings 2006 IEEE Internavolume 4931 of Lecture Notes in Computer Science,
+tional Conference on, pages 1704 –1709.
+pages 189–206. Springer Berlin Heidelberg.
+Hazon, N. and Kaminka, G. (2005). Redundancy, efficiency and robustness in multi-robot coverage. In Lumelsky, V. J., Mukhopadhyay, S., and Sun, K.
+Robotics and Automation, 2005. ICRA 2005. Pro(1990). Dynamic path planning in sensor-based terceedings of the 2005 IEEE International Conference
+rain acquisition. IEEE Transactions on Robotics and
+on, pages 735 – 741.
+Automation, 6(4):462–472.
+30
+
+Luo, C. and Yang, S. (2002). A real-time coopera- Oksanen, T. and Visala, A. (2009). Coverage path
+tive sweeping strategy for multiple cleaning robots.
+planning algorithms for agricultural field machines.
+In Intelligent Control, 2002. Proceedings of the 2002
+Journal of Field Robotics, 26:651–558.
+IEEE International Symposium on, pages 660 – 665.
+Ollis, M. and Stentz, A. (1997). Vision-based percepLuo, C. and Yang, S. (2008). A bioinspired neural
+tion for an automated harvester. In Proc. IEEE/RSJ
+network for real-time concurrent map building and
+Int Intelligent Robots and Systems IROS ’97. Conf,
+complete coverage robot navigation in unknown envolume 3, pages 1838–1844.
+vironments. Neural Networks, IEEE Transactions
+on, 19(7):1279 –1298.
+Palacin, J., Palleja, T., Valganon, I., Pernia, R., and
+Roca, J. (2005). Measuring coverage performances of
+Luo, C., Yang, S., and Stacey, D. (2003). Real-time
+a floor cleaning mobile robot using a vision system.
+path planning with deadlock avoidance of multiple
+In Robotics and Automation, 2005. ICRA 2005. Procleaning robots. In Robotics and Automation, 2003.
+ceedings of the 2005 IEEE International Conference
+Proceedings. ICRA ’03. IEEE International Conferon, pages 4236–4241.
+ence on, volume 3, pages 4080 – 4085 vol.3.
+Papadopoulos, G., Kurniawati, H., and Patrikalakis,
+Luo, C., Yang, S. X., Stacey, D. A., and Jofriet, J. C.
+N. M. (2013). Asymptotically optimal inspection
+(2002). A solution to vicinity problem of obstacles in
+planning using systems with differential constraints.
+complete coverage path planning. In Proc. IEEE Int.
+In Proc. International Conference on Robotics and
+Conf. Robotics and Automation ICRA ’02, volume 1,
+Automation.
+pages 612–617.
+Mannadiar, R. and Rekleitis, I. (2010). Optimal cov- Paull, L., Saeedi, S., Li, H., and Myers, V. (2010).
+An information gain based adaptive path planning
+erage of a known arbitrary environment. In Proc.
+method for an autonomous underwater vehicle using
+IEEE Int Robotics and Automation (ICRA) Conf,
+sidescan sonar. In Automation Science and Engipages 5525–5530.
+neering (CASE), 2010 IEEE Conference on, pages
+835–840.
+Maza, I. and Ollero, A. (2007). Distributed Autonomous Robotic Systems 6, chapter Multiple UAV
+cooperative searching operation using polygon area Paull, L., SaeediGharahbolagh, S., Seto, M., and Li,
+H. (2012). Sensor driven online coverage planning
+decomposition and efficient coverage algorithms,
+for autonomous underwater vehicles. In Intelligent
+pages 221–230. Springer.
+Robots and Systems (IROS), 2012 IEEE/RSJ InterMazo, M. and et al. (2004). Robust area coverage using
+national Conference on, pages 2875–2880.
+hybrid control. TELEC 2004, Santiago de Cuba.
+Qiu, X., Song, J., Zhang, X., and Liu, S. (2006). A
+Menezes, R., Martins, F., Vieira, F. E., Silva, R., and
+complete coverage path planning method for moBraga, M. (2007). A model for terrain coverage inbile robot in uncertain environments. In Proc. Sixth
+spired by ant’s alarm pheromones. In Proceedings
+World Congress Intelligent Control and Automation
+of the 2007 ACM symposium on Applied computing,
+WCICA 2006, volume 2, pages 8892–8896.
+SAC ’07, pages 728–732, New York, NY, USA. ACM.
+Reeb, G. (1946). Sur les points singuliers d’une forme
+Milnor, J. (1963). Morse Theory. Princeton University
+de Pfaff complètement intégrable ou d’une foncPress.
+tion numérique. Comptes Rendus Acad. Sciences,
+222:847–849.
+Moravec, H. and Elfes, A. (1985). High resolution maps
+from wide angle sonar. In Proc. IEEE Int. Conf.
+Reif, J. H. and Sun, Z. (2001). Algorithmic and ComRobotics and Automation, volume 2, pages 116–121.
+putational Robotics: New Directions, chapter An efficient approximation algorithm for weighed region
+Najjaran, H. and Kircanski, N. (2000). Path planning
+shortest path problem, pages 191–203. A. K. Peters.
+for a terrain scanner robot. In Proc. 31st Int. Symp.
+Robotics, pages 132–137, Montreal, QC, Canada.
+Rekleitis, I., New, A., Rankin, E., and Choset,
+Oh, J. S., Choi, Y. H., Park, J. B., and Zheng, Y.
+H. (2009). Efficient boustrophedon multi-robot
+(2004). Complete coverage navigation of cleaning
+coverage: an algorithmic approach. Annals of
+robots using triangular-cell-based map. Industrial
+Mathematics and Artificial Intelligence, 52:109–142.
+Electronics, IEEE Transactions on, 51(3):718–726.
+10.1007/s10472-009-9120-2.
+31
+
+Shermer, T. (1992). Recent results in art galleries [geometry]. Proceedings of the IEEE, 80(9):1384–1399.
+
+Yang, S. X. and Luo, C. (2004). A neural network approach to complete coverage path planning. IEEE
+Transactions on Systems, Man, and Cybernetics,
+Shivashankar, V., Jain, R., Kuter, U., and Nau, D.
+Part B: Cybernetics, 34(1):718–724.
+(2011). Real-time planning for covering an initiallyunknown spatial environment. In Proceedings of the Yasutomi, F., Yamada, M., and Tsukamoto, K. (1988).
+Cleaning robot control. In Proc. Conf. IEEE Int
+Twenty-Fourth International Florida Artificial IntelRobotics and Automation, pages 1839–1841.
+ligence Research Society Conference.
+Thrun, S. (1998). Learning metric-topological maps Zelinsky, A., Jarvis, R. A., Byrne, J. C., and Yuta, S.
+(1993). Planning paths of complete coverage of an
+for indoor mobile robot navigation. Artif. Intell.,
+unstructured environment by a mobile robot. In Pro99(1):21–71.
+ceedings of International Conference on Advanced
+Robotics, pages 533–538.
+Thrun, S. (2003). Robotic mapping: a survey. In
+Exploring Artificial Intelligence in the New Millennium, pages 1–35. Morgan Kaufmann Publishers Zheng, X., Jain, S., Koenig, S., and Kempe, D. (2005).
+Multi-robot forest coverage. In Intelligent Robots
+Inc., San Francisco, CA, USA.
+and Systems, 2005. (IROS 2005). 2005 IEEE/RSJ
+International Conference on, pages 3852 – 3857.
+Tully, S., Kantor, G., and Choset, H. (2010). Leapfrog path design for multi-robot cooperative localZheng, X. and Koenig, S. (2007). Robot coverage
+ization. In Howard, A., Iagnemma, K., and Kelly,
+of terrain with non-uniform traversability. In InA., editors, Field and Service Robotics, volume 62
+telligent Robots and Systems, 2007. IROS 2007.
+of Springer Tracts in Advanced Robotics, pages 307–
+IEEE/RSJ International Conference on, pages 3757
+317. Springer Berlin / Heidelberg. 10.1007/978-3–3764.
+642-13408-1 28.
+Wagner, I. A., Altshuler, Y., Yanovski, V., and Bruckstein, A. M. (2008). Cooperative cleaners: A study in
+ant robotics. The International Journal of Robotics
+Research, 27(1):127–151.
+Wagner, I. A., Lindenbaum, M., and Bruckstein, A. M.
+(1999). Distributed covering by ant-robots using
+evaporating traces. IEEE Transactions on Robotics
+and Automation, 15(5):918–933.
+Wong, S. C. (2006). Qualitative topological coverage of
+unknown environments by mobile robots. PhD thesis,
+The University of Auckland.
+Wong, S. C. and MacDonald, B. A. (2003). A topological coverage algorithm for mobile robots. In Proc.
+IEEE/RSJ Int. Conf. Intelligent Robots and Systems
+(IROS 2003), volume 2, pages 1685–1690.
+Xu, A., Virie, P., and Rekleitis, I. (2011). Optimal
+complete terrain coverage using an unmanned aerial
+vehicle. In Proceedings of the 2011 IEEE International Conference on Robotics & Automation.
+Xu, L. (2011). Graph Planning for Environmental Coverage. PhD thesis, Carnegie Mellon University.
+Yan, M. and Zhu, D. (2011). An algorithm of complete
+coverage path planning for autonomous underwater
+vehicles. Key Engineering Materials, 467-469:1377–
+1385.
+32
+
+

@@ -1,0 +1,9 @@
+# Config-safety net: never commit the real secret-bearing .env or regenerable
+# data. Only .env.example (redacted) is tracked; reconstruct .env from it and set
+# a fresh POSTGRES_PASSWORD (e.g. `openssl rand -hex 24`).
+.env
+.env.*
+!.env.example
+data/
+*.bak
+*.pre-*

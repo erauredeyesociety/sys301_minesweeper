@@ -1,0 +1,3031 @@
+1
+
+A Generalized Framework for Autonomous
+Calibration of Wheeled Mobile Robots
+
+arXiv:2001.01555v1 [cs.RO] 6 Jan 2020
+
+Mohan Krishna Nutalapati, Student Member, IEEE, Lavish Arora, Student Member, IEEE, Anway Bose,
+Ketan Rajawat, Member, IEEE and Rajesh M Hegde, Senior Member, IEEE
+
+Abstract—Robotic calibration allows for the fusion of data
+from multiple sensors such as odometers, cameras etc., by
+providing appropriate transformational relationships between the
+corresponding reference frames. For wheeled robots equipped
+with exteroceptive sensors, calibration entails learning the motion
+model of the sensor or the robot in terms of the odometric
+data, and must generally be performed prior to performing
+tasks such as simultaneous localization and mapping (SLAM).
+Within this context, the current trend is to carry out simultaneous
+calibration of odometry and sensor without the use of any
+additional hardware. Building upon the existing simultaneous
+calibration algorithms, we put forth a generalized calibration
+framework that can not only handle robots operating in 2D with
+arbitrary or unknown motion models but also handle outliers
+in an automated manner. We first propose an algorithm based
+on the alternating minimization framework applicable to twowheel differential drive. Subsequently, for arbitrary but known
+drive configurations we put forth an iteratively re-weighted least
+squares methodology leveraging an intelligent weighing scheme.
+Different from the existing works, these proposed algorithms
+require no manual intervention and seamlessly handle outliers
+that arise due to both systematic and non-systematic errors.
+Finally, we put forward a novel Gaussian Process-based nonparametric approach for calibrating wheeled robots with arbitrary or unknown drive configurations. Detailed experiments are
+performed to demonstrate the accuracy, usefulness, and flexibility
+of the proposed algorithms.
+Index Terms—Calibration and identification, kinematics,
+wheeled robots, sensor fusion, extrinsic calibration
+
+TABLE I
+N OMENCLATURE USED IN THE PAPER
+Parameters that are to be estimated
+p = (`x , `y , `θ , r)
+| {z }
+
+parameters to be estimated
+
+`
+
+` position of extrinsic sensor w.r.t robot frame
+r robot instrinsic parameters
+
+rL , rR left and right wheel radii (m)
+Two-wheel drive
+b
+distance between two wheels (m)
+
+Lx half of axle length along x-axis of the robot (m) 
+Ly half of axle length along x-axis of the robot (m)
+Mecanum drive
+
+r
+radius of each wheel
+Measurements
+U
+V
+δ(t)
+Z(t)
+q(t) =
+ŝjk
+
+raw data log of odometry sensor
+Measurememts from exteroceptive sensor
+vector of wheel angular velocities at time instant t
+exteroceptive sensor measurement at time instant t
+[qx (t) qy (t) qθ (t)]T Pose of robot at any time t
+sensor displacement estimate for time interval [tj , tk )
+
+Operators
+⊕
+
+
+Roto-translation operator
+
+inverse
+ of ⊕ operator
+ax
+bx
+ax + bx cos aθ − by sin aθ
+∆
+ay  ⊕ by  = ay + bx sin aθ + by cos aθ 
+aθ + bθ
+aθ
+bθ
+
+
+
+
+
+
+
+  
+ax
+−ax cos aθ − ay sin aθ
+∆ 
+
+
+ ay = ax sin aθ − ay cos aθ 
+−aθ
+aθ
+
+I. I NTRODUCTION
+OBOTIC calibration is an important first step necessary for carrying out various sophisticated tasks such
+as simultaneous localization and mapping (SLAM) [1, 2],
+object detection and tracking [3], and autonomous navigation
+[4]. For most wheeled robot configurations that comprise
+encoders and exteroceptive sensors, the calibration process
+entails learning a mathematical model that can be used to fuse
+odometry and sensor data. For instance, calibrating a robot
+with a two-wheel differential drive robot involves learning
+various intrinsic parameters, namely the wheel radii and the
+axle length, and the extrinsic parameters, namely the pose
+of the sensors [5–8]. More generally, however, when the
+motion model of the robot is unavailable, calibration involves
+learning the relationships that describe the sensor motion in
+
+R
+
+The authors are with the Department of Electrical Engineering, Indian Institute of Technology Kanpur, Kanpur 208016, India, (e-mail:
+{nmohank, lavi, anwayb, ketan, rhegde}@iitk.ac.in).
+This paper has supplementary downloadable material (available at http:
+//tinyurl.com/simultaneous-calibration) that includes raw-data of all the experiments and implementation codes for the proposed methodologies.
+
+terms of the odometry measurements. Precise calibration is
+imperative since calibration errors are often systematic and
+tend to accumulate over time [9]. Conversely, an accurately
+specified odometric model complements the exteroceptive sensor, e.g. to correct for measurement distortions if any [10], and
+continues to provide motion information even in featureless or
+geometrically degenerate environments [11].
+As the robot undergoes wear-and-tear during its course of
+operation, calibration must also be performed regularly. Such
+a requirement motivates the need for calibration approaches
+that work without any additional hardware, require no prior
+information, and do not need to disrupt the operation of the
+robot. A joint calibration approach for a two-wheel differential
+drive that is independent of specialized hardware was first
+proposed in [12], with the formal analysis presented in [13]
+and has since been extended to other settings such as the
+tricycle robot [14]. The idea here is to find a maximum likelihood estimate of the various intrinsic and extrinsic parameters
+
+2
+
+(a) Configuration T1
+
+(b) Configuration T2
+
+Fig. 1. Deformed Turtlebot3 Mecanum drive robot used for experimental
+evaluations. (a) Unaligned wheel axis deformation, (b) Tilted wheel deformation.
+
+(a) Fire Bird VI robot
+
+(b) Configuration F1
+
+Fig. 2. One of the wheels (left) of Fire Bird VI robot is deformed such that
+the wheel looses its notion of circularity.
+
+using the ego-motion estimates provided by the exteroceptive
+sensor. As long as these ego-motion estimates are sufficiently
+accurate, calibration can be carried out without any additional
+hardware or a specialized environment. The present work also
+utilizes such a joint calibration approach. Fully automatic and
+simultaneous extrinsic-odometric calibration algorithms exist,
+but require artificial landmarks to properly handle outliers [15].
+Henceforth, existing algorithms for joint calibration suffer
+from two key issues (a) applicability to specific drive configurations due to the use of customized algorithms; and (b) outlier
+rejection mechanisms requiring either manual intervention or
+specialized hardware. Besides, extending the approaches in
+[13, 14] to other robot configurations may be possible but
+not straightforward. More importantly, existing methods do
+not apply to robots for which full kinematic models are
+not available. Examples include complex multi-wheel robots,
+robots with a misaligned axis, other unknown offsets or
+deformations (see Fig. 2 and Fig. 1), and robots suffering
+from excessive wear-and-tear, such as a punctured wheel [16].
+As the calibration is performed in operating environments,
+the ego-motion estimates provided by the sensor are often
+corrupted with outliers. A fully automated outlier removal
+mechanism is necessary to ensure that the calibration routine
+runs by itself.
+This work puts forth a generalized calibration framework
+applicable to robots with arbitrary or unknown models and
+
+is capable of rejecting outliers automatically. We begin with
+describing joint odometry and sensor calibration algorithm
+for two-wheel differential drive robot that is capable of
+handling outliers in an automated manner. Notably, the proposed approach handles various non-systematic errors such as
+those arising from sensor malfunctions and wheel slippages.
+The method is in contrast with existing approaches such
+as [13] where outlier removal requires specific environmentdependent parameters to be carefully tuned. Subsequently, an
+iteratively re-weighted least-squares algorithm is proposed that
+is capable of calibrating any robot with a known kinematic
+model while also automatically handling outliers. We remark
+here that the proposed algorithm can be used with a variety
+of robots with complicated drive configurations and is the
+first such general-purpose simultaneous calibration algorithm.
+Finally, a completely generic Gaussian process (GP) regression
+based calibration algorithm is proposed that can calibrate any
+robot from scratch and without knowing its kinematic model.
+Experiments are carried out to assess the performance of
+the proposed algorithms. As compared to the state-of-the-art
+algorithms, the first two algorithms yield better performance
+while also handling outliers automatically. The third algorithm
+is tested on robots with minor deformations to wheels and
+axes (see Fig. 1 and Fig. 2), and it is understood that existing
+algorithms are not applicable to handle such deformations. In
+contrast, the proposed GP-based algorithm continues to yield
+accurate odometric motion estimates of the extrinsic sensor.
+The rest of the paper is organized as follows. Sec. II briefly
+reviews some related literature. Sec. III details the system
+setup and the problem formulation. The proposed algorithms
+are described in Sec. IV. Detailed experimental evaluations
+are carried out to validate the performance of the proposed
+methods, and the results are discussed in Sec. V. Finally, Sec.
+VI concludes the paper. The notation used in the paper is
+summarized in Table I.
+II. R ELATED W ORK
+Wheeled robots with exteroceptive sensors require both
+intrinsic and extrinsic calibration before the odometry data
+can be fused with the sensor data. Initial works on intrinsic
+calibration utilized specially crafted trajectories to estimate
+the imperfections in the kinematic model of the robot and
+hence correct for systematic odometry errors [17]. Similar
+approaches were later proposed for generalized trajectories
+in [18] as well as other configurations such as car-like [19]
+and tricycle [20]. A linear identification problem to estimate
+odometry calibration parameters is formulated and solved
+within the least-squares framework in [21]. A common issue
+among these approaches was the need for external measurement systems such as calibrated video cameras or motion
+capture systems. Towards simplifying the calibration problem, [22] proposed an algorithm that exploited the redundant
+information from multiple sensors mounted on the robot.
+Likewise, filtering-based calibration techniques were proposed
+in [23–28], some of these approaches involve incorporating
+the systematic parameters in the state vector and estimating
+them within the extended Kalman filter (EKF)-based SLAM
+
+3
+
+framework. However, filtering techniques such as EKF are not
+designed to handle outliers, that must be eliminated separately
+rendering the entire process suboptimal. Finally, the calibration
+problem has also been studied within the aegis of optimization
+theory, and relevant works include [29, 30] where systematic
+and random errors are analyzed and modelled for vehicle
+odometry.
+Methods for extrinsic calibration generally assume that
+the intrinsic parameters of the robot are already available.
+The problem of determining the transformation between a
+camera and an IMU was considered in [31] within the EKF
+framework. In [32], the maximum likelihood formulation using
+observations from a mirror surface is considered to estimate
+the six-degrees-of-freedom transformation between a camera
+and the body of the robot. Extrinsic calibration of a lidar
+sensor attached to a ground vehicle using EKF is considered
+in [33]. Both extrinsic and intrinsic calibration approaches
+may perform poorly if the underlying parameter estimation
+problem is ill-conditioned. Observability analysis, in general,
+provides valuable insights towards practical considerations
+under which all the intended parameters are observable. Observability properties for different combinations of sensors are
+described in [34]. Later [35, 36] solved the extrinsic calibration
+problem along with formal observability analysis. Also, [37]
+calibrate a bearing sensor and theoretically validate through an
+observability analysis, taking into account the system nonlinearities. Misalignment error if any, was explicitly modelled and
+corrected in the multi-sensor calibration algorithms in [38, 39].
+Simultaneous calibration of the intrinsic and extrinsic parameters has been considered before, but with the help of
+external hardware; see, e.g., [40]. As already discussed, the
+problem of simultaneous calibration without any special equipment was first considered in [12], with the formal analysis
+presented in [13] for two-wheel differential drive robots and
+later for tricycle robots in [14]. More generic calibration
+routines for arbitrary robot configurations were presented in
+[41] without any convergence guarantees. A joint SLAM
+and calibration problem was considered in [42] and involved
+solving a non-linear optimization problem using the GaussNewton method. Note however that while such an algorithm
+allows us to track the calibration parameters closely, it incurs
+a significantly higher overall complexity as opposed to batch
+calibration methods. Most of the current approaches are not
+robust to outliers in the sensor measurements. However, some
+approaches handle outliers either through a manual trimming
+procedure in [13] or by installing special hardware such as
+reflective markers [14]. Generalizing the existing schemes,
+the proposed algorithm allows calibration of arbitrary robot
+configurations while automatically handling outliers.
+Thus far, model-free calibration of robots has not been
+widely studied. A few exceptions include [16] which entailed
+learning the inverse kinematics of the robot using instancebased learning techniques. The present work is inspired by [9]
+where GP regression is used to complement the existing model
+by accounting for unmodeled errors. The proposed approach is
+more general and allows us to directly learn the full kinematic
+model.
+
+Fig. 3. Illustrating the calibration methodology and its usage in performing
+high level autonomous tasks such as SLAM
+
+III. P ROBLEM S TATEMENT
+We begin with a brief description of the system model
+adopted here and depicted in Fig.3. In the calibration phase
+the foremost goal is to estimate the robot/sensor motion model
+making use of synchronized data from odometry and extrinsic
+sensors, where as in the operational phase the estimated model
+is used to perform high level autonomous tasks such as SLAM
+etc. The relevant notation is summarized in Table I. Consider a
+general robot with an arbitrary drive configuration, equipped
+with m rotary encoders on its wheels and/or joints and an
+exteroceptive sensor such as a lidar or a camera. The exteroceptive sensor can sense the environment and generate scans
+or images V = {Z(t)}t∈T that can be used to estimate its ego
+motion. Here, T := {t1 , t2 , . . . , tn } denotes the set of discrete
+time instants at which the measurements are made. The rotary
+encoders output raw odometry data in form of a sequence of
+wheels angular velocities U = {δ(t)}t∈T . Given two time
+instants tj and tk such that ∆tjk := tk − tj > 0 is sufficiently
+small, it is generally assumed that δ(t) = δ(tj ) := δjk for all
+tj ≤ t < tk . Traditionally, the odometry data is pre-processed
+to yield translation motion and orientation information, in the
+form of the robot pose {qj := q(tj )}nj=1 , and is subsequently
+fused with the ego motion estimates from exteroceptive and
+other sensors. Following the notation in Table I, the relative
+pose of the robot at time tk with respect to that at time
+tj is given by qjk := qj ⊕ qk . The pre-processing step
+necessitates the use of the motion model fr of the robot that
+acts upon the odometry data δjk to yield the relative pose of
+the robot qjk = fr (δjk ). Note that if the exteroceptive sensor
+is mounted exactly on the robot frame of reference, the sensor
+motion model f is the same as the robot motion model fr . In
+general however, if the pose of the exteroceptive sensor with
+respect to the robot is denoted by `, the sensor motion model
+is given by f (δjk ) = ` ⊕ fr (δjk ) ⊕ `, where generally ` is
+also unknown.
+As shown in Fig.3, the goal of the calibration phase is
+to estimate the function f , given U and V collected during
+the training phase. The estimated motion model, denoted by
+fˆ, is subsequently used in the operational phase to augment
+or even complement the motion estimates provided by the
+exteroceptive sensor. More importantly, accurate odometry can
+be used to correct distortions in the sensor measurements [10].
+
+4
+
+We begin with studying the special case when the function
+f takes the form f (•) = g(• ; p) where g is a known
+function, and p is the set of unknown parameters, such as
+the dimensions of the wheel, sensor position w.r.t robot frame
+of reference etc. Knowing the form of g allows us to consider
+a simpler parametric problem that entails estimation of the
+relevant parameters p. Two distinct scenarios are considered:
+the simpler case where the robot has a two-wheel differential
+drive that allows for joint scan-matching and calibration, and
+the more general case where sensor displacement is calculated
+a priori and provided as input to the calibration routine. A significantly more challenging scenario occurs when the form of
+f is not known, e.g. due to excess wear-and-tear, or is difficult
+to handle, e.g. due to non-differentiability. For such cases, the
+parametric approach is no longer feasible, and the unknown
+variable f is generally infinite dimensional. Towards this end,
+a low-complexity approach is proposed, wherein a simple
+but generic (e.g. linear) model for f is postulated. A more
+general and fully non-parametric Gaussian process framework
+is also put forth that is capable of handling more complex
+scenarios and estimate a broader class of motion models f . It
+is remarked that in this case, unless the exteroceptive sensor
+is mounted on the robot axis, additional information may also
+be required to estimate the robot motion model fr .
+An interesting feature of the proposed class of algorithms is
+that they do not require the ground truth of the robot motion.
+Therefore, the calibration phase may be repeated as often as
+required depending on the rate of wear-and-tear of the robot
+wheels or sensor pose changes. More generally, the calibration
+phase can be integrated within the operational phase itself and
+may, therefore, be carried out without interrupting the robot
+operation. However, as will be shown later, the calibration
+phase does require the robot motion to comprise of both,
+rotation and translation at each step.
+While the formulation and techniques developed here can
+be applied to arbitrary exteroceptive sensors, for ease of
+exposition and testing, we will restrict ourselves to 2D Lidar
+that is mounted in such a way that it makes zero pitch
+and roll with robot axis. Likewise, although most of the
+calibration techniques are general, the fomulae and algorithms
+presented here will only consider a robot operating in a planar
+environment.
+The 2D pose of the robot at time t is denoted by q(t) :=
+[qx (t) qy (t) qθ (t)]T , consisting of the location coordinates
+and orientation of the robot with respect to a fixed frame
+of reference. The robot motion is governed by the following
+differential equation for t ∈ R:
+
+ 
+
+v (t)
+v(t) cos(qθ (t))
+dq(t)  x  
+= vy (t) = v(t) sin(qθ (t))  (1)
+q̇(t) :=
+dt
+ω(t)
+ω(t)
+where v(t) and ω(t) are respectively the translational and
+rotational velocities of the robot and vx (t), vy (t) being the
+components of v(t) along x-axis and y-axis respectively.
+Having introduced the preliminary notation, we discuss the
+three relevant examples that will subsequently be considered.
+Example 1: Consider a two-wheel differential drive robot
+(see Fig. 4(a)) operating in a planar environment. Calibrating
+
+(a)
+
+(b)
+
+Fig. 4. Robots used for experimental evaluations of proposed algorithms
+along with the state-of-the-art. (a) Kobuki robot equipped with a 2D-lidar,
+wheel encoders and an on-board computer. (b) Similarly Fire Bird VI robot.
+
+such a robot entails estimation of two sets of parameters (a)
+kinematic model parameters r := (rL , rR , b) ∈ R3 , where
+rL and rR denote the radii of the left and right wheels
+respectively, and b denotes the axle length; and (b) the pose
+of the exteroceptive sensor with respect to the robot frame
+` := (`x , `y , `θ ) ∈ R3 . For such a robot, the left and
+right wheel odometry sensors output a sequence of ticks, that
+can generally be converted into left- and right-wheel angular
+velocities, denoted by ωL (t) and ωR (t) respectively. The robot
+translation and rotation velocities used in (1) are related to
+δ(t) := [ωL (t) ωR (t)]T as follows,
+
+
+v(t)
+= Jr δ(t)
+(2)
+ω(t)
+where
+
+
+rL /2 rR /2
+Jr :=
+(3)
+−rL /b rR /b
+Henceforth, we denote the wheel angular velocities by ωi (t)
+where i = {L, R}.
+In order to derive the motion model, consider the time
+interval [tj , tk ) such that ∆tjk is sufficiently small and the
+wheel velocities {ωi (t)}i=L,R remain approximately constant
+for t ∈ [tj , tk ). Such an approximation allows us to use the
+notation ωijk := ωi (t) for t ∈ [tj , tk ). In practice, the wheel
+angular velocities are obtained by counting the number of ticks
+recorded in the interval [tj , tk ), scaling it with the manufacture
+specified radians per tick factor, and dividing the result by
+∆tjk . Consequently, from (3) we have that
+1
+1
+jk
+jk
+rL ωL
++ rR ωR
+= vjk
+(4)
+2
+2
+1
+1
+jk
+jk
+ω(t) := − rL ωL
++ rR ωR
+= ωjk
+(5)
+b
+b
+for t ∈ [tj , tk ). Finally, the relative pose qjk can be obtained
+by integrating (1) over the interval [tj , tk ), that yields
+v(t) :=
+
+x
+qjk
+= vjk ∆tjk (sin ωjk ∆tjk )/(ωjk ∆tjk )
+
+(6a)
+
+y
+qjk
+= vjk ∆tjk (1 − cos ωjk ∆tjk )/(ωjk ∆tjk )
+θ
+qjk = ωjk ∆tjk .
+
+(6b)
+(6c)
+
+The robot motion model fr can be obtained by substituting
+(4)-(5) into (6). It can be observed that the for the two-wheel
+
+5
+
+differential drive robot, the sensor motion model f (δjk ) =
+`⊕fr (δjk )⊕` is completely specified, but for the parameters
+p = (`, r).
+Example 2: Consider an arbitrary complex wheel drive robot
+operating in a planar environment, for example, a four-wheel
+Mecanum drive robot as shown in Fig. 4(b). Calibrating
+such a robot entails estimation of kinematic model parameters
+r := (r, Lx , Ly ) ∈ R3 , where r denotes the fixed radius of
+all the four wheels, Lx denotes the half of axle length along
+x-axis of the robot, and Ly denotes the same along the y-axis.
+For such a robot, the left-rear, right-rear, left-front and rightfront wheel odometry sensors output a sequence of ticks, that
+can generally be converted into corresponding wheel angular
+velocities denoted by ωLr (t) , ωRr (t) , ωLf (t), and ωRf (t),
+respectively. The robot translation and rotation velocities used
+in (1) are related to δ(t) := [ωLr (t) ωRr (t) ωLf (t) ωRf (t)]T
+as follows,
+
+
+vx (t)
+vy (t) = Jr δ(t)
+(7)
+ω(t)
+where 
+
+1
+1
+1
+1
+
+−1
+1
+1
+−1 
+.
+Jr := r 
+
+
+1
+1
+1
+1
+−
+−
+Lx + Ly Lx + Ly
+Lx + Ly Lx + Ly
+(8)
+Following the short hand notations used in Example 1, the
+wheel angular velocities are denoted by ωi (t) where i ∈
+{Lr , Rr , Lf , Rf }. Likewise, assume that ∆tjk is small, so that
+y
+x
+vx (t) = vjk
+and vy (t) = vjk
+for t ∈ [tj , tk ). Consequently,
+the relative poses are given by
+x
+x
+qjk
+= vjk
+∆tjk
+
+(9a)
+
+y
+y
+qjk
+= vjk
+∆tjk
+θ
+qjk = ωjk ∆tjk .
+
+(9b)
+(9c)
+
+We remark here that for the four-wheel Mecanum drive robot,
+the sensor motion model f (δjk ) = ` ⊕ fr (δjk ) ⊕ ` is
+completely specified, but for the parameters p = (`, r).
+Example 3: Finally, consider a two-wheel differential drive
+and a four-wheel Mecanum drive robots suffering from hardware malfunctions such as deformation of one of the wheels
+(see Fig. 2), unaligned wheel axis, or tilted wheel (see Fig.
+1). The original kinematic model of the respective robots
+with such deformations no longer captures the true motion
+behaviour, and therefore cannot be used. In general, such
+distortions introduce new parameters that are difficult to
+model. Despite the distortions, the robots continue to output
+angular velocities δ(t) (of dimension m) that can be used to
+determine f : Rm → R3 using the ego-motion estimates of
+the exteroceptive sensors. Indeed, for such cases, it only makes
+sense to talk about the sensor motion model and not the robot
+motion model, which is unidentifiable unless the position of
+the sensor (parameterized by `) is known. Defining constant
+angular wheel velocities as in Example 1 for a small interval
+[tj , tk ), the relative pose of the sensor would be given by
+qjk = f (δjk ) and the goal is to estimate f .
+
+In summary, the goal is to learn the function f , given raw
+odometry U and sensor measurements V while being robust
+to outliers in an automated manner. For the case when the
+parametric form of the function f is known, the problem
+entails estimating the associated parameters p involving robot
+intrinsic parameters r and exteroceptive sensor position `. On
+the other hand, when the kinematic model of the robot is not
+known, the aim is to learn the non-parametric form of the
+function f .
+IV. C ALIBRATION M ETHODOLOGY
+This section details the algorithms for various cases discussed in Sec.III, namely, calibration of robots with twowheel differential drive configuration (Sec. IV-A), robots with
+generic but known drive configurations (Sec. IV-B), and finally, robots with unknown or unmodeled drive configurations
+(Sec. IV-C). The algorithms for the more general cases can
+always be used in the special cases, e.g., a robot with twowheel differential drive can be calibrated by any of the
+techniques presented in this section. However, using a more
+general method incurs a higher computational complexity and
+may result in lower calibration accuracy.
+A. Autonomous calibration of the two-wheel differential drive
+robots
+Consider a two-wheel differential drive robot equipped with
+a Lidar. Recall from Example 1 that for this case, the parameters of interest are p = (`, r) and the kinematic model of the
+robot is given by (4)-(6). The simple form of the kinematic
+model for the two-wheel drive motivates the formulation of a
+joint scan-matching and parameter estimation problem that can
+be solved via the alternating minimization algorithm. Different
+from the existing unsupervised calibration algorithms, e.g.
+[13], the proposed algorithm builds upon the ICP framework
+[43, 44] and allows automated outlier rejection. However,
+the overall approach here is general and can be used with
+other scan matching algorithms such as the point-to-line ICP
+(PLICP) [45]; see B.
+|Z(t)|
+Let {z(i) (t)}i=1 denote the Cartesian coordinates of the
+scan points expressed with respect to the Lidar frame and
+collected at time t ∈ T . Here, Z(t) denotes the set of all scan
+points collected at time t. Following the notation introduced
+in Sec. III, the scan points can be transformed into the robot
+|Z(t)|
+frame and written as {` ⊕ z(i) (t)}i=1 . We drop the subscript
+i, also t and denote the scan points collected at times {tj } by
+(i)
+(i)
+{zj }. For any point zj , the distance to the closest point in
+Z(tk ) is given by
+(i)
+
+djk := min
+
+z∈Z(tk )
+
+(i)
+
+qjk ⊕ ` ⊕ z − ` ⊕ zj
+
+2
+2
+
+(10)
+
+Within the ICP framework, the correspondence error is given
+by
+X X (i)
+h(r, `) =
+djk
+(11)
+(j,k)∈E i∈Zjk
+
+where E represents set of all chosen scan pairs and Zjk ⊂
+(i)
+Z(tk ) consists of points for which the distances djk are
+
+6
+
+the smallest. In order to allow partial overlap between the
+scan pairs Z(tj ) and Z(tk ), we utilize a trimming procedure
+(i)
+inspired from [44]. If the distances {djk } are sorted and the
+[ι]
+ι-th smallest distance is denoted by djk , then the trimmed
+correspondence error may be written as
+h(r, `) =
+
+Ijk
+X X
+[ι]
+djk .
+
+(12)
+
+(j,k)∈E ι=1
+
+Here, the number of points under consideration Ijk is generally
+decided on the basis of the overall trimmed correspondence
+error value. Trimming, by choosing Ijk < |Z(tk )|, not only
+allows partial overlaps between scan pairs but also handles
+erroneous measurements and shape defects. The overlap parameter ζ = Ijk /|Z(tk )| is determined automatically by
+solving a simple optimization problem as detailed in [44,
+Sec. 3]. Recall that in (10), qjk is a function of r and is
+given by (6) for the two-wheel drive. As in the classical
+ICP algorithm, for each pair of scans in E, the scan points
+are first transformed into a common frame of reference and
+then compared. The parameters are recovered by solving the
+following optimization problem
+(r? , `? ) = arg min h(r, `).
+r,`
+
+(13)
+
+Note that while in theory, one could impose constraints of the
+form r ≥ 0, such constraints would not be useful in practice.
+Indeed, a solution on the boundary (e.g. with rL = 0) is
+also not acceptable, and would generally necessitate collecting
+more measurements for calibration.
+The problem in (13) can be viewed as a generalization of
+the trimmed ICP framework, where the parameter ` does not
+appear. The inclusion of `, however, complicates the optimization problem, which is already non-convex and difficult
+to solve. To this end, we propose the following algorithm:
+starting from an initial estimate (r0 , `0 ), perform the two
+α
+steps iteratively (a) establish correspondences Zjk
+based on
+α α
+α+1 α+1
+(r , ` ); and (b) update (r
+,`
+) = arg minr,` hα (r, `)
+where hα is obtained from h while using the given correα
+spondences Zjk
+. Of these, the first step is straightforward
+and implements the trimming procedure, as outlined in [44].
+The step (b) is however still complicated, and we solve it via
+an alternating minimization approach. Also referred to as the
+block-coordinate descent (BCD) method [46], the approach
+entails alternating minimization of hα with respect to ` and
+r. While the algorithm is not guaranteed to converge except
+under specific conditions [47], it is known to work well in
+practice and has been used to solve a wide variety of problems
+in communications and signal processing.
+In the present context, the algorithm admits a natural interpretation, namely alternate intrinsic and extrinsic calibration,
+summarized in the following Lemma.
+Lemma 1. Given correspondences, the following problems:
+Extrinsic calibration given r0 : min hα (r0 , `)
+
+(14)
+
+Intrinsic calibration given `0 : min hα (r, `0 )
+
+(15)
+
+`∈L
+r≥0
+
+can both be solved efficiently. Specifically,(14) can be solved
+in closed-form while (15) can be solved via two-dimensional
+grid search.
+Note that the subproblems in (14)-(15) are both non-convex.
+Interestingly, however, Lemma 1 establishes that the global
+minima of these subproblems can be readily found. The full
+calibration via alternating minimization (CAM) algorithm is
+summarized in Algorithm 1. The parameters are initialized
+either from manufacture supplied values or from the values
+obtained via manual measurements. The development of the
+closed form solutions to (15)-(14) is carried out in A. Having
+developed the joint scan matching and calibration algorithm,
+discussion on various implementation related issues is due.
+Algorithm 1 CAM algorithm for autonomous calibration of
+two wheel differential drive robots
+1: Collect scans and wheel odometry measurements
+2: Initialize parameters i.e pα = (rα , `α ), with α = 0
+3: Select scan pairs based on the criteria detailed in IV-A2
+4: repeat
+5:
+Establish correspondences with current best estimate
+of parameters
+6:
+Perform Alternating Minimization :
+7:
+β = 0, pβ = (rβ , `β ) = (rα , `α ) = pα
+8:
+repeat
+9:
+Extrinsic calibration of Lidar :
+10:
+`β+1 ← arg min` hα (rβ , `)
+11:
+Intrinsic calibration of wheel odometry :
+12:
+rβ+1 ← arg minr hα (r, `β+1 )
+13:
+β ←β+1
+14:
+until Convergence pβ+1 − pβ ≤ 
+15:
+α ← α + 1, update pα
+16: until Convergence
+1) Observability and uniqueness: As in classical parameter
+estimation settings, it is necessary to explicate the limitations
+of the proposed algorithm. Observability analysis seeks to
+identify the conditions and constraints under which the estimates obtained from Algorithm 1 are reasonably close to
+the actual robot parameters. The idea is to generate a set of
+guidelines for the generation of measurements that make the
+system parameters observable.
+As a simple example, consider a robot that always moves
+along the x-axis in a straight line. Then, for any two time
+y
+x
+points tj and tk , it holds that qjk
+= vjk ∆tjk while qjk
+=
+θ
+qjk = 0. Recall from (4) that vjk depends only on rL and rR
+but not on the axle length b. Substituting these into (11), it can
+be seen that in this case, h would also not depend on b, i.e.,
+∇b h(r, `) = 0 regardless of the value of b. Indeed, if the robot
+only moves along the x-axis, the parameter b would remain
+unobservable irrespective of the calibration method used.
+More generally, the following proposition specifies the
+guidelines for robot motion during the calibration process.
+Proposition 1. The sensor parameters are unobservable if
+the robot motion comprises of either pure translations or pure
+rotations alone.
+The proof of Proposition 1 is provided in C. The observability analysis reveals the conditions under which certain
+
+7
+
+parameters would remain unobserved. For example, it can be
+y
+x
+seen from (11) that for pure rotation (i.e. when qjk
+= qjk
+= 0),
+the function h does not depend on intrinsic parameters rL and
+rR . In other words, rL and rR are not observable if all the
+scan pairs in E correspond only to pure rotations. In other
+words, if the training phase is comprised of pure rotations
+alone, inferring the radii rL and rR would be impossible.
+The requirement for the robot to be sufficiently mobile during
+the training phase is generally always required for passive
+calibration schemes [13].
+Before concluding, we remark here that the solution to (13)
+is not necessarily unique, even when all the parameters are
+observable. In particular, it can be observed from (13) that both
+(rL , rR , b, `x , `y , `θ ) and (−rL , −rR , −b, −`x , −`y , `θ + π)
+yield the same value of h(r, `) and ∇h(r, `). Such parameter
+ambiguity is often unavoidable in calibration algorithms; see,
+e.g. [13]. In the present case, however, the ambiguity can be
+resolved by selecting the solution that has positive values of
+(rL , rR , b). In general, if the initial values are not too far
+from the actual values, the proposed Algorithm was found
+to converge to the vicinity of the correct solution.
+2) On the choice of scan pairs and trajectory: While the
+proposed calibration algorithm allows for the calibration to
+be carried out while the robot is operating, the observability
+analysis does impose certain restrictions on the robot trajectory. Specifically, for the parameters to be observable with
+sufficiently high accuracy, the overall motion of the robot
+during the calibration phase should involve both translation
+and rotation. For instance, the estimated parameters would
+be highly inaccurate if the robot continues to move along
+an almost straight line or continues to turn around without
+moving.
+A typical calibration routine consists of a large number of
+scans and including every possible scan pair in E is inefficient
+and computationally demanding. Given that the robot trajectory adheres to such a restriction, the efficiency and accuracy
+of the calibration phase can both be improved by intelligently
+selecting the scan pairs. Specifically, based on robot odometry
+with nominal parameters, we choose scan pairs that have nonzero translation and rotation between them. Here, it is essential
+to ensure that scan pairs still correspond to sufficiently close
+robot locations, lest our assumption regarding small ∆tjk is
+violated. The simulations utilize a heuristic upper bound on
+the translation distance to ensure this.
+3) Automatic outlier rejection: Outliers enter into the system either through scan points that belong to non-overlapping
+regions or due to wheel slippages. The proposed CAM algorithm automatically removes both kinds of outliers; specifically, the trimmed correspondence error in (12) allows for
+partial overlaps and the Huber loss function incorporated
+within the subproblem (15) eliminates outliers due to wheel
+slippages (see A). The automatic outlier rejection approach
+contrasts existing calibration algorithms that require manual
+trimming [13] or additional hardware [14].
+4) Tuning parameters for CAM: Recall that the CAM overlap parameter ζ is found by solving an optimization problem
+as detailed in [44]. The corresponding preset parameter for
+the trimming procedure is set to be unity since the scan
+
+selection criteria yielded scans with considerable overlap. For
+this choice of preset parameter, the performance of the CAM
+algorithm was relatively robust to the choice of the Huber
+parameter c, which was also selected to be unity.
+
+B. Autonomous calibration of robots with arbitrary but known
+drive configurations
+This section develops a general-purpose calibration algorithm that can be applied to a robot with any given drive
+configuration. As in Sec. IV-A, the parameters of interest
+are denoted by p = (r, `), where r collects the intrinsic
+robot parameters while ` denotes the pose of the exteroceptive
+sensor in the robot frame. Unlike Sec. IV-A however, the
+exteroceptive sensor need not be a 2D Lidar, but any sensor
+capable of estimating its ego-motion, e.g., a camera.
+As in Sec. IV-A, let T denote the set of times at which
+the sensor observations are made. Consider a pair of times
+[tj , tk ) ∈ T , 3 tk > tj and ∆tjk = tk − tj is not too
+large. Recall that the relative pose of the robot qjk (r) is a
+function of the intrinsic robot parameters. Given `, the sensor
+displacement between tj and tk can be calculated as
+sjk (r, `) =  (qj ⊕ `) ⊕ (qk ⊕ `) =  ` ⊕ qjk (r) ⊕ ` (16)
+where qjk (r) encodes the robot motion model, as detailed in
+Sec. III. For certain pair of times [tj , tk ), the exteroceptive sensor may generate an estimate of its ego motion, henceforth denoted by ŝjk . For most sensors, such estimates are also accomy 2
+θ 2
+x 2
+) )
+) , (σjk
+) , (σjk
+panied by error variances Σjk := diag((σjk
+that quantify the estimation error variances in x, y, and θ
+estimates in ŝjk . Defining the set of all scan pairs E := {(j, k) |
+ŝjk is available and ∆tjk small}, the calibration problem can
+be posed within the non-linear least squares framework as
+ˆ = arg min h(r, `) :=
+(r̂, `)
+r,`
+
+X
+
+2
+
+kŝjk − sjk (r, `)kΣ−1 (17)
+jk
+
+(j,k)∈E
+
+Define the residual vector υjk (r, `) := ŝjk − sjk (r, `) and
+i
+denote its i-th element by υjk
+(r, `) for i ∈ {x, y, θ}. Observe
+that the objective function in (17) is also the negative loglikelihood − log p({ŝjk }; r, `) if the uncertainty in ŝjk is
+modeled as independent Gaussian distributed with zero mean
+and co-variance matrix Σjk . Such an interpretation allows (17)
+to be interpreted as the maximum likelihood (ML) estimator
+[13, 14].
+The exteroceptive sensor output is well known to be prone
+to outliers, e.g., due to the scan-matching failures. On the
+other hand, the ordinary least squares estimator tends to fail
+catastrophically even in the presence of a single outlier [48].
+In order to handle such outliers, we resort to the class of robust
+M-estimators. Rewriting the objective function in (17) in terms
+i
+of υjk
+, we obtain
+h(r, `) =
+
+X
+
+X
+
+(j,k)∈E i∈{x,y,θ}
+
+ρ
+
+i
+υjk
+(r, `)
+i
+σjk
+
+!
+(18)
+
+8
+
+guess p̂(0) and entails carrying out the following iterations for
+α ≥ 0:
+X
+2
+(22)
+p̂(α+1) = arg min
+kυjk (p)kW(α)
+p
+
+jk
+
+(j,k)∈E
+(α)
+
+(a)
+
+(b)
+
+Fig. 5. (a) Illustration of robot poses qj ,qk w.r.t to world frame; ` represents
+pose of Lidar sensor w.r.t robot frame; qjk is the relative pose of qk w.r.t
+qj . (b) Weight function plotted against residuals for Huber loss.
+
+2
+
+where ρ(u) = u2 . The robust counterpart of (18) is obtained
+by replacing the squared loss function ρ with the Huber
+function ρc defined as [49]
+( 2
+u
+|u| ≤ c
+(19)
+ρc (u) = 2
+c(|u| − 2c ) |u| > c.
+It can be seen that the Huber function is the same as the
+squared law function for |u| ≤ c but becomes linear in
+|u| for |u| > c. The Huber estimator obtained
+by plugging
+ i
+P
+P
+υjk (r,`)
+in hc (r, `) :=
+in (17) is
+i
+(j,k)∈E
+i∈{x,y,θ} ρc
+σjk
+robust to outliers in ŝjk . Alternatively, the Huber estimator can
+be viewed as a special case of a sparsity controlling outlier
+rejection framework [50]. Note that the Huber estimator is
+inefficient when the noise is actually Gaussian distributed. For
+instance, the choice c = 1.345 results in about 95% efficiency
+[49].
+In the following subsections, we discuss the methodology
+to solve (17) with the Huber loss function, followed by
+observability analysis.
+1) Iteratively Re-weighted Least Squares (IRLS) Algorithm:
+In general, both h and hc are non-convex functions of (r, `)
+and are difficult to work with. Moreover, the function ρc is
+not twice differentiable so classical second order methods (e.g.
+Newton method) cannot be directly applied. Instead, we put
+forth an IRLS variant that solves a non-linear least squares
+problem at each step. Recalling that p = (r, `), the equation
+∇hc (p) = 0 can be equivalently written as
+X
+
+X
+
+i
+i
+wjk
+(υjk
+(p))∇p
+
+
+
+(j,k)∈E i∈{x,y,θ}
+
+2
+1 i
+υjk (p)
+2
+
+
+=0
+
+(20)
+
+i
+wjk
+(u) :=
+
+
+
+1
+i
+(σjk
+)
+
+2
+
+c
+2
+i
+|u|(σjk
+)
+
+|u| ≤ c
+|u| ≥ c
+
+where γ = 1 − n1
+
+n
+P
+k=1
+
+i
+wjk
+(u). To understand the trimming
+
+process, observe that when there are few outliers in the data,
+i
+several of the weights wjk
+(u) are close to 1, and consequently,
+γ ≈ 0. As a result, no trimming occurs in such a scenario, and
+all the residual terms contribute to the optimization. On the
+other hand, when the number of outliers is very large, γ is
+larger, and a number of residuals having small weights may
+get trimmed. As a result, even when the level of corruption is
+high, the contribution of the outlier residual terms still stays
+small. The justification on the effectiveness of the trimming
+procedure will be substantiated in the experimental section.
+Second, the residuals are adjusted using leverage, as suggested
+i
+in [51]. The adjusted residuals are denoted by υ̃jk
+(p) and full
+IRLS algorithm is summarized in Algorithm 2.
+Note that in the context of two-wheel differential drive and
+the tricycle drive, the weighted least squares problem in (22)
+can be solved in closed-form if the following condition holds
+[13, 14]
+y
+x
+wjk
+= wjk
+.
+
+where the weight function is defined as
+
+
+
+where Wjk is a diagonal matrix whose (i, i)-th entry is given
+α
+i
+i
+by [Wjk
+]ii = wjk
+(υjk
+(p(α) )). Note that the non-linear least
+squares problem in (22) is similar to that in (17) except for
+the changing weights. Classical approaches for solving the
+NLS include (a) Newton method that can be applied when
+the motion model qjk (r) is twice differentiable in r; and the
+(b) Levenberg Marquardt (LM) algorithm otherwise. In general, LM algorithm is preferred when a lower computational
+complexity is desired while the Newton method is more suited
+when the Hessian can be calculated easily.
+Based on empirical observations, we propose two enhancements to the IRLS algorithm. First, when the number of
+outliers is large, there may be a large number of residual terms
+with very small weights. While the contribution of each of
+these residual terms may be small, their combined contribution
+may still be significant and may bias the estimate. Ideally,
+the residuals for which the corresponding weights are very
+small should be completely eliminated from the optimization
+process. Towards this end, we propose to trim the weights at
+every iteration as follows:
+(
+i
+(u) ≤ γ
+0
+wjk
+i
+w̃jk (u) =
+(23)
+i
+i
+wjk (u) wjk
+(u) > γ
+
+(21)
+
+i
+and shown in Fig.5(b). Observe that given the weights {wjk
+},
+solving (20) is equivalent to solving a non-linear weighted
+least squares (NLS) problem. Assuming that such a problem
+can be solved readily, the IRLS algorithm starts with an initial
+
+(24)
+
+While such a condition would not generally hold since the
+weights in (21) depend on the residuals, the availability of
+closed-form solution simplifies the overall algorithm significantly. Specifically, the proposed CIRLS algorithm reduces
+to alternatively solving (22) in closed-form and updating the
+weights as in (21) or (23). It is possible to explicitly force
+(24) to hold by setting
+y
+i
+x
+wjk
+= max{wjk
+, wjk
+}
+
+f or i ∈ {x, y}
+
+(25)
+
+9
+
+Algorithm 2 CIRLS algorithm for autonomous calibration of
+arbitrary drive robots
+1: Collect measurements from wheel odometry and extereoceptic sensors over any sufficiently exciting trajectories
+2: Now run the corresponding sensor displacement algorithm
+for each selected interval, to get the estimates {ŝjk }
+3: Initialize parameters pα = (`α , rα ), with α = 0
+4: Also initialize the weight matrix to W = I
+5: repeat
+6:
+Using current weight matrix (W) and available best
+estimate of parameters
+(pα ), solve the following:
+P
+2
+7:
+p̂ = arg minp (j,k)∈E kυjk (p)kW(α)
+jk
+8:
+This can be done by employing either Gauss Newton
+or Levenberg Marquardt algorithm
+9:
+Update pα , also update subsequent weights using
+equation (23), thus W
+10: until Convergence
+
+for all (j, k) ∈ E. In this case, equal weight is applied to all the
+residuals in the first iteration. We refer to this case as CIRLS
+CF (CIRLS with closed forms).
+2) Observability and Covariance analysis of estimated parameters: The observability analysis for ` is similar to that in
+Sec. IV-A. That is, pure translations alone, make `θ unobservable while pure rotations alone make `x and `y unobservable.
+Therefore the robot trajectory in the calibration phase should
+not consist entirely of pure translations or pure rotations solely.
+The observability of the intrinsic parameters depends on the
+motion model of the robot and must be explicitly analyzed for
+a given drive configuration. It can be seen for instance that if
+one or more entries of ∇qjk (r) are zero, the NLS problem
+may become ill-conditioned.
+The uncertainty in the estimated parameters can be found
+as follows:
+Σ = mse × (JT J)−1
+(26)
+where mse is the mean of squared weighted residual terms
+evaluated at the converged solution and the e-th row of J is
+∇p se (r, `) for all e ∈ E.
+C. Autonomous calibration of robots with un-modeled wheel
+deformations
+When no information about the kinematic model of the
+robot is available, it becomes necessary to estimate f directly.
+As in Sec. IV-B, let {tj } be the set of time instants at
+which measurements are made. For certain pairs of times
+[tj , tk ) ∈ E for which ∆tjk is not too large, the exteroceptive
+sensor generates motion estimates ŝjk . Given data of the form
+D := (δjk , ŝjk )(j,k)∈E and n := |E|, the goal is to learn the
+function f : Rm → R3 that adheres to the model
+ŝjk = f (δjk ) + εjk
+
+(27)
+
+for all (j, k) ∈ D, where εjk ∈ R3 models the noise in
+the measurements, and δjk now represents the wheel ticks
+recorded in the time interval ∆tjk . As in Sec. IV-B, it is
+assumed that the noise variance Σjk is known. Given an
+
+estimated fˆ of the sensor motion model, new odometry
+measurements δ? can be used to directly yield sensor pose
+changes s? = fˆ(δ? ). As remarked earlier, it may be possible
+to obtain the robot pose change q? from s? if the sensor
+pose ` is known a priori. Since the functional variable f
+is infinite dimensional in general, it is necessary to postulate
+a finite dimensional model that is computationally tractable.
+Towards solving the functional estimation problem, we detail
+two methods, that are very different in terms of computational
+complexity and usage flexibility.
+1) Calibration via Gaussian process regression: The GP
+regression approach assumes that the measurement noise is
+Gaussian distributed and assumes that the ŝjk also follows
+normal distribution with mean f (δjk ). Specifically, we have
+the likelihood as
+p(ŝjk |f (δjk )) = N (ŝjk |f (δjk ), Σjk )
+
+(28)
+
+or equivalently, εjk ∼ N (0, Σjk ). Given inputs {δjk }, let f
+denote the {3n×1} vector that collects {f (δjk )} for {(j, k) ∈
+E}. Defining Σ ∈ R3n×3n as the block diagonal matrix with
+entries Σjk and ŝ ∈ R3n as the vector that collects all the
+measurements {ŝjk }(j,k)∈E . Having this we can equivalently
+write the joint likelihood as
+p(ŝ|f ) = N (ŝ|f , Σ)
+
+(29)
+
+Unlike the parametric model in Sec. IV-B, we impose a
+Gaussian process prior on f directly. Equivalently, we have
+that
+p(f ) = N (f |µ̄, K)
+
+(30)
+
+where µ̄ ∈ R3n is the mean vector with stacked entries of
+µ(δjk ) ∈ R3 and the covariance matrix K ∈ R3n×3n has
+entries [Kjk,j 0 k0 ] = κ(δjk , δj 0 k0 ) for (j, k) and (j 0 , k 0 ) ∈ E .
+The choice of the mean function µ : Rm → R3 and kernel
+function κ : Rm × Rm → R3×3 is generally important
+and application specific. Popular choices include the linear, squared exponential, polynomial, Laplace, and Gaussian,
+among others. Next, the predictive posterior for a new test
+input δ? is defined as follows,
+Z
+p(ŝ? |ŝ) = p(ŝ? |fˆ(δ? )) · p(fˆ(δ? )|ŝ) · dfˆ(δ? )
+(31)
+R
+where p(fˆ(δ? )|ŝ) = p(fˆ(δ? )|f ) · p(f |ŝ) · df and also note
+p(fˆ(δ? )|f ) must be Gaussian. With a Gaussian prior and noise
+model, the posterior distribution of f given D is also Gaussian.
+For a new odometry measurement δ? with noise variance Σ? ,
+let k? ∈ R3n×3 be the vector that collects {κ(δ? , δjk )}(j,k)∈E .
+Then the distribution of fˆ(δ? ) for given ŝ is
+p(fˆ(δ? )|ŝ) = N (fˆ(δ? ) | µ̂? , Σ̂? )
+
+(32)
+
+where µ̂? = kTe (K + Σ)−1 (ŝ − µ̄) + µ(δ? ) and the covariance
+Σ̂? = κ(δ? , δ? ) − kT? (K + Σ)−1 k? . It is remarked that
+while the computational complexity of calculating the required
+inverse matrix (K + Σ)−1 is O(n3 ), it is required to be
+computed only once at the end of the training phase. The
+full CGP algorithm is summarized in Algorithm 3.
+
+10
+
+(a) X
+
+(b) Y
+
+(c) Theta
+
+(d) X
+
+(e) Y
+
+(f) Theta
+
+Fig. 6. (a),(b),(c) illustrates the movement of the sensor frame in x, y, θ, respectively w.r.t change in left and right wheel ticks of a two wheel differential
+drive robot (i.e., f (•) = g(• ; p̂)), overlaid with the corresponding sensor displacement measurements generated using raw data published at [52] for a
+particular configuration. Note p̂ denotes parameter estimates found using CMLE [13]. Also in [52], since data from each configuration is divided into three
+subsets, we consider any two of them as training data and rest as test data. Points that are displayed in red and yellow color denote training and testing
+samples generated at selected scan instants respectively. Note: red points that are away from the 3D surface are outliers. (d)-(f) represent the truncated and
+enlarged versions of the same plots to expose the linearity.
+
+Algorithm 3 CGP algorithm for simultaneous calibration of
+robot and sensor parameters
+1: Collect measurements from sensors.
+2: Training Phase :
+3: Run sensor displacement algorithm for each selected interval, to get the estimates {ŝk } and store them along with
+the corresponding angular velocities.
+4: Now pre-compute the following quantities :
+5:
+(K + Σ)−1 (ŝ − µ̄) and (K + Σ)−1
+6: Testing Phase :
+7: For every test input δ? , evaluate the following,
+8:
+µ̂? = k? (K + Σ)−1 (ŝ − µ̄) + µ(δ? )
+9:
+Σ̂? = κ(δ? , δ? ) − kT? (K + Σ)−1 k?
+10: Report ŝ∗ , where p(ŝ? ) = N (ŝ? |µ̂? , Σ̂? )
+
+Note that in general, the choice of the mean and kernel
+functions is important and specific to the type of robot in use.
+In the present case, we use the linear mean function
+µ(x) = Cx
+
+(33)
+
+where x ∈ Rm is the vector of wheel ticks recorded in
+a time interval and C ∈ R3×m is the associated hyperparameter of the mean function. Recall that m represents total
+number of wheels equipped with wheel encoders. Intuitively,
+
+the implication of this choice of linear mean function is that
+the relative position of the robot varies linearly with the wheel
+ticks recorded in the corresponding time interval. Such a
+relationship generally holds for arbitrary drive configurations
+if the time interval is sufficiently small. A widely used kernel
+function is the radial basis function as follows
+
+
+1
+0
+2
+0 T −1
+0
+[κrbf (x, x )]i,i0 = σi,i0 exp − (x − x ) Bi,i0 (x − x )
+2
+(34)
+where x, x0 ∈ Rm are the data inputs with hyper-parameters
+Ξ = [σi,i0 , Bi,i0 ], here i, i0 = 1, 2, 3. It will be shown in section
+V-C2 that for the two-wheel differential drive robot in use
+here, the squared exponential kernel (34) with the linear mean
+function yielded better results than others. On the other hand
+for four-wheel Mecanum drive in use here, the inner product
+kernel, which amounts to a linear transformation of the feature
+space,
+[κlin (x, x0 )]i,i0 = h x, x0 i
+(35)
+performed better. We remark here that for our experiments
+we have assumed κ(x, x0 ) = diag([κ(x, x0 )]i,i ). In general,
+the choice of the mean and kernel functions and that of
+the associated hyper-parameters is made a priori. For our
+experiments we infer the hyper-parameters by optimizing the
+corresponding log marginal likelihood. However, they may
+
+11
+
+also be determined during the calibration phase via crossvalidation.
+2) Calibration via approximate linear motion model: As
+an alternative to the general and flexible CGP approach that is
+applicable to any robot, we also put forth a computationally
+simple approach that relies on a linear approximation of f .
+Specifically, if ∆tjk is sufficiently small, so are elements
+of δjk . Therefore, it follows from the first order Taylor’s
+series expansion, that f is approximately linear. This assertion
+if further verified empirically for the two-wheel differential
+drive. As evident from Fig. 6, for ∆tjk sufficiently small,
+the elements of δjk are concentrated around zero and the
+surface fitting them is indeed approximately linear. Motivated
+by the observation in Fig. 6, we let f (δjk ) = Wδjk , where
+W ∈ R3×m is the unknown weight matrix. The following
+robust linear regression problem can subsequently be solved
+to yield the weights:
+!
+X
+X
+ŝijk − [Wδjk ]i
+c = arg min
+(36)
+W
+ρc
+i
+W
+σjk
+(j,k)∈E i∈{x,y,θ}
+
+where ρc is the Huber loss function [49]. Here, (36) is a
+convex optimization problem and can be solved efficiently
+with complexity O(n3 ). Note that the entries of W do not
+have any physical significance and cannot generally be related
+to the intrinsic or extrinsic robot parameters, especially after
+wheel deformation. Also, the computational cost incurred in
+making prediction is O(m) for the linear model but O(n2 )
+for the CGP algorithm.
+V. E XPERIMENTS ON AUTONOMOUS C ALIBRATION OF
+M OBILE ROBOTS
+This section details the experiments carried out to test
+the various calibration algorithms proposed in the paper. For
+all experiments, we made use of two different two-wheel
+differential drive and a four-wheel Mecanum drive robots, each
+equipped with wheel encoders and laser range finder. We begin
+with detailing the performance metrics used for evaluation
+followed by details regarding the experimental setup and
+results.
+
+Fig. 7. An example scenario describing loose relation between the error
+metrics ATE & RPE. {x0 , x1 , . . . , x6 } are the poses recorded at time instants
+t ∈ T = {t0 , t1 , . . . t6 } respectively. Note that dotted lines with arrows
+represents correspondences of test trajectory poses with that of ground truth
+poses.
+
+some of them [53] do not require odometry measurements
+and consequently serves as a benchmark for all calibration
+algorithms. Specifically, the google cartographer algorithm,
+which leverages a robust scan to sub-map joining routine, is
+used for generating the trajectory and the map [53] of the
+environments. Note that in the absence of extrinsic calibration
+parameters, SLAM outputs only the sensor trajectory (and
+not the robot trajectory), which is subsequently used for
+comparisons. Further, estimating the sensor trajectory from
+odometry measurements requires the sensor motion model f .
+Various sensor trajectory estimates are compared on the
+basis of Relative Pose Error (RPE) and the Absolute Trajectory
+Error (ATE) motivated from [54]. The RPE measures the local
+accuracy of the trajectory, and is indicative of the drift in the
+estimated trajectory as compared to the ground truth. At any
+time tk ∈ T , let the odometry and SLAM pose estimates be
+denoted by x̂k and xk , respectively. Then, relative pose change
+between times tk and tk+1 estimated via odometry and SLAM
+are given by  x̂k ⊕ x̂k+1 and  xk ⊕ xk+1 , respectively.
+Defining erk :=  ( x̂k ⊕ x̂k+1 ) ⊕ ( xk ⊕ xk+1 ), the
+RPE is defined as the root mean square of the translational
+components of {erk }n−1
+k=1 , i.e.,
+!1/2
+n−1
+1 X
+2
+RPE :=
+ktrans(erk )k
+(37)
+n−1
+k=1
+
+A. Performance Metrics
+The various calibration algorithms detailed in the paper
+output a robot/sensor motion model fˆ, and the goal of this
+section is to evaluate the efficacy of the learned model. In the
+absence of wheel slippages, it is remarked that the accuracy
+of motion model is quantified by the closeness of the robot
+trajectory estimate obtained from odometry to the ground truth
+trajectory. Since even small errors in the model accumulate
+over time, the overall trajectory may deviate significantly over
+a longer interval. Therefore in practical settings, odometry data
+must generally be augmented or fused with data from other
+sensors.
+Since ground truth data was not available for the experiments, we instead used a SLAM algorithm to localize the sensor and build a map of the environment. While SLAM output
+would itself be inaccurate as compared to the ground truth,
+
+where trans(ek ) refers to the translational components of ek .
+In contrast, the ATE measures the global (in)consistency of the
+estimated trajectory and is indicative of the absolute distance
+between the poses estimated by odometry and SLAM at any
+time tk . Defining the absolute pose error at time tk as eak :=
+ x̂k ⊕ xk , the ATE is evaluated as the root mean square of
+the pose errors for all times tk ∈ T , i.e.,
+!1/2
+n
+1X
+a 2
+ktrans(ek )k
+.
+(38)
+ATE :=
+n
+k=1
+
+We remark here that both relative rotational and translational
+errors in the robot trajectory contribute to the RPE. In contrast,
+the ATE only considers the absolute translational errors. A
+robot is said to be calibrated if the trajectory obtained from
+odometry is close to that obtained from SLAM under both the
+measures. Note that both the error metrics are loosely related
+
+12
+
+to each other; in most cases, RPE and ATE can either be both
+low or high. However, situations exist when the same is not
+true. For instance, consider the case described in Fig.7, where
+two test trajectories are compared against ground truth. The
+RPE of Test trajectory 1 is caused due to relative rotation error
+occurring only in time segment t12 := t2 − t1 . In contrast, test
+trajectory 2 incurs more RPE than that of test trajectory 1 due
+to low translational errors present between most of the time
+segments. Since the test trajectory 1 drifts more globally, it has
+a higher ATE than the test trajectory 2. This test case would
+be helpful in analyzing some of the results obtained in the
+later sub-sections.
+B. Experimental conditions for autonomous calibration of
+wheeled robots
+Next, we detail the experimental setup used to test the
+different calibration algorithms.
+1) Robots and sensors setup: To perform experimental
+evaluations we used two two-wheel differential drive robots
+iClebo Kobuki and FireBird VI (see Fig.4) and a four-wheel
+Mecanum drive Turtlebot3 robot (see Fig. 1). Note that both
+iClebo Kobuki and FireBird VI robots have different sets of
+intrinsic parameters [55, 56]. Kobuki is a low-cost research
+robot with a diameter of 351.5 mm, weight of 2.35 kilograms,
+and a maximum translational velocity of 0.7 m/s. The wheel
+encoders provide data at the rate of 50 Hz and with a resolution
+of 2578.33 ticks per revolution. It is also equipped with
+RPLidar A1 2D laser scanner having 360◦ field of view, with
+a detection range of 6 meters and a distance resolution less
+than 0.5 m and the operating frequency of 5.5 Hz. The Fire
+Bird VI is primarily a research robot with diameter 280 mm,
+weight of 12 kilograms, and maximum translational velocity
+of 1.28 m/s. All Fire Bird encoders publish data at the rate
+of 10 Hz with a resolution of 3840 ticks per revolution.
+Turtlebot3 Mecanum is from the Robotis group with all wheels
+diameter of 60 mm. It weighs 1.8 kilograms, and maximum
+translational velocity is 0.26m/s. The dynamixels used, publish
+data at 10 Hz with an approximate resolution of 4096 ticks
+per revolution. Both Firebird VI and Turtlebot3 Mecanum
+robots were mounted with the RPLidar A2 laser scanner,
+which comes with adjustable frequency in the range of 5 to
+15 Hz. In the experiments with RPLidar A2, the frequency
+of 10 Hz was used resulting in an angular resolution of 0.9◦ ,
+while the detection range and distance resolution were being
+same as those of RPlidar A1 laser scanner. Note that, for
+all our experiments, we made use of an onboard computer
+(with an i5 processor of 8GB RAM, running ROS kinetic)
+for processing the data from laser range finder and wheel
+encoders, performing SLAM for validation, and running the
+calibration algorithms.
+To demonstrate the non-availability of the robot model, one
+of the wheels of the Firebird VI robot is deformed with a thick
+tape (see Fig.2). Care was taken to ensure that the deformation
+was not too large, to avoid wobbling of the robot and the scan
+plane of the Lidar. In the case of Turtlebot3 robot two different
+configurations are constructed (see Fig. 1), by changing the
+position of the wheels from the regular configuration. We will
+
+TABLE II
+L IST OF EXPERIMENTAL CONFIGURATIONS WITH LABELS AND
+CORRESPONDING LOCATIONS AT WHICH TRAINING AND TEST DATA ARE
+COLLECTED
+Robot
+
+A
+B
+C
+D
+
+Kobuki
+
+E
+
+Turtlebot3
+
+F
+
+FireBird VI
+
+F1
+
+WSN Lab
+
+Turtlebot3
+
+T1
+T2
+
+ACES
+Library
+
+G
+H
+
+Configuration
+
+Training
+Data
+
+Setting
+
+K1
+K2
+M1
+
+Test Data
+
+WSN Lab
+
+MiPS Lab
+
+WSN Lab +
+ACES Corridor
+Helicopter
+Building
+
+KD building
+3rd Floor
+Helicopter
+Building
+Tomography
+Lab
+ACES
+Library
+
+see further that the amount of deformation in tilted wheel
+configuration (as in Fig. 1(b)) is more as opposed to unaligned
+wheels configuration (as in Fig. 1(a)).
+2) Robot Configurations: Experiments, comprising of training and test phases, were carried out for various configurations
+of the setup used. It is remarked that test data for all configurations are collected for both, short and longer trajectories with
+simple and varied robot motions. Each experiment is labelled
+for reference, with details provided as shown in Table II. For
+example, setting A refers to the experiment done using Kobuki
+robot with configuration K1, where training and test data are
+collected in WSN and MiPS labs respectively.
+3) Scan Matching: Since the CAM algorithm is a onestep method as opposed to other techniques discussed in the
+paper, it does not require a scan matching algorithm to be
+run beforehand. To demonstrate other proposed approaches
+we used point-to-line ICP (PLICP) variant [45] to estimate
+the sensor displacements ŝjk . Moreover, ICP-like methods also
+output the corresponding covariance value in closed-form [57]
+that can be used by the IRLS algorithm.
+4) Data Processing: For the experiments, we ensure that
+scans are collected at times spaced T seconds apart. The
+choice of T is not trivial. For instance, choosing a small T
+often makes the algorithm too sensitive to un-modelled effects
+arising due to synchronization of sensors, robot’s dynamics. It
+is lucrative to choose far scan pairs as more information is captured about the parameters; however, both the scan matching
+output as well as the motion model become inaccurate when
+T is large. For the experiments, we chose the largest value
+of T that yielded a reliable scan matching output in the form
+of sensor motion, resulting in T = 0.7 seconds for Kobuki,
+T = 0.3 and 0.6 seconds for the Firebird VI and Turtlebot3
+Mecanum robots respectively. These values are chosen based
+on maximum wheel speeds such that slippages are minimized
+during experimentation. Note that since the odometry readings
+are acquired at a rate, higher than the scans, temporally closest
+odometry reading is associated with a given scan. With the
+chosen T the robots would move a maximum displacement of
+15cm in x and y and 8◦ in yaw, under such conditions PLICP
+achieves 99.51 % accuracy [45].
+C. Experimental Results
+Here we present calibration results for both model-based
+and model-free scenarios. In model-based scenario calibration
+
+13
+
+entails learning various parameters associated with the motion
+model of the sensor in terms of odometric data. On the other
+hand, model-free based algorithms involves learning the nonparametric motion model of the sensor. Note that the proposed
+CAM and CIRLS algorithms are model-based and CGP is
+model-free.
+1) Results for model-based Calibration: We first compare
+the performance of the proposed CAM and CIRLS algorithms
+with CMLE [13] against ground truth over various configurations (see Table II) in the context of two-wheel differential
+drive. Recall that the proposed CAM algorithm is specifically
+designed for calibrating a two-wheel differential robot with
+CMLE [13] as its counterpart existing in the literature. On the
+other hand, the proposed CIRLS algorithm is applicable for
+calibrating robots with arbitrary but known drive configurations, henceforth subsumes the differential drive case. To this
+end, we ran CMLE [13] algorithm for number of iterations N
+= 4 and N = 16 discarding one percent of samples with higher
+order residual terms in each iteration, over configurations K1
+and K2 respectively. Table III displays the corresponding estimated calibration parameters. Specifically for CMLE, CIRLS
+and CIRLS CF, 3-sigma confidence intervals for the estimated
+parameters are also displayed. Recall that CIRLS CF is a
+special case of CIRLS applicable to two-wheel differential
+drive where the optimization problem in step 7 of CIRLS (see
+Algorithm 2) is solved in closed forms. Note that the closed
+forms are derived following the similar approach as described
+in [13]. For CAM, an analytical expression for the covariance
+of the estimated parameters was not available and hence
+not shown here. Observe that the extrinsic laser parameters
+are different for configurations K1 and K2 since the laser
+sensor is mounted distinctly concerning the robot frame of
+reference. However, the robot intrinsic parameter estimates are
+still consistent, as expected. We can notice that the parameter
+estimates for CAM are slightly different than that of those
+estimated from CMLE, CIRLS, and CIRLS CF. Nevertheless,
+since the actual values of parameters are not known, their
+correctness should only be evaluated via performance metrics
+(RPE and ATE).
+To further compare the efficacy of the proposed algorithms,
+we generate the trajectory of the exteroceptive sensor on the
+corresponding test data using its inferred parametric motion
+model fˆ. If the parameters are calibrated correctly, the generated trajectories should be close to the SLAM trajectory
+given the system is free from non-systematic errors like
+wheel slippages. Fig.8 displays the trajectories found using
+the parameters estimated from CAM, CIRLS, CIRLS CF, and
+CMLE [13] along with the map and trajectory generated using
+SLAM [53] for configurations K1 and K2. Further, taking the
+SLAM trajectory as a reference, the RPE and ATE values for
+various algorithms are shown in Table IV. From the table, it
+can be seen that almost all algorithms have similar RPE values,
+except for CAM for which they are slightly higher. In contrast,
+however, the CAM algorithm exhibits the lowest ATE values
+suggesting that CAM parameters accurately predict relative
+heading of the robot over relative translation. It is to be noted
+that slight inaccuracy in relative heading estimates makes the
+global trajectory estimate drift heavily from ground truth over
+
+(a) MiPS Lab, setting A
+
+(b) MiPS Lab, setting B
+
+(c) 4i Lab, setting C
+
+(d) KD building, setting D
+
+Fig. 8. Trajectory comparisons against SLAM in various test environments.
+Here (a), (b) are the test environments for the configuration K1 where as
+(c), (d) are for the configuration K2. (e) represents the test environment for
+configuration M1.
+
+time. Interestingly, for settings C and D which contain outliers,
+the ATE of the CMLE approach [13] is relatively high. We
+remark here from Fig. 10 that the CMLE algorithm incurs
+higher ATE values than CAM even for the optimal choice of
+N . Since all algorithms have similar and low RPE values, it
+can be concluded that the shape of the estimated trajectories
+is close to that of the ground truth. Recall that for testing
+purposes, the SLAM trajectory constitutes the ground truth.
+a) Robustness to outliers: To further understand the
+improvements obtained from the proposed algorithms, we take
+a detailed look at the process of outlier removal in various
+methods. Unlike factory settings where a separate calibration
+phase and environment may be utilized, this paper advocates
+carrying out the calibration during the operational phase itself.
+As a result, however, outliers in the training phase are inevitable. To further test the effect of such outliers, we consider
+a corridor environment which is relatively featureless, resulting
+in a large number of scan matching failures that manifest
+themselves as outliers. Our experiments with configuration K2
+include such a scenario. Recall that the proposed algorithms
+are designed to handle outliers, thanks to the use of the Huber
+function as well as the trimming procedure (CAM) or the
+weight pruning algorithm (CIRLS). With the settings detailed
+in Sec. IV, no further parameter tuning is required, and the
+algorithm works well regardless of the number of outliers
+in the data. On the other hand, an iterative manual outlier
+rejection method is detailed in [13] amounting to extensive
+parameter tuning. The idea in [13] is to run the algorithm N
+
+14
+
+TABLE III
+L IST OF ESTIMATED PARAMETERS VIA CMLE[13], CIRLS, CIRLS CF, AND CAM FOR CONFIGURATIONS K1, K2
+Robot
+Config.
+
+K1
+
+K2
+
+Method
+
+N
+
+CMLE[13]
+CAM
+CIRLS
+CIRLS CF
+CMLE [13]
+CAM
+CIRLS
+CIRLS CF
+
+4
+16
+-
+
+r̂L (mm)
+35.04 ± 0.22
+35.94
+35.16 ± 0.19
+35.09 ± 0.21
+34.92 ± 0.36
+35.98
+34.88 ± 0.25
+34.96 ± 0.23
+
+Estimated Parameters
+b̂ (mm)
+l̂x (mm)
+
+r̂R (mm)
+
+35.16 ± 0.22 238.42 ± 1.84
+35.99
+241.00
+35.18 ± 0.19 238.38 ± 1.38
+35.12 ± 0.21 237.76 ± 1.59
+34.94 ± 0.36 231.26 ± 4.83
+35.98
+242.08
+34.90 ± 0.24 231.92 ± 1.71
+34.98 ± 0.23 232.96 ± 1.63
+
+19.92 ± 1.54
+12.34
+19.81 ± 2.38
+19.80 ± 2.60
+2.36 ± 7.81
+-0.64
+1.73 ± 2.49
+1.50 ± 2.08
+
+l̂y (mm)
+
+l̂θ (rad)
+
+47.01 ± 2.89
+3.13 ±0.01
+53.52
+3.13
+45.85 ± 2.39 3.13 ± 0.01
+46.15 ± 2.61 3.13 ± 0.01
+-119.73 ± 8.74 1.00 ± 0.02
+-128.79
+1.00
+-117.05 ± 2.33 1.00 ± 0.01
+-117.42 ± 1.94 1.00 ± 0.01
+
+TABLE IV
+A BSOLUTE TRAJECTORY ERROR (ATE) AND R ELATIVE POSE ERROR (RPE) FOR CONFIGURATIONS K1, K2
+Setting
+A
+B
+C
+D
+
+ATE (cm)
+CMLE [13] CIRLS CIRLS CF
+11.49
+16.79
+63.30
+217.84
+
+11.72
+17.23
+43.74
+202.30
+
+11.65
+18.71
+39.59
+196.21
+
+CAM
+2.72
+10.13
+40.81
+162.69
+
+iterations, while eliminating a fixed percentage α of outliers at
+every iteration. It is also required that the residual distribution
+should ’look’ Gaussian, and the algorithm continues to run
+till that is the case. While it may be possible to utilize various
+statistical tests to discern the normality of a given distribution,
+the whole process is still manual and does not translate well
+to an automated calibration setting considered here. Indeed, it
+is evident from Table V that the choice of N is also critical,
+as the parameter estimates differ significantly over the range
+of N values.
+The difficulty of selecting the correct value of N using
+such a process is depicted through the scatter plots provided
+in Fig.9, which shows the residual distributions for different
+values of N. It can be seen that the residuals for N=16 and
+N=18, both look Gaussian. On the other hand the ATE values
+for the two values of N are quite different, as can be seen
+from Fig.10. It can also be seen that one cannot simply take a
+sufficiently large value of N, as excessive removal of outliers
+leads to performance degradation. In contrast, the proposed
+methods do not suffer from such an issue as the weights are
+automatically tuned according to the number of outliers. Fig.9
+also includes the residual distribution plots of the proposed
+CIRLS CF algorithm at convergence.
+To further demonstrate the generality of the proposed
+CIRLS algorithm, we consider the joint calibration problem for
+the four-wheeled Mecanum drive robot (see Fig. 1) mounted
+with a lidar sensor under setting E (see Table II). To this end,
+we perform calibration routine using CIRLS algorithm over
+configuration M1, and the corresponding estimated calibration
+parameters are displayed in Table VI. Next, we generate
+the trajectory of the exteroceptive sensor mounted on the
+Mecanum robot using its inferred (using estimated parameters)
+motion model fˆ as displayed in Fig. 11(a). Observe that
+the predicted trajectory is close to ground truth and the
+corresponding ATE, and RPE values are also displayed in
+Table VI. We remark here that, to the best of our knowledge,
+
+RPE (mm)
+CMLE [13] CIRLS CIRLS CF CAM
+6.40
+7.63
+15.03
+27.63
+
+6.40
+7.64
+15.02
+27.62
+
+6.40
+7.63
+15.03
+27.63
+
+6.46
+7.72
+15.19
+27.75
+
+(a)
+
+(b)
+
+(c)
+
+(d)
+Fig. 9. Residual distribution plots (for configuration K2) for number of
+iterations N=1, 16, 18 in case of CMLE [13] are respectively shown in
+(a), (b), (c), where points in red indicates the higher order residual terms
+trimmed as per [13, Sec. V-C] while the inliers are colored blue. Plots in (d)
+display the residual distribution in the case of CIRLS CF at the convergence,
+where green points indicate those terms whose weights are exactly equal
+to one, where as points in blue have weights in the range (γ, 1). It can be
+observed that the CIRLS CF automatically eliminates the outliers and yields a
+residual distribution that is close to Gaussian without any manual intervention
+or parameter tuning.
+
+15
+
+TABLE V
+VARIATION IN THE PARAMETER ESTIMATES FOUND VIA CMLE ALGORITHM [13] FOR VARIOUS VALUES OF N, FOR CONFIGURATION K2
+Robot
+Config.
+
+N
+
+K2
+
+1
+7
+12
+16
+18
+20
+25
+
+r̂L (mm)
+
+r̂R (mm)
+
+28.56 ± 0.27
+31.68 ± 0.30
+34.13 ± 0.34
+34.92 ± 0.36
+35.06 ± 0.37
+35.13 ± 0.38
+35.27 ± 0.40
+
+28.58 ± 0.27
+31.68 ± 0.30
+34.13 ± 0.34
+34.94 ± 0.36
+35.08 ± 0.37
+35.14 ± 0.38
+35.29 ± 0.40
+
+Estimated Parameters
+b̂ (mm)
+l̂x (mm)
+194.14 ± 3.76
+212.19 ± 4.13
+226.59 ± 4.59
+231.26 ± 4.83
+232.04 ± 4.95
+232.40 ± 5.07
+233.35 ± 5.35
+
+2.48
+2.59
+2.51
+2.36
+2.25
+2.17
+2.09
+
+± 6.10
+± 6.67
+± 7.37
+± 7.81
+± 8.05
+± 8.24
+± 8.70
+
+l̂y (mm)
+
+l̂θ (rad)
+
+-119.72 ± 6.74
+-120 ± 7.40
+-119.53 ± 8.23
+-119.73 ± 8.74
+-119.58 ± 9.01
+-119.83 ± 9.21
+-119.91 ± 9.77
+
+1.01 ± 0.02
+1.00 ± 0.02
+1.00 ± 0.02
+1.00 ± 0.02
+1.00 ± 0.02
+1.00 ± 0.02
+1.00 ± 0.02
+
+TABLE VI
+L IST OF ESTIMATED PARAMETERS VIA CIRLS AND CORRESPONDING ATE AND RPE FOR CONFIGURATION M1
+Robot
+Method
+Config.
+M1
+
+CIRLS
+
+`ˆx (mm)
+
+Estimated Parameters
+`ˆθ (rad)
+r(mm)
+
+`ˆy (mm)
+
+Lx (mm)
+
+Ly (mm)
+
+ATE RPE
+(cm) (mm)
+
+-32.60 ± 3.50 -25.30 ± 3.60 2.14 ±0.01 30.40 ±0.20 82.50 ±1.10 162.50 ± 1.10 81.90 8.38
+TABLE VII
+L IST OF ESTIMATED PARAMETERS FOR CONFIGURATION F1
+
+Robot
+Config.
+F1
+
+Method
+
+N
+
+r̂L (mm)
+
+r̂R (mm)
+
+Estimated Parameters
+b̂ (mm)
+`ˆx (mm)
+
+`ˆy (mm)
+
+`ˆθ (rad)
+
+CMLE [13] 4 52.22 ± 0.54 50.42 ± 0.48 282.67 ±3.61 90.30 ±2.75 -38.31 ±3.28 -0.46 ± 0.01
+
+TABLE VIII
+ATE AND RPE FOR C ONFIGURATIONS F1
+GP
+Mean fn
+Kernel fn
+Zero
+RBF
+Linear
+RBF
+Zero
+Linear
+Zero
+RBF + Linear
+Linear
+RBF + Linear
+Linear Model
+CMLE [13]
+(a) ATE vs N
+
+(b) RPE vs N
+
+Fig. 10. Trajectory error plots for CMLE algorithm [13] with configuration
+K2 under setting D, against number of iterations N, while discarding a fraction
+of higher order residual terms in each iteration.
+
+(a) Helicopter Building, setting E
+Fig. 11. Trajectory comparisons against SLAM in the test environment. Here
+(a) represents the test environment for configuration M1.
+
+Configuration F1
+ATE (m)
+RPE (mm)
+6.273
+9.634
+0.592
+9.367
+0.687
+9.367
+0.716
+9.34
+0.732
+9.343
+0.687
+9.367
+1.546
+9.361
+
+TABLE IX
+ATE AND RPE FOR C ONFIGURATIONS T1 AND T2
+GP
+Mean fn
+Kernel fn
+Zero
+RBF
+Linear
+RBF
+Zero
+Linear
+Zero
+RBF + Linear
+Linear
+RBF + Linear
+Linear Model
+CIRLS
+
+Configuration T2
+ATE (m) RPE (mm)
+2.49
+5.21
+0.161
+8.324
+0.068
+5.108
+3.798
+5.121
+1.193
+5.49
+0.068
+5.108
+4.24
+5.112
+
+Configuration T1
+ATE (m) RPE (mm)
+6.523
+5.466
+5.006
+5.573
+0.87
+5.457
+0.87
+5.455
+1.849
+5.519
+0.869
+5.458
+3.647
+5.517
+
+the proposed algorithm is the first of its kind capable of
+simultaneously calibrating complicated drives such as the fourwheel Mecanum drive in a robust manner.
+2) Results for model-free Calibration: For the case when
+the robot kinematic model is not known, ensured by deforming the left wheel of FireBird VI (see Fig.2), we perform
+calibration of such a robot using model-based CMLE [13]
+algorithm along with the proposed model-free CGP algorithm,
+for configuration F1 under setting F. With regards to the
+CMLE algorithm, Table VII displays the corresponding estimated parameters. Observe that the CMLE algorithm predicts
+
+16
+
+(a) Tomography Lab, Configuratoin F1
+
+(b) ACES Library, Configuration T1
+
+(c) ACES Library, Configuration T2
+
+Fig. 12. Trajectory comparison against SLAM for different robot configurations. (a) is the test environment for the configuration F1 where as (b) and (c) are
+for configurations T1 and T2 respectively.
+
+the radius of the left wheel to be slightly more than that of the
+right wheel, but recall that the left wheel is deformed in such a
+way that it loses its notion of circularity. Unlike CMLE [13],
+the proposed CGP algorithm conducts a pre-selection phase
+involving testing over the various kernel and mean functions,
+using collected data.
+Once the model is learned in both parametric and nonparametric forms, predictions are made on the test data. The
+predicted trajectories are then compared with SLAM trajectory
+as the reference. Error metrics for the resulting trajectories
+are generated and displayed in Table VIII. It is observed that
+CGP with squared exponential kernel function and linear mean
+function outperforms other trained models, including CMLE.
+We remark here that although CMLE predicts the radius of
+the left wheel to be slightly more than that of the right wheel,
+the predictions are worse since the original kinematic model
+is no longer applicable. Observe that CGP with linear kernel
+function is comparable to the best case. Next, trajectories are
+generated for CMLE [13], CGP with linear kernel and SLAM
+[53] and displayed in Fig. 12(a). It is also evident that the
+proposed CGP with linear kernel predicts the test trajectory
+that is close to SLAM.
+Similar tests are conducted over four-wheeled Turtlebot3
+robot with configurations T1 and T2. Note that since the
+analysis of CMLE [13] is restricted to two-wheel differential drive robots, we use parametric motion model of fourwheel Mecanum drive robot [58] with manufacturer specified
+parameters for robot intrinsics, and nominal hand measured
+parameters for lidar extrinsics. Table IX displays error metrics
+evaluated for parametric and various learned non-parametric
+models. It is also observed here that the proposed CGP algorithm with linear kernel function outperforms other learned
+models. The corresponding test trajectories for configurations
+T1 and T2 are displayed in Fig. 12(b) and Fig. 12(c) respectively.
+Interestingly it can be observed from Table.VIII and Table
+IX that the linear model approximation is sufficient to explain
+the motion model with the set deformities in all configurations.
+Here we notice that learning a linear approximation of f is
+sufficient to predict robot odometry accurately; this is in lines
+
+with our discussion in Sec. IV-C2.
+VI. C ONCLUSION
+We develop generalized odometry and sensor calibration
+framework applicable to wheeled robots equipped with one
+or more exteroceptive sensor(s). The idea is to utilize the egomotion estimates from the exteroceptive sensors to estimate the
+motion model of the sensor/robot. Three different algorithms,
+all capable of handling outliers in an automated manner,
+are proposed. The first algorithm pertains to a two-wheel
+differential drive equipped with a Lidar. A calibration via
+alternating minimization (CAM) approach is proposed that can
+be used to estimate the intrinsic and extrinsic parameters of the
+robot robustly. The proposed approach not only has superior
+performance as compared to the state-of-the-art approaches
+but also does not require any manual trimming of outliers. A
+more general scheme applicable to robots with arbitrary drive
+models is subsequently proposed that utilizes the iteratively
+reweighted least squares (IRLS) framework for estimation of
+the motion parameters. The resulting IRLS approach can be
+used to calibrate arbitrary robots with known motion models
+and is again shown to provide good calibration performance
+while handling outliers. Finally, for robots whose motion
+model is not known or too complicated, we advocate a nonparametric Gaussian process regression-based approach that
+directly learns the relationship between the wheel odometry
+and the sensor motion. The model-free calibration approach
+is tested on a robot with a deformed wheel and is shown
+to outperform all other techniques that make assumptions
+regarding the motion model of the robot. Multiple experiments
+are carried, and the efficacy of the proposed techniques is
+evaluated using the performance metrics.
+A PPENDIX A
+S OLUTIONS TO (14)-(15)
+This section will detail the techniques required to solve (14)
+and (15). Specifically, the extrinsic calibration problem in (14)
+will be solved in closed-form while a low-complexity grid
+search algorithm will be provided to solve (15).
+
+17
+
+1) Extrinsic calibration: For brevity, let us denote t` :=
+y T
+x
+(`x , `y )T and tjk := (qjk
+, qjk
+) . Given r = r0 , the objective
+0
+function h(r , `) can be written as (see (11)):
+
+X
+
+X
+
+(j,k)∈E
+
+i
+
+h(r0 , `) =
+
+
+R(`θ )
+
+(i)
+
+(i)
+
+θ
+zj − R(qjk
+) zk
+
+
+
+!
+
+
+2
+θ
++ I2×2 − R(qjk ) t` − tjk
+2
+
+(39)
+
+θ
+where qjk
+and tjk are functions of r0 . Here, we have used
+(i)
+the fact that the 2D rotational matrices commute. Let zjk =
+(i)
+(i)
+θ
+θ
+zj − R(qjk
+) zk and Rjk = I2×2 − R(qjk
+) so that the
+extrinsic calibration problem may be written as
+
+`∗ = arg min h(r0 , `θ , t` )
+
+(40)
+
+(`θ ,t` )
+
+X
+
+X
+
+(j,k)∈E
+
+i
+
+h(r , `θ , t` ) =
+
+(i)
+R(`θ ) zjk + Rjk t` − tjk )
+
+2
+
+!
+
+2
+
+(41)
+In order to solve (40) in closed-form, we expand (41) and
+collecting all constant terms into c, we obtain :
+X 
+h(r0 , `θ , t` ) =
+2 zTjk R(`θ )T Rjk t` − 2 zTjk R(`θ )T tjk
+(j,k)∈E
+
+
+− 2η tTjk Rjk t` + η tT` RTjk Rjk t` + c
+(42)
+P (i)
+Pζ.|Z(tj )|
+where zjk =
+1) denoting total
+i
+i zjk , η = (
+number of scan points in the overlapping region. Now let
+
+
+cos `θ sin `θ
+y 
+T
+T
+x
+zjk R(`θ ) = zjk zjk
+−sin `θ cos `θ
+ x
+
+
+zjk zyjk
+(43)
+= cos `θ sin `θ
+y
+x
+−z
+z
+{z
+}
+|
+jk
+jk
+{z
+}
+|
+xT
+Zjk
+
+Hence using (43) we get the modified new function in terms
+of x, t and ignoring the terms independent to the optimization
+problem, with added constraint as follows :
+X 
+h̃(x, t` ) =
+2 xT Zjk Rjk t` − 2 xT Zjk tjk
+(j,k)∈E
+ (44)
+T
+T T
+− 2η tjk Rjk t` + η t` Rjk Rjk t`
+By writing (44) in matrix form the problem becomes
+min tT` Qt` + xT Mt` + xT g + tT` d
+x,t`
+
+s.t xT x = 1
+
+(45)
+
+where
+X
+
+Q=η
+
+RTjk Rjk , M = 2
+
+(j,k)∈E
+
+g = −2
+
+X
+(j,k)∈E
+
+∇t` h̃(x, t` ) = 0 ⇒ 2Qt` + MT x + d = 0
+1
+⇒ t̂` = − Q† (MT x + d)
+2
+
+(47)
+
+where Q† is the pseudo inverse of Q. Substituting for t` in
+(45) and ignoring constant terms yields the following in terms
+of x :
+min xT M̃x + xT g̃
+x
+
+(48)
+
+s.t xT x = 1
+
+where M̃ = − 14 M Q† MT and g̃ = g − 12 M Q† d.
+We solve the above problem using method of Lagrange
+multipliers. Specifically, the Lagrangian is given by
+L(x) = xT M̃x + xT g̃ + λ(xT x − 1)
+
+where
+0
+
+Since there is no constraint on t` , we can solve (45) for t` as
+shown below,
+
+X
+
+Zjk Rjk
+
+(j,k)∈E
+
+Zjk tjk , d = −2η
+
+X
+(j,k)∈E
+
+RTjk tjk
+
+(46)
+
+(49)
+
+The necessary condition for optimality is ∇x L(x) = 0 i.e.,
+2M̃x + g̃ + 2λx = 0
+1
+⇒ x̂ = − (M̃ + λI2×2 )−1 g̃
+2
+
+(50)
+
+To solve for λ substitute x̂ in the constraint xT x = 1, which
+results in a fourth order polynomial in λ, whose roots can be
+readily found. Having determined λ, solutions to (45), can be
+found subsequently in closed forms and therefore `∗ can be
+recovered as follows,
+
+`∗θ = arctan x̂(2), x̂(1) ,
+
+(`∗x , `∗y )T = t̂`
+
+(51)
+
+Next, we detail P
+the proof of existence of pseudo inverse of Q.
+As Q = η (j,k)∈E RTjk Rjk , let us consider one term
+(j, k)th of the summation.
+θ
+θ
+RTjk Rjk = (I − R(qjk
+))T (I − R(qjk
+))
+θ T
+θ
+= 2I − R(qjk
+) − R(qjk
+)
+
+
+θ
+1 − cos(qjk
+)
+0
+=2
+<0
+θ
+0
+1 − cos(qjk
+)
+
+(52)
+
+Since, η > 0 as it is the total number of scan points in
+the overlapping region. Therefore, Q can be written as a sum
+of positive semidefinite matrices multiplied by a non-negative
+intiger, hence positive semidefinite. Pseudo inverse will exist
+if any one of the matrix in the sum is positive definite. This
+θ
+will happen if for any of the terms qjk
+6= 0, which holds for
+exciting trajectories not having all pure translations. Therefore
+pseudo inverse of Q i.e. Q† always exist for sufficiently
+exciting trajectories.
+2) Intrinsic calibration: Here the goal is to solve for intrinsic parameters in closed forms, given extrinsic parameters.
+To this end, expanding (11) given ` = `0 , we obtain
+ !
+X
+X (i) 
+2
+(i)
+θ
+)z̃k + tjk
+h(r, `0 ) =
+z̃j − R(qjk
+(j,k)∈E
+
+i
+
+2
+
+(53)
+
+18
+
+(i)
+
+(i)
+
+(i)
+
+(i)
+
+where z̃j = `0 ⊕ zj and z̃k = `0 ⊕ zk . The intrinsic
+calibration problem is therefore posed as
+r∗ = arg min h(r, `0 )
+
+(54)
+
+r
+
+To solve the above problem we first find an equivalent problem
+in terms of new set of variables r̃ = (r̃L , r̃R , b), where
+22
+r̃L = −J21
+r , r̃R = Jr and remember the definition of Jr
+from equation (3). Rewriting (6) with this new set of variables,
+we found that tjk = b t̃jk where t̃jk is a vector function
+parameterized by r̃L and r̃R . Therefore equation (53) becomes
+ !
+X
+X (i) 
+2
+(i)
+0
+θ
+h(r̃, ` ) =
+z̃j − R(qjk )z̃k + b t̃jk
+
+(`θ ,t` )
+
+(55)
+
+(59)
+By reducing (59) to quadratic form in four dimensional space
+∆
+x = [x1 , x2 , x3 , x4 ] = [`x , `y , cos `θ , sin `θ ] and imposing
+additional constraint x23 + x24 = 1, a closed form can be found
+as detailed in [45], i.e., by writing (59) as follows,
+min xT Mx + gT x
+x
+
+where
+M=
+
+and r̃R . Hence one can solve (55) for b in closed form and is
+given by
+(i)
+
+b̂ =
+
+PLICP uses point-to-line metric [45] instead of point-topoint used by ICP. Proceeding in a manner similar to that in the
+PLICP algorithm [45], we formulate the objective function for
+simultaneous calibration using PLICP framework as follows :
+
+ i2
+X X  (i)T h
+(i)
+(i)
+h(`, r) =
+ηjk ` ⊕ zj − qjk ⊕ ` ⊕ zk
+i
+
+(57)
+(i)
+where ηjk is the normal vector. In a very compact form (57)
+can be written as :
+!
+
+ 2
+X
+X
+(i)
+(i)
+h(`, r) =
+` ⊕ zj − qjk ⊕ ` ⊕ zk
+(i)
+i
+
+Cjk
+
+(58)
+(i)
+
+(i) (i)T
+
+where Cjk = ηjk ηjk .
+
+
+
+(56)
+
+A PPENDIX B
+AUTONOMOUS C ALIBRATION USING PLICP F RAMEWORK
+
+(j,k)∈E
+
+g=
+W=
+
+02×2
+02×2
+
+(i)T
+
+(i)
+
+(i)
+
+Mjk Cjk Mjk
+
+i
+
+X X
+(j,k)∈E
+
+P
+where η =
+i 1. Now substituting for b in (53) using
+closed form (56) yields an objective function h̃(r̃L , r̃R ).
+Since approximate values of r̃L and r̃R are known from the
+original robot specifications or through hand-held measurements, a simple grid search around these values yields the
+optimum values that minimize h̃(r̃L , r̃R ). Alternatively, any
+two-dimensional search algorithm may be utilized [59]. The
+complexity of such a search is low since a good initialization
+is always available.
+To handle outliers due to non-systematic errors such as
+wheel slippages, the intrinsic calibration problem defined in
+(54) can be solved by incorporating Huber loss instead of
+squared loss. However, though closed forms for the parameter
+b does not exists, the problem can be solved by employing
+numerical techniques detailed in [60].
+
+(j,k)∈E
+
+X X
+(j,k)∈E
+
+(i)
+
+T
+θ
+T
+(j,k)∈E
+i t̃jk R(qjk )z̃k − t̃jk z̃j
+P
+η (j,k)∈E kt̃jk k22
+
+P
+
+(60)
+
+s.t xT Wx = 1
+
+Note here that qθjk is a scalar function parameterized by r̃L
+
+P
+
+Cjk
+
+i
+
+(j,k)∈E
+
+2
+
+i
+
+(j,k)∈E
+
+1) Extrinsic calibration: Following the similar analysis
+done from (39) - (41), here in this context we have the
+following subproblem
+!
+X
+X
+2
+(i)
+R(`θ ) zjk + Rjk t` − tjk ) (i)
+min
+
+(i)T
+
+(i)
+
+−2Mjk Cjk tjk
+
+(61)
+
+i
+
+02×2
+I2×2
+
+
+
+!
+(i)x
+(i)y
+zjk
+−zjk
+.
+(i)y
+(i)x
+zjk
+zjk
+2) Inrinsic Calibration : To find wheel odometry parameters in this framework, we have to solve the following
+subproblem,
+!
+
+X
+X (i) 
+2
+(i)
+θ
+min
+z̃j − R(qjk )z̃k + tjk
+(62)
+(i)
+(i)
+and Mjk = [Rjk
+
+r
+
+(j,k)∈E
+
+(i)
+Zjk ]2×4 ,
+
+(i)
+Zjk =
+
+i
+
+Cjk
+
+A similar procedure can be carried out as detailed in Appendix
+A-(2), to solve the aforementioned subproblem.
+A PPENDIX C
+P ROOF OF P ROPOSITION 1
+It can be seen from (11) that for pure rotation (i.e. when
+y
+x
+qjk
+= qjk
+= 0), the function h does not depend on intrinsic
+parameters rL and rR . In other words, rL and rR are not
+observable if all the scan pairs in E correspond only to pure
+θ
+rotations. Likewise, for pure translations (i.e. when qjk
+= 0),
+the function h becomes independent of the extrinsic parameters `x and `y , making them unobservable. In summary, at
+least one scan pair in E must correspond to translation and
+one to rotation.
+R EFERENCES
+[1] H. Durrant-Whyte and T. Bailey, “Simultaneous localization and mapping: part I,” Proc. IEEE Robotics Automation Magazine, vol. 13, no. 2,
+pp. 99–110, June 2006.
+[2] T. Bailey and H. Durrant-Whyte, “Simultaneous localization and mapping (SLAM): part II,” Proc. IEEE Robotics Automation Magazine,
+vol. 13, no. 3, pp. 108–117, Sept 2006.
+[3] P. Kulkarni, D. Ganesan, P. Shenoy, and Q. Lu, “Senseye: a multi-tier
+camera sensor network,” Proc. of the 13th annual ACM International
+Conference on Multimedia, pp. 229–238, 2005.
+[4] M. Hoy, A. S. Matveev, and A. V. Savkin, “Algorithms for collisionfree navigation of mobile robots in complex cluttered environments: a
+survey,” Robotica, vol. 33, no. 3, pp. 463–497, 2015.
+
+19
+
+[5] X. Ruan, Y. Li, and X. Zhu, “Kinematic parameter calibration of twowheeled robot,” Proc. IEEE International Conference on Mechatronics
+and Automation, pp. 81–86, Aug 2012.
+[6] C. Jung and W. Chung, “Accurate calibration of two wheel differential
+mobile robots by using experimental heading errors,” Proc. IEEE International Conference on Robotics and Automation (ICRA), pp. 4533–
+4538, 2012.
+[7] Q. V. Le and A. Y. Ng, “Joint calibration of multiple sensors,” Proc.
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS),, pp. 3651–3658, 2009.
+[8] L. Heng, B. Li, and M. Pollefeys, “Camodocal: Automatic intrinsic
+and extrinsic calibration of a rig with multiple generic cameras and
+odometry,” Proc. IEEE/RSJ International Conference on Intelligent
+Robots and Systems (IROS), pp. 1793–1800, 2013.
+[9] J. Hidalgo-Carrió, D. Hennes, J. Schwendner, and F. Kirchner, “Gaussian
+process estimation of odometry errors for localization and mapping,”
+Proc. IEEE International Conference on Robotics and Automation
+(ICRA), pp. 5696–5701, 2017.
+[10] J. Zhang and S. Singh, “LOAM: Lidar odometry and mapping in realtime.” Robotics: Science and Systems, vol. 2, 2014.
+[11] Z. Fang, S. Yang, S. Jain, G. Dubey, S. Roth, S. Maeta, S. Nuske,
+Y. Zhang, and S. Scherer, “Robust autonomous flight in constrained
+and visually degraded shipboard environments,” Proc. Journal of Field
+Robotics, vol. 34, no. 1, pp. 25–52, 2017.
+[12] A. Censi, L. Marchionni, and G. Oriolo, “Simultaneous maximumlikelihood calibration of odometry and sensor parameters,” Proc. IEEE
+International Conference on Robotics and Automation (ICRA), pp.
+2098–2103, 2008.
+[13] A. Censi, A. Franchi, L. Marchionni, and G. Oriolo, “Simultaneous
+calibration of odometry and sensor parameters for mobile robots,” Proc.
+IEEE Transactions on Robotics, vol. 29, no. 2, pp. 475–492, April 2013.
+[14] F. Kallasi, D. L. Rizzini, F. Oleari, M. Magnani, and S. Caselli, “A novel
+calibration method for industrial AGVs,” Robotics and Autonomous
+Systems, vol. 94, pp. 75–88, 2017.
+[15] H. Tang and Y. Liu, “Automatic simultaneous extrinsic-odometric calibration for camera-odometry system,” Proc. IEEE Sensors Journal,
+vol. 18, no. 1, pp. 348–355, 2018.
+[16] H. Schulz, L. Ott, J. Sturm, and W. Burgard, “Learning kinematics from
+direct self-observation using nearest-neighbor methods,” Advances in
+Robotics Research, pp. 11–20, 2009.
+[17] J. Borenstein and L. Feng, “Measurement and correction of systematic
+odometry errors in mobile robots,” Proc. IEEE Transactions on Robotics
+and Automation, vol. 12, no. 6, pp. 869–880, Dec 1996.
+[18] A. Kelly, “Fast and easy systematic and stochastic odometry calibration,”
+Proc. IEEE/RSJ Intl. Conf. on Intelligent Robots and Systems (IROS),
+vol. 4, pp. 3188–3194 vol.4, Sept 2004.
+[19] K. Lee and W. Chung, “Calibration of kinematic parameters of a car-like
+mobile robot to improve odometry accuracy,” Proc. IEEE International
+Conference on Robotics and Automation, pp. 2546–2551, 2008.
+[20] M. De Cecco, “Self-calibration of AGV inertial-odometric navigation
+using absolute-reference measurements,” Proc. of the 19th IEEE Instrumentation and Measurement Technology Conference (IMTC), vol. 2, pp.
+1513–1518, 2002.
+[21] G. Antonelli, S. Chiaverini, and G. Fusco, “A calibration method for
+odometry of mobile robots based on the least-squares technique: theory
+and experimental validation,” Proc. IEEE Trans. on Robotics, vol. 21,
+no. 5, pp. 994–1004, Oct 2005.
+[22] H. J. V. der Hardt, R. Husson, and D. Wolf, “An automatic calibration
+method for a multisensor system: application to a mobile robot localization system,” Proc. IEEE Intl. Conf. on Robotics and Automation,
+vol. 4, pp. 3141–3146 vol.4, May 1998.
+[23] T. D. Larsen, M. Bak, N. A. Andersen, and O. Ravn, “Location
+estimation for an autonomously guided vehicle using an augmented
+kalman filter to autocalibrate the odometry,” FUSION Spie Conference,
+1998.
+[24] D. Caltabiano, G. Muscato, and F. Russo, “Localization and selfcalibration of a robot for volcano exploration,” Proc. IEEE International
+Conference on Robotics and Automation (ICRA), vol. 1, pp. 586–591,
+2004.
+[25] A. Martinelli, N. Tomatis, and R. Siegwart, “Simultaneous localization
+and odometry self calibration for mobile robot,” Autonomous Robots,
+vol. 22, no. 1, pp. 75–85, 2007.
+[26] E. M. Foxlin, “Generalized architecture for simultaneous localization,
+auto-calibration, and map-building,” Proc. IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), vol. 1, pp. 527–533,
+2002.
+[27] P. Goel, S. I. Roumeliotis, and G. S. Sukhatme, “Robust localization
+
+using relative and absolute position estimates,” Proc. IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), vol. 2,
+pp. 1134–1140, 1999.
+[28] J.-G. Kang, W.-S. Choi, S.-Y. An, and S.-Y. Oh, “Augmented ekf based
+SLAM method for improving the accuracy of the feature map,” Proc.
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS), pp. 3725–3731, 2010.
+[29] N. Roy and S. Thrun, “Online self-calibration for mobile robots,” Proc.
+IEEE International Conference on Robotics and Automation, vol. 3, pp.
+2292–2297, 1999.
+[30] A. Kelly, “Linearized error propagation in odometry,” The International
+Journal of Robotics Research, vol. 23, no. 2, pp. 179–218, 2004.
+[31] F. M. Mirzaei and S. I. Roumeliotis, “A kalman filter-based algorithm
+for imu-camera calibration: Observability analysis and performance
+evaluation,” Proc. IEEE Transactions on Robotics, vol. 24, no. 5, pp.
+1143–1156, 2008.
+[32] J. A. Hesch, A. I. Mourikis, and S. I. Roumeliotis, “Determining the
+camera to robot-body transformation from planar mirror reflections,”
+Proc. IEEE International Conference on Intelligent Robots and Systems
+(IROS), pp. 3865–3871, 2008.
+[33] T. Sasaki and H. Hashimoto, “Calibration of laser range finders based on
+moving object tracking in intelligent space,” Proc. IEEE International
+Conference on Networking, Sensing and Control (ICNSC), pp. 620–625,
+2009.
+[34] A. Martinelli and R. Siegwart, “Observability properties and optimal
+trajectories for on-line odometry self-calibration,” Proc. 45th IEEE
+Conference on Decision and Control (CDC), pp. 3065–3070, 2006.
+[35] F. M. Mirzaei and S. I. Roumeliotis, “A kalman filter-based algorithm
+for imu-camera calibration: Observability analysis and performance
+evaluation,” Proc. IEEE Trans. on Robotics, vol. 24, no. 5, pp. 1143–
+1156, 2008.
+[36] J. Kelly and G. S. Sukhatme, “Visual-inertial sensor fusion: Localization, mapping and sensor-to-sensor self-calibration,” The International
+Journal of Robotics Research, vol. 30, no. 1, pp. 56–79, 2011.
+[37] A. Martinelli, D. Scaramuzza, and R. Siegwart, “Automatic selfcalibration of a vision system during robot motion,” Proc. IEEE International Conference on Robotics and Automation (ICRA), pp. 43–48,
+May 2006.
+[38] J. P. Underwood, A. Hill, T. Peynot, and S. J. Scheding, “Error
+modeling and calibration of exteroceptive sensors for accurate mapping
+applications,” Journal of Field Robotics, vol. 27, no. 1, pp. 2–20, 2010.
+[39] J. Brookshire and S. Teller, “Automatic calibration of multiple coplanar
+sensors,” Robotics: Science and Systems VII, vol. 33, 2012.
+[40] J. Borenstein, “Internal correction of dead-reckoning errors with the
+smart encoder trailer,” Proc. of the IEEE/RSJ/GI International Conference on ’Intelligent Robots and Systems’ ’Advanced Robotic Systems
+and the Real World’, (IROS), vol. 1, pp. 127–134, 1994.
+[41] D. A. Cucci and M. Matteucci, “A flexible framework for mobile robot
+pose estimation and multi-sensor self-calibration.” ICINCO (2), pp. 361–
+368, 2013.
+[42] R. Kümmerle, G. Grisetti, and W. Burgard, “Simultaneous calibration,
+localization, and mapping,” Proc. IEEE/RSJ International Conference
+on Intelligent Robots and Systems (IROS), pp. 3716–3721, 2011.
+[43] P. J. Besl and N. D. McKay, “Method for registration of 3-D shapes,”
+Robotics-DL tentative, pp. 586–606, 1992.
+[44] D. Chetverikov, D. Svirko, D. Stepanov, and P. Krsek, “The trimmed
+iterative closest point algorithm,” Proc. 16th IEEE Intl. Conf. on Pattern
+Recognition, vol. 3, pp. 545–548, 2002.
+[45] A. Censi, “An ICP variant using a point-to-line metric,” Proc. IEEE Intl.
+Conf. on Robotics and Automation (ICRA), pp. 19–25, May 2008.
+[46] D. P. Bertsekas, Nonlinear programming. Athena scientific Belmont,
+1999.
+[47] P. Tseng, “Convergence of a block coordinate descent method for
+nondifferentiable minimization,” Journal of optimization theory and
+applications, vol. 109, no. 3, pp. 475–494, 2001.
+[48] P. W. Holland and R. E. Welsch, “Robust regression using iteratively
+re-weighted least-squares,” Communications in Statistics-theory and
+Methods, vol. 6, no. 9, pp. 813–827, 1977.
+[49] P. J. Huber, Robust statistical procedures. SIAM, 1996.
+[50] G. B. Giannakis, G. Mateos, S. Farahmand, V. Kekatos, and H. Zhu,
+“USPACOR: Universal sparsity-controlling outlier rejection,” Proc.
+IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP), pp. 1952–1955, May 2011.
+[51] W. Dumouchel and F. O’Brien, “Integrating a robust option into a
+multiple regression computing environment,” Institute for Mathematics
+and Its Applications, vol. 36, p. 41, 1991.
+[52] A. Censi, “Supplemental material for simultaneous calibration of
+
+20
+
+odometry and sensor parameters for mobile robots.” [Online].
+Available: https://github.com/AndreaCensi/calibration
+[53] W. Hess, D. Kohler, H. Rapp, and D. Andor, “Real-time loop closure in
+2d LIDAR SLAM,” in 2016 IEEE International Conference on Robotics
+and Automation (ICRA). IEEE, 2016, pp. 1271–1278.
+[54] J. Sturm, N. Engelhard, F. Endres, W. Burgard, and D. Cremers,
+“A benchmark for the evaluation of RGB-D SLAM systems,” Proc.
+IEEE/RSJ International Conference on Intelligent Robots and Systems
+(IROS), pp. 573–580, 2012.
+[55] “Find about kobuki robotic research platform.” [Online]. Available:
+http://kobuki.yujinrobot.com/about2/
+[56] “Find
+about
+fire
+bird
+vi
+robotic
+research
+platform.” [Online]. Available: http://www.nex-robotics.com/products/
+fire-bird-vi-robot/fire-bird-vi-robotic-research-platform.html
+[57] A. Censi, “An accurate closed-form estimate of ICP’s covariance,” Proc.
+IEEE International Conference on Robotics and Automation (ICRA), pp.
+3167–3172, 2007.
+[58] H. Taheri, B. Qiao, and N. Ghaeminezhad, “Kinematic model of a four
+mecanum wheeled mobile robot,” International journal of computer
+applications, vol. 113, no. 3, pp. 6–9, 2015.
+[59] A. Chamoli and S. S. Masood, “Two-dimensional quantum search
+algorithm,” arXiv preprint arXiv:1012.5629, 2010.
+[60] T. F. Coleman and Y. Li, “An interior trust region approach for nonlinear
+minimization subject to bounds,” SIAM Journal on optimization, vol. 6,
+no. 2, pp. 418–445, 1996.
+
+

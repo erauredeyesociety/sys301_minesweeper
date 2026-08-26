@@ -1,0 +1,1070 @@
+Degree Project in Computer Science and Engineering
+First Cycle, 15 credits
+
+Comparison of Coverage
+Algorithms for Robot Vacuum
+Cleaners in Cluttered Environments
+OSCAR HELLGREN & SAMVEL HOVHANNISYAN
+
+English Title
+Comparison of Coverage Algorithms for Robot Vacuum Cleaners in Cluttered
+Environments
+
+Swedish Title
+Jämförelse av täckningsalgoritmer för robotdammsugare i röriga miljöer
+
+Authors
+Oscar Hellgren, oschel@kth.se
+Samvel Hovhannisyan, samvelh@kth.se
+Information and Communication Technology
+KTH Royal Institute of Technology
+
+Place for Project
+Stockholm, Sweden
+
+Year
+2024
+
+Examiner
+Prof. Pawel Herman
+KTH Royal Institute of Technology
+
+Supervisor
+Jana Tumova
+KTH Royal Institute of Technology
+
+Abstract
+The use of household robotics has increased massively in the 21st century, with
+vacuum cleaners being one of the most common use cases in this field. Robot
+vacuum cleaners require good path planning, even in environments containing
+obstacles to be useful. One challenge to this is the fact that the robot often does
+not have knowledge of its environment, as all rooms are different and sometimes
+rearranged.
+Four different algorithms were tested to compare their performance in realistic
+home settings: random walk, closest first scan, BA* and our custom made hybrid
+BA* algorithm. Random walk is a simple algorithm where its path is determined
+by chance. It performed poorly when considering the amount of moves taken,
+especially when used in rooms with more complex obstacles and when a high
+degree of coverage was desirable, although was somewhat better in the amount
+of turns necessary. It may be more suited for situations with fewer obstacles
+and where good coverage is less of a priority. Closest first scan, which walks
+randomly to unvisited spaces while creating a map to improve performance in
+high coverage scenarios, performed slightly worse than BA* but still offered
+a significant improvement over random walk in the amount of moves taken.
+It performed poorly when considering the amount of turns taken. BA* is a
+more sophisticated approach that walks deterministically and creates a map of
+its environment during the run, which it then uses to find uncovered space.
+It performed well, both in moves and turns, always achieving full coverage
+and rarely visited covered spaces. Hybrid BA* showed promising results when
+dealing with changes in the environment. Limitations of our work includes a low
+resolution of our simulation and optimistic assumptions about the reliability of
+robot hardware.
+
+Keywords
+Coverage, Path Planning, autonomous robots
+ii
+
+Abstract
+Användandet av robotik i hushåll har sett en stor ökning i det nya årtusandet,
+dammsugare
+
+är
+
+en
+
+av
+
+de
+
+vanligaste
+
+användningarna
+
+i
+
+detta
+
+fält. Robotdammsugare kräver bra ruttplanering, även i miljöer som innehåller
+hinder för att vara användbara. En utmaning som uppstår är att roboten kan ej
+ha kunskap om sin egen miljö, för att alla rum är unika och blir ibland omflyttade.
+Detta leder till problem om roboten gör för många antaganden.
+Fyra olika algoritmer valdes ut för att jämföra deras prestanda i realistiska
+hemmiljöer: random walk, closest first scan, BA* och vår egenutveckled hybrida
+BA* algoritm. Random walk är en enkel algoritm där vägen som tas är bestämd av
+slumpen. Den presterade dåligt i mängden steg nödvändigt för täckning, särskilt i
+rum med mer komplexa hinder och när en hög grad av täckning krävdes. Dock
+så presterade den någorlunda bättre i antal svängningar. Den kan vara mer
+lämpad i fall med färre hinder och där bra täckning är mindre av en prioritet.
+Closest first scan är en icke-deterministisk algoritm som går slumpmässigt till
+otäckta granar samtidigt som den skapar en intern karta som den använder till att
+förbättra prestanda vid hög täckning. Den presterade någorlunda sämre än BA*
+men fortfarande betydligt bättre än random walk i antal steg. Den presterade dålig
+i antal svängningar. BA* är en mer sofistikerad algoritm som skapar en karta av
+sin miljö under körning, vilket den sedan använder sig av för att upptäcka ej täckta
+utrymmen. Den presterade väl i både antal steg samt svängningar, en full täckning
+av arean uppnåddes alltid och den återbesökte sällan redan täckta utrymmen.
+Hybrida BA* visade goda resultat för förändringar i sin miljö Begränsningar i vårt
+arbete har varit en låg upplösning i simuleringen samt optimistiska antagningar
+om pålitligheten av robotars hårdvara.
+
+Nyckelord
+Täckning, ruttplanering, självkörande robotar
+
+iii
+
+Contents
+1 Introduction
+
+1
+
+1.1
+
+Problem Statement . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+2
+
+1.2
+
+Delimitations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+2
+
+2 Background
+2.1
+
+3
+
+Coverage Path Planning . . . . . . . . . . . . . . . . . . . . . . . . .
+
+3
+
+2.2 Cellular Decomposition . . . . . . . . . . . . . . . . . . . . . . . . .
+
+3
+
+2.3 Grid Decomposition . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+3
+
+2.4 Random Walk . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+4
+
+2.5 BA* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+5
+
+2.6 Hybrid BA* . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+6
+
+2.7 Closest First Scan . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+7
+
+2.8 Genetic Algorithms . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+8
+
+3 Method
+
+9
+
+3.1
+
+Assumptions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+9
+
+3.2 Simulation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+9
+
+3.3 Rooms and Obstacles . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+3.4 Robot . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+3.5 Testing . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 12
+4 Results
+4.1
+
+13
+
+Static Coverage . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+
+4.2 Dynamic Coverage . . . . . . . . . . . . . . . . . . . . . . . . . . . . 18
+5 Discussions
+5.1
+
+19
+
+Performance . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 19
+
+5.2 Limitations . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 20
+5.3 Applications . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 21
+6 Conclusions
+
+23
+
+References
+
+24
+
+iv
+
+1
+
+Introduction
+
+Robot vacuum cleaners were first conceived as an idea early in the second half
+of the 20th century but it was first in the late 90’s when it hit the commercial
+market. Robot vacuum cleaners have since become more popular through the
+years and are today common in our homes. However regardless of its success, the
+robot vacuum cleaner still faces challenges when dealing with complex obstacles.
+Robot vacuum cleaners have in recent years drastically increased in popularity
+and are one of the applications where coverage path planning is central. The
+rise in popularity can be attributed to several factors such as a stressful work
+life, increased performance of the average commercial robot vacuum cleaner
+which automatize one of the most time consuming chores to a satisfactory level
+of cleanliness. They also provide a useful role for adapting to an ageing society
+[8]. Robotic vacuum cleaners come in many different form factors and hardware
+equipment, the most popular form factor is the disc shape of iRobot’s Roomba
+which has become a genericide for robot vacuum cleaners thanks to its success.
+In [1] the first four generations of Roombas are discussed and the improvements
+are contextualize. The first generations of Roombas were not capable of exploring
+and room sizes were needed to be specified where as the latest generation were
+not only capable of exploration but also scheduled routines. More advanced
+and specialized robot vacuum cleaners can take other forms such as a zamboni
+looking model, and are usually equipped with more advanced set of sensors such
+as cameras, ultrasound sensors.
+Automatization of certain jobs and tasks have in recent years become increasingly
+relevant and desirable. Contributing factors such as increased productivity and
+efficiency, demand for workers in critical societal industries like agriculture,
+and a decrease in operational prices have for years driven automation research
+forward. Automated robots deal with different types of problems, and one such
+problem is coverage path planning (CPP). CPP is the problem of covering area or
+volume units while avoiding obstacles. This is a relevant problem across many
+different robot applications such as autonomous underwater vehicles (AUVs),
+autonomous surface vehicles (ASVs), that handle everything from crop harvesting
+and underwater image mosaic generator to home applications such as lawn
+
+1
+
+mowers and robot vacuum cleaners [5]. There are several methods or classes of
+algorithms which might be used for mapping environments and finding optimal
+paths. These methods can be naive and deterministic like “Go straight forward
+until a bump and in case of one turn right” or they might be more complicated
+evolutionary algorithms (EAs) that make use of meta-heuristics [4].
+
+1.1
+
+Problem Statement
+
+The purpose of this thesis is to examine how different algorithms solve the CPP
+problem in cluttered environments, with realistic obstacles. The questions we
+wish to answer are,
+• Does the more advanced algorithms offer improved performance for a
+realistic home
+• Can an offline-online hybrid cope well with a changing environment
+In order to investigate these questions, we will conduct a literature study
+consisting of a number of different algorithms which may be used to solve the CPP
+problem. We will also implement a selection of aforementioned algorithms and
+test their performances in different simulated rooms, containing obstacles. We
+will also develop our own offline-online hybrid algorithm to tests its effectiveness
+in dealing with dynamic environments.
+
+1.2
+
+Delimitations
+
+In order to achieve our goal, we hade made the following delimitations.
+• We will not be dealing with changes during runs, only between runs.
+• We will not take sensor inaccuracy in account.
+
+2
+
+2
+
+Background
+
+2.1
+
+Coverage Path Planning
+
+Coverage Path Planning algorithms are usually categorized into two groups;
+offline and online algorithms.
+
+The difference between offline and online
+
+algorithms is the assumptions that the algorithms make of the target space.
+Offline algorithms operate under the assumption of a known and static target
+space which makes the algorithms less complicated, however the assumptions
+do not hold in many of the fields where CPP problems arise. Online algorithms
+operate on the premise that the target space is only partially known or unknown
+therefore online algorithms are more complicated, and require more real-time
+sensor based information to plan path for coverage [5].
+
+2.2
+
+Cellular Decomposition
+
+Cellular decomposition is used frequently in CPP algorithms and it is the
+act of decomposing target space into subregions and cells to plan path
+trajectory free of collisions. Decomposition is used for both offline and online
+algorithms. There are several methods for decomposition, the classical methods
+include: Trapezoidal decomposition and boustrophedon decomposition, however
+there also exists more advanced methods such as the morse-based cellular
+decomposition [5].
+
+2.3
+
+Grid Decomposition
+
+One of the most the most common types of cellular decomposition is grid based
+decomposition.
+Grid based decomposition of the target space is a collection of uniform grid cells
+which are used to represent the target space. Grids are usually represented as
+squares, although other shapes like triangles are possible. With a grid based
+approach there is a need to differentiate free space and spaces occupied by objects,
+this is usually done with valued grids. Grid based decomposition faces the issue
+with accurate representation of environments since irregularly shaped obstacles
+
+3
+
+will take up free space. This issue classifies grid based decomposition as an
+approximate cell decomposition and makes most grid-based methods “resolution
+complete”, meaning that depending on the size of a grid results may vary. [5]
+There are several grid based methods that have been used for coverage over the
+years, here are some of the notable ones. Grid based coverage using the wavefront
+algorithm, such approach requires a start and goal and was first suggested in
+[2]. The cells in the grid are assigned values depending on their distance to the
+goal cell and the direction path is chosen by a heuristic where the lowest valued
+neighboring cell is chosen and in the case there are several cells with same value
+path is chosen randomly. This method is an offline method however a generalized
+online method was introduced in [9].
+A grid with hexagonal shaped cells is usually called a hex map and has several
+advantages which can help improve performance and optimization in certain
+scenarios. Some of the advantages include improved representation of curvature
+and uniform distance to each neighbouring cell. There are several coverage
+algorithm based on hexagonal decomposition like e.g.
+
+Hex decompostion
+
+coverage planning (HDCP) suggested in [10] which is new and novel algorithm
+that covers more area total than other popular coverage algorithms like: STC, MHDE and BA*.
+
+2.4
+
+Random Walk
+
+Random walk is the simplest algorithm pertaining to the field. It works by
+traveling in a straight line until it encounters an obstacle, and then turns a
+randomized amount of degrees [4]. This behavior is executed for a set amount
+of time. If given sufficient time, full coverage will eventually be achieved, but its
+efficiency is poor due to many areas being visited multiple times. The random
+nature of the algorithm gives it no guarantee of cleaning performance within
+certain run times [11]. Nevertheless, this method has been used in early robot
+vacuum cleaners due to the low requirements for computational and sensory
+resources [5]. This method is most suited for small rooms with few obstacles,
+being served by cheap robots.
+
+4
+
+One field of robotics where random walk is popular is swarm robotics. In [3]
+few different types of random walks were tested with swarm robots searching
+for a static target. The different types of walks were: Lévy walk (LW) and
+correlated random walks (CRW) and the main difference between the different
+walks is where the randomness comes from e.g. in Lévy walks the step length
+follow a power law probability distribution while CRE has a Gaussian step
+length distribution. There is no objective best method as is seen in [3] the
+different parameters in the probability distributions and the environments play
+a significant role in which method is optimal.
+The random walk which we have selected to implement is described by
+Algorithm 1 and henceforth when random walk is referenced it is this algorithm
+being talked about.
+Algorithm 1 Random walk algorithm
+1: maxSteps ← n
+2: direction ← ŷ
+3: while maxSteps > 0 do
+4:
+if obstacle inf ront then
+5:
+direction ← randomDirection()
+6:
+end if
+7:
+moveRobot(position, direction)
+8:
+maxSteps ← maxSteps − 1
+9: end while
+
+In
+
+the
+
+algorithm
+
+above
+
+two
+
+additions
+
+help
+
+functions
+
+are
+
+used
+
+these being randomDirection() and moveRobot(). randomDirection() scans all
+the neighbouring cells and randomly returns one direction which is not hindered
+by an obstacle. moveRobot() simply moves the robot in the direction which was
+selected randomly and the cell is then marked as covered.
+
+2.5
+
+BA*
+
+BA* is an online CPP algorithm [6], designed to facilitate autonomous navigation
+in unknown environments. As an online algorithm, it dynamically constructs a
+map while the robot explores its surroundings. The core mechanism involves a
+boustrophedon motion strategy, a systematic pattern reminiscent of the way a
+5
+
+farmer plows a field, moving back and forth in straight lines.
+Initially, the robot takes a step in the first available direction based on a priority
+sequence of north, south, east, and west. This movement pattern helps to define
+a boustrophedon region, which is typically large and contiguous. These regions
+are integral to the algorithm as they simplify the area into manageable sections.
+By continuously updating its path in memory, the robot marks previously
+traversed paths as unavailable, ensuring it does not revisit these areas. Obstacles
+encountered are similarly marked as unavailable, effectively preventing the robot
+from attempting to navigate through them. When the robot encounters a situation
+where no movement is possible in any of the four prioritized directions, it has
+reached what is termed a critical point. At this juncture, the algorithm constructs
+a backtracking list.
+
+This list comprises corner tiles that still have available
+
+neighboring tiles, indicating potential paths the robot can explore next. From this
+list, the robot selects the tile with the lowest distance cost relative to its current
+position, optimizing its movement efficiency. The navigation from the robot’s
+current location to the chosen corner tile is planned using the A* search algorithm,
+a well-known pathfinding method that guarantees the shortest path in a weighted
+grid. The integration of A* ensures that the robot can efficiently navigate between
+critical points.
+One of the significant advantages of the BA* algorithm is its ability to reduce
+the number of turns required during navigation. Since turning consumes more
+time and energy compared to moving straight, minimizing turns is crucial
+for operational efficiency. The boustrophedon motion inherently reduces the
+frequency of turns, allowing the robot to cover more ground in less time. The use
+of an internal map should also offer good performance for high coverage scenarios
+as it does not need to search physically for the last spots. BA* has demonstrated
+promising results in unknown and static environments.
+
+2.6
+
+Hybrid BA*
+
+Hybrid BA* is a new hybrid algorithm created for this thesis. It is an offline-online
+hybrid which first tries to cover the area with previous mapping information and
+then fall backs to BA* if it encounters an unexpected obstacle. It follows the path
+6
+
+generated by a previous BA* run. If the area is unchanged since the earlier run,
+it is completely offline and thus requires less processing power. It likely performs
+similar to normal BA* as the initial path planning is identical to the previous
+run and changes are dealt with BA*. There is a risk that the cleaning becomes
+more fragmented if the moved obstacles creates free pockets before the algorithm
+switches to online planning. That would reduce efficiency as the robot would have
+to spend more time to travel over already cleaned areas to reach all points of the
+room.
+
+2.7
+
+Closest First Scan
+
+Closest First Scan (CFS) is an online algorithm for CPP [9]. The algorithm is
+designed to navigate and map unknown environments efficiently. Upon starting
+in an unexplored environment, the algorithm first checks the four adjacent
+neighboring cells to determine if any of them are free. If one or more adjacent cells
+are free, the algorithm selects one of these cells at random and moves to it. This
+movement process continues, with the algorithm maintaining an internal map of
+the environment that gets updated as it explores new areas.
+The internal map is crucial as it enables the algorithm to ensure comprehensive
+coverage of the environment. If all adjacent neighbors are occupied or otherwise
+inaccessible, the algorithm initiates a breadth-first search to locate the nearest
+free cell. Once a free cell is identified, the algorithm calculates and follows a
+path from its current position to this free cell. This process of searching and
+pathfinding is repeated as necessary to achieve full coverage of the environment.
+The CFS algorithm continues its operation until it has visited all cells that have
+been identified as free at any point during its exploration. By marking cells
+as visited, the algorithm ensures that every accessible area is covered without
+unnecessary revisits. This is particularly important in maintaining the efficiency
+of the traversal.
+The CFS algorithm has shown good results in its performance in unknown and
+static environments. In the experiments reported by Shivashankar et al., the
+algorithm demonstrated a relatively low rate of revisiting free cells, specifically
+only revisiting 6.41% of free cells. This low revisit rate highlights the algorithm’s
+7
+
+efficiency in avoiding redundant movements, thereby optimizing the exploration
+process.
+
+2.8
+
+Genetic Algorithms
+
+Genetic Algorithms (GAs) are optimization techniques inspired by natural
+selection and genetics, effective in solving complex problems like the Coverage
+Path Planning (CPP) problem.
+GAs work by evolving a population of candidate solutions over generations. Each
+candidate, or individual, is represented by a chromosome. The process includes
+population initialization, fitness evaluation, selection, crossover (recombination),
+mutation, and replacement. Initially, a population of individuals is generated, and
+each one’s fitness is measured. Individuals are then selected based on fitness to
+reproduce and create the next generation through methods like roulette wheel
+selection and tournament selection [7]. During crossover, genetic material from
+selected parents is combined to produce offspring, while mutation introduces
+random changes to maintain genetic diversity.
+
+This process repeats until a
+
+termination criterion is met.
+For CPP, GAs optimize the robot’s path encoded as a sequence of waypoints or grid
+cells. The fitness function evaluates coverage efficiency, path length, and obstacle
+avoidance. Paths with better coverage are selected for reproduction, combining
+parts of parent paths to create new ones. Random modifications help explore
+new solutions and avoid local optima. This iterative process continues until the
+optimal or near-optimal path is found.
+GAs offer flexibility and robustness, handling various constraints and objectives
+while avoiding local optima. However, they can be computationally intensive, are
+most suited for offline coverage, and sensitive to parameter choices.
+
+8
+
+3
+
+Method
+
+Random walk, BA*, hybrid BA* and CFS has been implemented in Python, refer to
+sections 2.4, 2.5, 2.6 and 2.7 respectively for more information. We chose the the
+random walk algorithm due to its low complexity for a baseline of performance
+as it likely performs the worst. BA* was chosen as to contrast the results of the
+simple random walk with a much more sophisticated solution, that should offer
+significant performance improvements. The hybrid BA* version was created to
+test changing environments.
+CFS was picked to examine the performance of a medium complexity algorithm
+that should still provide a large improvement over random walk, but not quite to
+the level of BA*.
+We chose to not implement a genetic algorithm due to their complexity and
+computational cost to train, although we suspect that using one for the offline
+stage in hybrid BA* could have provided better results.
+
+3.1
+
+Assumptions
+
+We have made the following assumptions when testing,
+• The robot can sense obstacles adjacent to it.
+• The robot can accurately track distance travelled and turns.
+• The simulation area consists of a grid decomposition with square tiles.
+• The simulation area is constrained by walls on all sides.
+• The simulation area contains no empty space that is unreachable to the
+robot.
+• Obstacles in the simulation are static during runs.
+
+3.2
+
+Simulation
+
+We developed a simple simulation tool in Python to examine the algorithms’
+performances in realistic environments.
+
+The simulation consists of a list
+
+9
+
+containing lists, effectively creating a two dimensional grid from a top down view
+of the area. Each element contains one of the following symbols.
+• ”X”, meaning occupied space, either part of an obstacle or wall.
+• ”O”, meaning free, unvisited space.
+• ”*”, visited space.
+• ”↑”, ”←”, ”→”, ”↓”, visited space indicating the direction of the path.
+• ”?”, meaning uncertain space due to the robot not surveying that space yet.
+The environments were printed out to the terminal to give a visual representation
+of which cells have been covered by the robot.
+
+Figure 3.1: Starting room, one BA* region, full random walk coverage
+
+3.3
+
+Rooms and Obstacles
+
+We have used two different rooms for the testing. A kitchen with a footprint of
+30x50, surrounded on all sides by walls. The kitchen contains a large ”u” shaped
+bar area with two chairs and also a dinner table with four chairs. This room is quite
+complex in regards to the obstacles. It might be challenging due to this, especially
+for the random walk algorithm.
+There is also a bedroom with the dimensions 30x40. This room is also surrounded
+on all sides by walls. This room contains a bed in the top left and a couch below
+the bed. A desk with a chair is present in the top right and a TV cabinet is below
+
+10
+
+the desk, on the opposite side of the couch. This room contains larger obstacles
+compared to the kitchen, which might make it easier to cover.
+
+Kitchen
+
+Bedroom
+
+Figure 3.2: Black spaces are occupied, white space are free.
+
+We also created one version each of the previous rooms with moved obstacles, to
+test the hybrid BA* algorithm. The moved kitchen room contains small differences
+in the placement of the chairs and table. This is to simulate small changes that
+could be expected to happen very often, possibly between every run, in a reallife scenario. The moved bedroom represents a redecoration of the room and
+thus contains obstacles in completely different locations. The obstacles which are
+moved is selected randomly once again introducing an aspect of non-determinism,
+in practices if the adjusted obstacle is at the end of robot’s usual path then there
+wont be a significant performance difference whereas an adjustment early on the
+usual path might have a more significant effect.
+
+11
+
+Kitchen
+
+Bedroom
+
+Figure 3.3: Moved versions of the kitchen and bedroom.
+
+3.4
+
+Robot
+
+The robot is represented as a single element in the aforementioned grid. It is
+able to travel in the eight adjacent directions due to the discrete nature of the
+simulation. The robots initial position is indicated with the ”#” symbol in the
+simulation. The path it has taken is indicated with arrows corresponding to the
+direction it was headed when conducting boustrophedon motion. The path is
+indicated with the symbol ”*” when conducting other motion, i.e A* navigation,
+CFS or random walk.
+
+3.5
+
+Testing
+
+The robots initial position for the testing was bottom left corner. BA* and hybrid
+BA* were run once per scenario due to them being deterministic. Random walk,
+CFS and the moved obstacle scenario were all non-deterministic and therefore
+required a large amount of runs to produce reliable results. We settled on 5000
+runs per scenario as a smaller sample showed too much variance, but a much
+greater amount of runs would have been too computationally expensive. The
+mean and standard deviation were calculated for every set of these runs. Every
+algorithm were ran until it had achieved a specified percentage of total coverage,
+we chose to sample the percentages of 10%, 20%, ... , 100%. Data for the amount
+of moves and turns required for coverage was collected.
+12
+
+4
+
+Results
+
+Random walk performed well for lower coverage but suffers from poor efficiency
+when targeting high coverage. It also has a large variance between runs. CFS
+displays a much smaller variance between runs and is also a major improvement
+over random walk when attempting high coverage percentage. BA* achieved the
+best results in all circumstances, it always required the least amount of moves for
+a given level of coverage.
+The shaded area of the lines show plus-minus the standard deviation.
+
+4.1
+
+Static Coverage
+
+The environments are completely static in these tests. Hybrid BA* is not displayed
+as it performs identically to BA* when there are no changes present.
+4.1.1 Moves
+Results for the number of moves required to achieve a certain percentage of total
+coverage in the static tests for kitchen and bedroom.
+
+13
+
+Moves
+
+104
+
+Random Walk
+BA*
+CFS
+
+103
+
+102
+10
+
+20
+
+30
+
+40
+
+50
+60
+Coverage %
+
+70
+
+80
+
+90
+
+100
+
+Figure 4.1: Kitchen data
+
+BA* performed the best in this test, achieving every coverage percentage with the
+fewest moves of the tested algorithms. CFS was a strong second, only trailing
+slightly behind BA*, even when going for high coverage percentage. Random walk
+performed well at first, but could not keep up when going for higher coverage
+with a significant bump at 100%. The standard deviation was also much larger for
+random walk compared to CFS. CFS suffered from poor turn performance.
+
+14
+
+Moves
+
+104
+
+Random Walk
+BA*
+CFS
+
+103
+
+102
+10
+
+20
+
+30
+
+40
+
+50
+60
+Coverage %
+
+70
+
+80
+
+90
+
+100
+
+Figure 4.2: Bedroom data
+
+The algorithms performed largely the same as in the Kitchen run here. Random
+walk performed slightly better.
+
+15
+
+4.1.2 Turns
+
+Turns
+
+103
+
+Random Walk
+BA*
+CFS
+
+102
+
+101
+
+10
+
+20
+
+30
+
+40
+
+50
+60
+Coverage %
+
+70
+
+80
+
+90
+
+100
+
+Figure 4.3: Kitchen data
+
+Closest first scan performed quite poorly while random walk did relatively well
+except for the end.
+
+16
+
+Turns
+
+103
+
+Random Walk
+BA*
+CFS
+
+102
+
+101
+10
+
+20
+
+30
+
+40
+
+50
+60
+Coverage %
+
+70
+
+80
+
+90
+
+100
+
+Figure 4.4: Bedroom data
+
+Random walk performed on par with BA* for very low coverage percentage while
+remaining superior to CFS for most of the time.
+
+17
+
+4.2
+
+Dynamic Coverage
+
+Kitchen
+
+Bedroom
+
+Figure 4.5: Moved versions of the kitchen and bedroom.
+
+The moves required to achieve varying degrees of coverage, in the moved kitchen
+and moved bedroom test rooms. Hybrid BA* was run with the map of the old
+room, while BA* had no prior information as usual. The algorithms performed
+virtually identically, giving the illusion of a single line.
+
+18
+
+5
+
+Discussions
+
+5.1
+
+Performance
+
+Random walk performed poorly in both test cases. In the same amount of
+moves BA* and CFS could completely cover the area, random walk only managed
+around a 50%-60% coverage. When pushing for higher coverage percentages with
+random walk, the moves required increased rapidly. Although, one strong point
+of random walk was its turn performance. Turns generally require more time to
+complete which makes them suitable to avoid when possible. It also introduces
+more possibility for inaccuracy as the robot is unlikely to turn the exact amount of
+degrees indicated. Small inaccuracies in each turn can add up to a major problem
+if many turns are conducted. The amount of turns required was lower than for
+CFS at all coverage percentages except for 100%. It did perform worse than BA*
+in turns though. The trend held true for both test cases, suggesting that obstacles
+does not make a huge difference to the balance of power between the algorithms’
+turn performances.
+The random walk algorithm performed poorly, as expected, in our testing. It did
+manage a complete coverage, but at the expense of an high amount of moves.
+Coverage progress slows down significantly as the run continues, this is due to
+the random nature of the algorithm. When more of the area has already been
+covered, it must travel further to encounter uncovered area. This suggests that this
+algorithm is unsuitable for complex environments where a high degree of coverage
+is desirable, for example our test rooms. We think it would be better suited
+for a robot lawn mover, as it would encounter less obstacles and the coverage
+requirements could be more lax.
+BA* performed well in both tests, with little difference in the amount of moves
+required to achieve full coverage. The kitchen test required slightly more moves
+than the bedroom test, but this is mostly due to the kitchen being slightly larger.
+Overall the BA* algorithm performed as expected. It fully covered the problem
+areas and rarely visited the same cell multiple times, making it very efficient. The
+complexity of obstacles made little difference in its performance, most likely due to
+it determining uncovered areas along the path it has travelled. BA* also performed
+19
+
+the best in turn performance, being significantly better than the rest at all points
+except for 10% coverage in bedroom where it performed on par with random walk.
+This testing suggests that the BA* algorithm is suitable for a robot vacuum cleaner
+navigating a home under, assuming good hardware.
+Hybrid BA* performed on par with the normal BA* implementation. This is not
+surprising as it relies on BA* to cover the area when encountering obstacles. This
+finding suggests that computational power can be spared for when it is actually
+required, allowing for a longer battery life.
+The moves performance of the CFS algorithm was rather surprising given the
+non-deterministic aspect, one would expect it to perform significantly worse than
+the deterministic BA* algorithm. The good performance most likely relies on
+the internal map it creates during the run. The algorithm does walk randomly,
+but only randomly onto unvisited spaces and then searches for where to go
+using the map when there are no unvisited neighbours. The probability that the
+algorithm visits the same space multiple times are thus greatly reduced. The turn
+performance was however somewhat disappointing, although not very surprising.
+It performed the worst in the amount of turns required to achieve all coverage
+levels except for 100% in both tests. The performance relative to others was
+especially bad for low coverage. This is likely due to the fact that it chooses its
+next by randomly choosing one of its neighbours, without regard for the direction
+of travel. This behaviour gives the algorithm a 2/3’s chance of turning when
+all neighbours except for the path it already took is unvisited. The somewhat
+increased performance for high coverage percentage is most likely due the path
+created by BFS being less wandering and more similar to BA*.
+
+5.2
+
+Limitations
+
+5.2.1 Simulation
+The problem area is represented with a two dimensional array.
+
+We made
+
+this decision for simplicity’s sake. The approach seemingly works well for our
+simulation, but it is not entirely realistic. The resolution is also quite low, which
+compounds the issue. This could be solved by simply making the grid larger, but
+
+20
+
+that would also require the robot to also increase in size for the sake of realism.
+Such a change would take significant time to develop and would also significantly
+increase the run times, which would be a problem as the simulations were already
+quite time consuming.
+5.2.2 Reliability Assumptions
+It was assumed that the robot is highly accurate in keeping track of the distance
+it has travelled and the turns it has completed. This was done for practical
+reasons, as simulating inaccuracy would have been challenging. This assumption
+is likely overly optimistic in regards to the capabilities of real-world hardware. The
+consequences of this decision is that the real-word performance will likely differ
+from the results we gathered. The differential is expected to increase with the size
+of the room, as small inaccuracies add up over the course of the run. This only
+applies to the BA* algorithm, random walk is not affected as it does not keep track
+of its position when cleaning.
+Another limitation brought forward by our assumptions is that of the sensors our
+robot is assumed to have. The work in this thesis was done with a robot which
+was assumed to have a 360 degree field vision meaning the robot is capable of
+detecting all nearby cells. This assumptions was made to make implementation
+and eventual simulation easier, however this is not realistic and in many of the
+more novel papers about the subject the angles of the field of vision is an essential
+parameter.
+
+5.3
+
+Applications
+
+As mentioned in the background the coverage path planning has applications
+in many different fields. In the field of autonomous robot vacuum cleaners
+the results indicate a clear and obvious advantage for the BA* algorithm which
+achieves a higher (ideal) coverage with significantly less movement however there
+are a few disadvantages. Firstly, the algorithm is more complicated to implement
+and secondly the algorithm maps the environment with boustrophedon motion
+which in certain environments might not be ideal and lastly the necessity to use
+sensors to map the environment and make the robot operational might be a
+21
+
+drawback in situations where the sensors are either damage or the environment
+difficult to map with said sensors.
+
+One example of field where BA* might
+
+struggle to operate well is AUVs where at deep levels of the sea there might arise
+issues for the sensors and as a consequence the algorithm will struggle. One
+advantage of random walk is that it does not need a lot of sensors and will perform
+similarly in some fields and application on top of being a really naive and easy to
+implement.
+
+22
+
+6
+
+Conclusions
+
+The study shows that the random walk algorithm is poorly suited for complex
+environments containing obstacles and where a high degree of coverage is needed,
+compared to other options. It struggled in achieving a high coverage percentage
+but was still useful when full coverage is not necessary. We theorize that it
+would be more suitable for simpler applications. For example, lawn moving,
+where it would encounter fewer obstacles and the reduced efficiency would be
+more tolerable. BA* proved effective in our testing and achieved total coverage
+within a reasonable amount of moves and the least amount of turns. It handled
+obstacles well. Although, real-world performance is likely somewhat inferior
+due to hardware limitations. CFS performed somewhat worse the BA*, but still
+relatively well when compared to random walk. It did not struggle with full
+coverage, due to it creating an internal map. Although, one weak point of CFS was
+the high amount of turns required. Hybrid BA* performed virtually identically to
+a new BA* run when the environment changed, suggesting that working from an
+old map is a viable optimization.
+The more advanced algorithms, especially BA* but also CFS, did offer significant
+improvements over the random walk algorithm, suggesting that there is much
+efficiency to gain. Hybrid BA* showed good performance when dealing with
+changing obstacles, suggesting offline-online hybrid algorithms can cope well with
+changing environments.
+
+23
+
+References
+[1] A. Pandey A. Kaushik, A.K. Jha and Kapse, G. “A Technological Survey
+on Autonomous Home Cleaning Robots”. In: International Journal of
+Scientific and Research Publications (2014).
+[2] A. Zelinsky R.A. Jarvis, J.C Byrne and Yuta, S. “Planning Paths of Complete
+Coverage of an Unstructured Enviornment by a Mobile Robot”. In: (1993).
+[3] C. Dimidov, G. Oriolo and V.Trianni. “Random Walks in Swarm Robotics :
+An Experiment with Kilobots”. In: ResearchGate (2016).
+[4] C.S. Tang, R. Mohd-Mokhtar and Arshad, M. R. “A Comprehensive Review
+of Coverage Path Planning In Robotics Using Classical and Heuristical
+Algorithms”. In: IEEE Access (2021).
+[5]
+
+Galceran, E. and Carreras, M. “A survey on coverage path planning”. In:
+Robotics and Autonomous System (2013).
+
+[6] H.H Viet v.H. Dang, M. N. U. Laskar and Chung, T. “BA*: an
+online complete coverage algorithm for cleaning robots”. In: Springer
+Science+Business Media New York (2012).
+[7]
+
+Karthik Karur Nitin Sharma, Chinmay Dharmatti and Siegel, Joshua E.
+“A Survey of Path Planning Algorithms for Mobile Robots”. In: Electrified
+Intelligent Transportation Systems (2021).
+
+[8]
+
+Nai-Hua Chen, Stephen Chi-Tsun Huang. “Domestic Technology Adoption:
+Comparison of Innovation Adoption Models and Moderators”. In: Human
+Factors and Ergonomics in Manufacturing Service Industries (2015).
+
+[9] V. Shivashankar R. Jain, U. Kuter and Nau, D.S. “Real-time Planning for
+Covering an Initially Unknown Spatial Enviornment”. In: The Florida AI
+Research Society (2011).
+[10] X.Kan, H.Teng and Karydis, K. “Online Exploration and Coverage Planning
+in Unknown Obstacle-Cluttered Environments”. In: IEEE Access (2020).
+[11] Yu Liu, Xiaoyong Lin and Zhu, Shiqiang. “Combined coverage path
+planning for autonomous cleaning robots in unstructured environments”.
+In: Intelligent Control and Automation (2008).
+24
+
+TRITA-EECS-EX-2024:352
+Stockholm, Sweden 2024
+www.kth.se
+
+

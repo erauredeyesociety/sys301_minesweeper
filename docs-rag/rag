@@ -1,0 +1,328 @@
+#!/usr/bin/env bash
+# =============================================================================
+# rag — unified modular CLI dispatcher for rag-bootstrap
+# =============================================================================
+# One entry point for the whole surface (lifecycle + maintainer + ops).
+# `rag <command>` is the SOLE interface — there are no other entry scripts.
+#
+# Design: docs/findings/2026-07-05_modular_cli_design.md  (Zone A — dispatcher).
+#
+# Usage:
+#   rag <command> [args...]      Run a command (see `rag help`)
+#   rag help [command]           Grouped listing, or long help for one command
+#   rag <command> --help|-h      Long help for one command
+#   rag --version                Print the rag-bootstrap version
+#   rag -q|--quiet <command> …   Quiet mode (exported as RAG_QUIET=1)
+#
+# Commands are discovered by globbing scripts/lib/commands/*.sh — each module
+# self-describes via cmd_meta(), so adding a capability never edits this file.
+# =============================================================================
+
+set -euo pipefail
+
+# ---------------------------------------------------------------------------
+# Locate ourselves (dispatcher lives at the template repo / consumer instance
+# root; the shared lib + command modules live under scripts/lib/).
+# ---------------------------------------------------------------------------
+RAG_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RAG_LIB_DIR="${RAG_SELF_DIR}/scripts/lib"
+RAG_COMMANDS_DIR="${RAG_LIB_DIR}/commands"
+RAG_COMMON="${RAG_LIB_DIR}/common.sh"
+
+# ---------------------------------------------------------------------------
+# Minimal fallbacks — used only until scripts/lib/common.sh (Zone B) exists.
+# common.sh, when present, is sourced below and OVERRIDES every one of these,
+# so the real logging/context helpers win. Keeping fallbacks here means the
+# dispatcher is self-sufficient: `bash -n rag` and `rag help` work standalone.
+# ---------------------------------------------------------------------------
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+    RAG_RED=$'\033[0;31m'; RAG_GREEN=$'\033[0;32m'; RAG_YELLOW=$'\033[1;33m'
+    RAG_CYAN=$'\033[0;36m'; RAG_BOLD=$'\033[1m'; RAG_DIM=$'\033[2m'; RAG_NC=$'\033[0m'
+else
+    RAG_RED=''; RAG_GREEN=''; RAG_YELLOW=''; RAG_CYAN=''; RAG_BOLD=''; RAG_DIM=''; RAG_NC=''
+fi
+
+# Logging idiom shared with common.sh so every command reads identically.
+if ! declare -F info    >/dev/null; then info()    { printf "${RAG_CYAN}[INFO]${RAG_NC}  %s\n" "$*"; }; fi
+if ! declare -F success >/dev/null; then success() { printf "${RAG_GREEN}[OK]${RAG_NC}    %s\n" "$*"; }; fi
+if ! declare -F warn    >/dev/null; then warn()    { printf "${RAG_YELLOW}[WARN]${RAG_NC}  %s\n" "$*"; }; fi
+if ! declare -F error   >/dev/null; then error()   { printf "${RAG_RED}[ERROR]${RAG_NC} %s\n" "$*" >&2; }; fi
+if ! declare -F fatal   >/dev/null; then fatal()   { error "$@"; exit 1; }; fi
+
+# Root + context fallbacks (common.sh provides the authoritative versions).
+if ! declare -F rag_root >/dev/null; then
+    rag_root() { printf '%s' "$RAG_SELF_DIR"; }
+fi
+if ! declare -F rag_context >/dev/null; then
+    # template = template checkout (has templates/ + CONSUMER_MANIFEST + app/);
+    # consumer = a scaffolded / exported instance (no app/ tree).
+    rag_context() {
+        local root; root="$(rag_root)"
+        if [[ -d "$root/templates" && -f "$root/CONSUMER_MANIFEST" && -d "$root/app" ]]; then
+            printf 'template'
+        else
+            printf 'consumer'
+        fi
+    }
+fi
+
+# ---------------------------------------------------------------------------
+# Load the shared library if it is present. It overrides the fallbacks above.
+# ---------------------------------------------------------------------------
+if [[ -f "$RAG_COMMON" ]]; then
+    # shellcheck source=/dev/null
+    source "$RAG_COMMON"
+fi
+
+# ---------------------------------------------------------------------------
+# Small helpers
+# ---------------------------------------------------------------------------
+_trim() {
+    local s="$1"
+    s="${s#"${s%%[![:space:]]*}"}"   # leading
+    s="${s%"${s##*[![:space:]]}"}"   # trailing
+    printf '%s' "$s"
+}
+
+rag_version() {
+    local vf="$(rag_root)/VERSION"
+    if [[ -f "$vf" ]]; then
+        _trim "$(head -n1 "$vf")"
+    else
+        printf 'unknown'
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Module discovery
+#
+# Globs scripts/lib/commands/*.sh and reads each module's one-line cmd_meta in
+# an ISOLATED subshell (so per-module run()/help()/cmd_meta never collide during
+# listing). cmd_meta format (pipe-delimited, single line):
+#     name | aliases(csv, "-" or empty = none) | audience(both|consumer|template) | summary
+#
+# Populates, for the current process:
+#   RAG_TOKEN2FILE[token] = module path        (canonical name AND each alias)
+#   RAG_MODMETA           = "name|aliases|audience|summary|file" per module
+# ---------------------------------------------------------------------------
+declare -A RAG_TOKEN2FILE=()
+RAG_MODMETA=()
+
+rag_discover() {
+    RAG_TOKEN2FILE=()
+    RAG_MODMETA=()
+    [[ -d "$RAG_COMMANDS_DIR" ]] || return 0
+
+    local f meta name aliases audience summary a
+    local -a alias_arr
+    shopt -s nullglob
+    for f in "$RAG_COMMANDS_DIR"/*.sh; do
+        # Isolated subshell: source the module, then ask for its meta line.
+        meta="$( set +e; source "$f" >/dev/null 2>&1; cmd_meta 2>/dev/null )" || meta=""
+        [[ -n "$meta" ]] || continue
+
+        IFS='|' read -r name aliases audience summary <<<"$meta"
+        name="$(_trim "${name:-}")"
+        aliases="$(_trim "${aliases:-}")"
+        audience="$(_trim "${audience:-}")"
+        summary="$(_trim "${summary:-}")"
+        [[ -n "$name" ]] || continue
+        [[ -n "$audience" ]] || audience="both"
+
+        RAG_TOKEN2FILE["$name"]="$f"
+        if [[ -n "$aliases" && "$aliases" != "-" ]]; then
+            IFS=',' read -ra alias_arr <<<"$aliases"
+            for a in "${alias_arr[@]}"; do
+                a="$(_trim "$a")"
+                [[ -n "$a" ]] && RAG_TOKEN2FILE["$a"]="$f"
+            done
+        fi
+        RAG_MODMETA+=("${name}|${aliases}|${audience}|${summary}|${f}")
+    done
+    shopt -u nullglob
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Help rendering
+# ---------------------------------------------------------------------------
+_audience_visible() {
+    # $1 = module audience, $2 = current context. Template-only commands are
+    # hidden when running inside a consumer instance.
+    local audience="$1" ctx="$2"
+    [[ "$audience" == "template" && "$ctx" != "template" ]] && return 1
+    return 0
+}
+
+_print_group() {
+    # $1 = header, then "name<US>aliases<US>summary" lines on stdin, where <US>
+    # is the \x1f unit separator. A non-whitespace delimiter is used so an empty
+    # aliases field is NOT swallowed by read's whitespace-collapsing.
+    local header="$1" any=0 name aliases summary label
+    while IFS=$'\x1f' read -r name aliases summary; do
+        [[ -n "$name" ]] || continue
+        if (( any == 0 )); then
+            printf '\n%s%s%s\n' "$RAG_CYAN" "$header" "$RAG_NC"
+            any=1
+        fi
+        label="$name"
+        if [[ -n "$aliases" && "$aliases" != "-" ]]; then
+            label="${name} ${RAG_DIM}(${aliases})${RAG_NC}"
+        fi
+        printf '  %s%-22s%s %s\n' "$RAG_GREEN" "$label" "$RAG_NC" "$summary"
+    done
+}
+
+rag_help_list() {
+    local ctx; ctx="$(rag_context)"
+    rag_discover
+
+    printf '\n%srag%s — unified CLI for rag-bootstrap %s(v%s)%s\n' \
+        "$RAG_BOLD" "$RAG_NC" "$RAG_DIM" "$(rag_version)" "$RAG_NC"
+    printf '\n%sUsage:%s\n  rag <command> [args...]\n' "$RAG_CYAN" "$RAG_NC"
+
+    if (( ${#RAG_MODMETA[@]} == 0 )); then
+        printf '\n%s(no command modules discovered under %s)%s\n\n' \
+            "$RAG_DIM" "${RAG_COMMANDS_DIR#"$RAG_SELF_DIR"/}" "$RAG_NC"
+        return 0
+    fi
+
+    # Bucket rows by audience so we can print grouped, sorted sections.
+    local line name aliases audience summary _file
+    local core="" consumer="" maint=""
+    for line in "${RAG_MODMETA[@]}"; do
+        IFS='|' read -r name aliases audience summary _file <<<"$line"
+        _audience_visible "$audience" "$ctx" || continue
+        local row="${name}"$'\x1f'"${aliases}"$'\x1f'"${summary}"$'\n'
+        case "$audience" in
+            template) maint+="$row" ;;
+            consumer) consumer+="$row" ;;
+            *)        core+="$row" ;;
+        esac
+    done
+
+    [[ -n "$core"     ]] && printf '%s' "$core"     | sort | _print_group "Core commands"
+    [[ -n "$consumer" ]] && printf '%s' "$consumer" | sort | _print_group "Consumer commands"
+    [[ -n "$maint"    ]] && printf '%s' "$maint"    | sort | _print_group "Maintainer commands (template only)"
+
+    printf '\n%sMore:%s  rag <command> --help   %sfor a command'\''s options%s\n' \
+        "$RAG_CYAN" "$RAG_NC" "$RAG_DIM" "$RAG_NC"
+    printf '        rag --version\n\n'
+    return 0
+}
+
+rag_help_command() {
+    # Long help for one command: source the module, call its help() (or fall
+    # back to the grouped listing if it has none).
+    local token="$1"
+    rag_discover
+    local file="${RAG_TOKEN2FILE[$token]:-}"
+    if [[ -z "$file" ]]; then
+        error "Unknown command: ${token}"
+        rag_help_list >&2
+        return 1
+    fi
+    # shellcheck source=/dev/null
+    source "$file"
+    if declare -F help >/dev/null; then
+        help
+    else
+        rag_help_list
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# Dispatch
+# ---------------------------------------------------------------------------
+rag_dispatch() {
+    local token="$1"; shift
+    rag_discover
+
+    local file="${RAG_TOKEN2FILE[$token]:-}"
+    if [[ -z "$file" ]]; then
+        error "Unknown command: ${token}"
+        rag_help_list >&2
+        exit 1
+    fi
+
+    # `rag <cmd> --help|-h` → the module's long help (never runs the command).
+    if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+        # shellcheck source=/dev/null
+        source "$file"
+        if declare -F help >/dev/null; then help; else rag_help_list; fi
+        exit 0
+    fi
+
+    # shellcheck source=/dev/null
+    source "$file"
+
+    # Audience guard: a maintainer-only command invoked inside a consumer
+    # instance is refused with a clear message and a distinct exit code (2).
+    local audience="both"
+    if declare -F cmd_meta >/dev/null; then
+        local metaline; metaline="$(cmd_meta 2>/dev/null || true)"
+        audience="$(_trim "$(printf '%s' "$metaline" | cut -d'|' -f3)")"
+        [[ -n "$audience" ]] || audience="both"
+    fi
+    if [[ "$audience" == "template" && "$(rag_context)" != "template" ]]; then
+        error "'${token}' is a maintainer command and is not available in this instance."
+        error "Run it from a rag-bootstrap template checkout."
+        exit 2
+    fi
+
+    if ! declare -F run >/dev/null; then
+        fatal "Command module '${file}' defines no run() — cannot execute '${token}'."
+    fi
+
+    run "$@"
+}
+
+# ---------------------------------------------------------------------------
+# Main — global flag parsing, then dispatch.
+# ---------------------------------------------------------------------------
+main() {
+    # Consume leading global flags (they must precede the command token).
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -q|--quiet)
+                export RAG_QUIET=1
+                shift
+                ;;
+            --version|-V)
+                printf 'rag (rag-bootstrap) %s\n' "$(rag_version)"
+                exit 0
+                ;;
+            -h|--help|help)
+                shift
+                if [[ $# -gt 0 ]]; then
+                    rag_help_command "$1"; exit $?
+                fi
+                rag_help_list
+                exit 0
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                error "Unknown global option: $1"
+                rag_help_list >&2
+                exit 1
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
+    # Bare `rag` → grouped help.
+    if [[ $# -eq 0 ]]; then
+        rag_help_list
+        exit 0
+    fi
+
+    rag_dispatch "$@"
+}
+
+main "$@"

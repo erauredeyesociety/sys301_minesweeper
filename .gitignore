@@ -1,0 +1,23 @@
+# Test output and generated artifacts
+tests/results/
+tests/outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Logs (application-generated records, not source)
+*.log
+logs/
+
+# OS / editor noise
+.DS_Store
+*.swp
+*~
+
+# Office lock files (the report is edited as .docx)
+~$*
+.~lock.*#

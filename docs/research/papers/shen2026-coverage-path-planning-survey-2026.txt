@@ -1,0 +1,2927 @@
+Coverage Path Planning: Classical Foundations,
+Recent Advances, and Future Directions
+
+arXiv:2607.10649v1 [cs.RO] 12 Jul 2026
+
+Zongyuan Shen1 , Shalabh Gupta2 , Shancheng Zhao1 , Dehua Zhou1 , Gao Wang1 , Zhongqiang Ren3 ,
+Yaming Ou4 , Yikui Zhai5 , and C. L. Philip Chen6 , Life Fellow, IEEE
+
+Abstract—Coverage path planning (CPP) is a fundamental
+problem in robot motion planning, whose aim is to produce
+robot trajectories that provide complete coverage of target
+workspaces while minimizing task-specific objectives such as
+path length, overlap, number of turns, and energy consumption.
+CPP has widespread applications in cleaning, inspection, mapping, agriculture, manufacturing, surveillance, demining, and
+environmental monitoring. Although classical CPP has been
+extensively studied, recent advances have extended CPP beyond single-robot settings to multi-robot systems, complex 3D
+environments, constrained platforms, learning-based coverage
+planning, and visual coverage tasks. This paper presents a
+comprehensive survey of 125 representative works published
+primarily between 2015 and 2026, while presenting the evolution
+of recent developments in light of the classical CPP methods
+published before 2015. The CPP methods are organized into six
+main categories: single-robot CPP, multi-robot CPP, 3D CPP,
+constrained CPP, learning-based CPP, and visual CPP. For each
+category, the review summarizes the main planning formulations,
+representative algorithms, strengths, and limitations. In addition,
+the review analyzes how environmental knowledge, workspace
+geometry, robot constraints, sensing objectives, and coordination requirements shape the CPP problem. The survey further
+discusses open challenges in scalable online planning, multirobot coordination, 3D and visual coverage, unified platformconstrained and resource-aware coverage, and learning-enhanced
+coverage. Thus, the survey provides a structured overview of
+recent CPP developments and future research directions.
+Index Terms—Coverage path planning, motion and path planning, unknown environments, autonomous robots.
+
+(a) Floor cleaning [1]
+
+(b) Underwater terrain mapping [4]
+
+(c) Structural inspection [7]
+
+(d) Surface cleaning [9]
+
+Fig. 1. Application examples of CPP.
+
+weeding [14] and farming [15]); and hazardous operations
+(e.g., offshore oil spill cleaning [16] and mine counter measures [17]). Fig. 1 shows application examples of CPP using
+different robotic platforms, such as unmanned ground vehicles
+(UGVs), unmanned underwater vehicles (UUVs), unmanned
+aerial vehicles (UAVs), and industrial manipulators.
+
+I. I NTRODUCTION
+Coverage path planning (CPP) is a fundamental problem
+in robot motion planning, whose aim is to produce robot trajectories that provide complete coverage of target workspaces
+while minimizing task-specific objectives such as path length,
+overlap, number of turns, and energy consumption. CPP plays
+an important role in a broad range of robotic applications,
+including household services (e.g., floor cleaning [1] and
+lawn mowing [2]); environmental monitoring (e.g., terrain
+mapping [3]–[6]); industrial operations (e.g., structural quality
+inspection [7], [8], surface cleaning [9], crack filling [10],
+[11], and spray-painting [12], [13]); agricultural tasks (e.g.,
+1 College of Information Science and Technology, Jinan University,
+Guangzhou 510632, China.
+2 Department of Electrical and Computer Engineering, University of Connecticut, Storrs, CT 06269, USA.
+3 Global College, Shanghai Jiao Tong University, Shanghai 200240, China.
+4 School of Artificial Intelligence, University of Chinese Academy of
+Sciences, Beijing 100049, China.
+5 School of Electronics and Information Engineering, Wuyi University,
+Jiangmen 529000, China.
+6 School of Computer Science and Engineering, South China University of
+Technology, Guangzhou 510006, China.
+
+A. CPP Classifications
+The CPP methods are classified in different ways, as shown
+in Fig. 2. The traditional CPP problem consists of a single
+robot performing coverage of 2D workspaces (e.g., floor
+cleaning in a warehouse). In recent years, CPP has evolved far
+beyond the classical single-robot 2D coverage to multi-robot
+CPP, 3D CPP, constrained CPP, learning-based CPP and visual
+CPP. Multi-robot CPP deals with problems such as task allocation, workload balancing, inter-robot conflict resolution, failure
+resilience, communication limitations, overlap reduction, and
+coordinated operation. Several mechanisms have been used for
+single-robot and multi-robot coverage, such as cellular decomposition, grid-based search, spanning-tree coverage, potentialfield guidance, and graph-based sequencing.
+The 3D CPP extension requires coverage of complex terrains and structures (e.g., high-rise buildings in aerial environments and uneven hilly surfaces in underwater environments). In these problems, surface reconstruction, elevation
+variation, and energy costs become critical. The constrained
+CPP problems require the planner to account for differ-
+
+2
+
+Offline Methods
+
+Offline Methods
+
+1). Cellular-decomposition methods
+
+1). Spanning-tree-based methods
+
+2). Rank-based methods
+
+2). Subarea-decomposition methods
+
+Online Methods
+
+Online Methods
+
+1). Local methods
+
+1). Grid-based methods
+
+2). Connectivity-aware local methods
+
+2). Subarea-decomposition methods
+
+3). Non-local methods
+
+Classical Methods
+
+Coverage Path
+Planning (CPP)
+
+Hierarchical planning Methods
+
+Layered-coverage Methods
+Contour-aware Methods
+Decomposition-based Methods
+
+Energy-constrained CPP
+
+Curvature-constrained CPP
+
+Tethered CPP
+
+Reconfigurable CPP
+
+Fig. 2. Taxonomy of CPP methods.
+
+ent platform-specific constraints, such as battery capacities,
+bounded curvatures, tethered cable limits, and morphological
+restrictions. Recently, learning-based CPP has emerged as a
+novel methodology, where learning techniques are integrated
+into classical CPP frameworks to support specific planning
+components. Finally, visual CPP shifts the focus from physical area coverage to trajectory generation under viewpoint
+constraints for inspection or reconstruction of target surfaces.
+Furthermore, all CPP methods are categorized as either offline or online, depending on the availability of environmental
+information. While offline methods assume the environment
+is known a priori to make plans before deployment, online
+methods operate in unknown or partially known environments
+and generate coverage trajectories incrementally based on realtime sensor data. Online CPP is challenging because it requires
+the robot to not only explore the unknown environment and
+cover the target regions but also avoid obstacles, escape dead
+ends, prevent coverage holes [18], and minimize overlaps.
+These developments have significantly broadened the scope
+of CPP and created the need for a systematic review that
+connects classical methods with emerging problems.
+B. Existing Surveys
+Table I summarizes the existing survey papers that have
+reviewed CPP with different scopes and emphases. Early
+surveys discussed classical methods that have served as the
+foundation for the development of advanced methods. The
+survey by Choset [19] focused mainly on single-robot CPP
+in 2D environments and organized representative methods
+according to the type of workspace decomposition, while also
+
+discussing the early multi-robot extensions. Based on Choset’s
+taxonomy, Galceran and Carreras [20] systematically reviewed
+single-robot CPP methods up to 2013 and further discussed
+several representative 3D CPP and multi-robot CPP methods.
+More recent surveys have focused on specific application
+domains or problem settings. Bormann et al. [21] implemented
+and quantitatively compared six offline CPP algorithms for
+indoor room-level coverage. Cabreira et al. [22] reviewed
+UAV-related CPP methods considering specific factors during planning such as camera footprint, flight time, turning
+maneuvers, wind effects, and energy consumption. Höffmann
+et al. [23] provided an in-depth review of 2D offline CPP
+methods that are applicable to precision agriculture.
+C. Contributions
+Although existing works provide valuable insights, a unified
+and up-to-date survey that connects classical CPP with recent
+developments is still lacking. This survey addresses this gap
+by presenting a comprehensive and structured review of 125
+representative works, primarily published between 2015 and
+2026, while linking recent advances to classical CPP foundations. Rather than organizing the literature only by algorithmic
+families, we adopt a problem-driven taxonomy that captures
+the major directions along which CPP has evolved. Accordingly, CPP methods are organized into six main categories:
+single-robot CPP, multi-robot CPP, 3D CPP, constrained CPP,
+learning-based CPP and visual CPP. Among recent advances,
+the learning-based CPP is presented as a promising direction,
+where supervised learning and reinforcement learning are
+integrated with classical CPP components for path generation,
+
+3
+
+Table I: Comparison of representative CPP survey papers.
+Paper Year Main Scope
+
+Single-Robot CPP Multi-Robot CPP 3D CPP Constrained CPP Visual CPP Learning-Based CPP
+
+[19]
+
+2001
+
+2D CPP for
+mobile robots
+
+Full
+
+Partial
+
+None
+
+None
+
+None
+
+None
+
+[20]
+
+2013
+
+General CPP
+methods up to 2013
+
+Full
+
+Partial
+
+Partial
+
+None
+
+Limited
+
+None
+
+[21]
+
+2018
+
+Evaluation of six
+offline CPP methods
+
+Limited
+
+None
+
+None
+
+None
+
+None
+
+None
+
+[22]
+
+2019 UAV-related CPP methods
+
+Partial
+
+Partial
+
+None
+
+Partial
+
+None
+
+None
+
+[23]
+
+2D offline CPP
+2024
+for agriculture
+
+Partial
+
+None
+
+None
+
+Limited
+
+None
+
+None
+
+Ours
+
+2026
+
+Full
+
+Full
+
+Full
+
+Full
+
+Full
+
+Full
+
+Unified CPP survey from
+classical to recent methods
+
+For any category, “Full” indicates it is systematically reviewed with representative methods across a broad CPP context; “Partial” indicates it is covered within
+a narrow application- or problem-specific context; “Limited” indicates it is only briefly mentioned; and “None” indicates it is not reviewed.
+
+subarea sequencing, multi-robot task allocation, and coverage
+coordination under robot-specific constraints. For each category, we summarize the main problem formulations, representative algorithms, key ideas, and strengths and limitations.
+Fig. 2 shows these categories and the methodologies therein.
+D. Organization
+The remainder of this paper is organized as follows. Section II reviews single-robot CPP methods, including online
+and offline approaches. Section III discusses multi-robot CPP.
+Section IV reviews 3D CPP methods according to layered
+coverage, contour-aware planning, and surface decomposition. Section V discusses constrained CPP, including energyconstrained CPP, curvature-constrained CPP, tethered CPP,
+and reconfigurable CPP. Section VI reviews learning-based
+CPP methods. Section VII summarizes visual CPP methods
+from the viewpoint of coverage planning. Finally, Section VIII
+concludes the survey and discusses future research directions.
+II. S INGLE -ROBOT CPP
+Single-robot CPP forms the foundational basis of all CPP
+literature. Advanced CPP formulations (e.g., multi-robot CPP,
+3D CPP, and constrained CPP) are extensions of the singlerobot CPP under different requirements, workspace geometries, sensing objectives, and constraints (e.g., curvature and
+energy). The single-robot CPP methods can be broadly classified as offline or online, depending on the availability
+of environmental information. Offline methods assume prior
+knowledge of the environment and plan coverage paths before
+deployment. In contrast, online methods generate coverage trajectories incrementally based on sensor data collected during
+navigation, thus they are suitable for unknown environments.
+A. Offline Methods
+Typically, offline CPP problems can be solved using the
+traveling salesman problem (TSP) since the environment is
+known; however, TSP is NP-hard [20]. Thus, the search for
+an optimal solution becomes computationally intractable as the
+problem complexity increases. In this regard, the offline methods exploit prior map information to partition the workspace
+
+Rank
+
+Coverage line with two endpoints
+
+Fig. 3. Illustration of the subarea-decomposition method in [24]. The
+free space is decomposed into ranks, each of which can be covered
+by a single straight line. The right decomposition uses fewer ranks
+than the left one, leading to less number of turns.
+
+into obstacle-free subareas to reduce the complexity of coverage path generation. These subareas are simpler coverage
+units, such as cells or ranks. While a cell is a free region that
+can be covered using a simple coverage pattern (e.g., back
+and forth motion), a rank is a stripe-shaped cell that can be
+covered by a single straight line. Then, the coverage planner
+decides the subarea traversal order and the local coverage path
+within each subarea. These methods are classified into cellular
+decomposition and rank-based methods.
+1) Cellular-decomposition methods: These methods partition the free space into non-overlapping cells and generate
+simple local coverage paths within each cell. Trapezoidal
+decomposition [25] is an early representative method that partitions the space with polygonal obstacles into non-overlapping
+cells. This partition, however, can produce many narrow cells
+in complex environments, which is undesirable for cell sequencing to avoid trajectory overlaps. Boustrophedon decomposition [26] improves Trapezoidal decomposition by merging
+adjacent cells according to connectivity changes to reduce
+the total number of cells. Morse-based decomposition [27]
+further generalizes this idea by formulating the partitioning
+process in terms of critical points of Morse functions [28]. It is
+applicable to environments containing complex obstacles with
+smooth geometries. This line of research has been extended
+to online coverage in unknown environments [29], optimization of the subspace traversal order [30], uncertainty-aware
+
+4
+
+STC [35]
+
+BSA [37]
+
+2001
+
+2005
+
+2003
+
+FSSTC [36]
+
+BINN [41]
+
+2007
+
+BM [38]
+
+2008
+
+𝜀* [40]
+
+2013
+
+BA* [39]
+
+Local methods
+
+Sun et al. [42] SP2E [45]
+
+2018
+
+2019
+
+Ramesh et al. [1] Huo et al. [47] CAP [49] C* [18]
+
+2023
+
+2024
+
+2025
+
+PPCPP [44] Cai et al. [43] Han et al. [46] Fu et al. [50]
+Connectivity-aware local methods
+
+HCPP [48]
+
+2026
+
+Fu et al. [51]
+
+Non-local methods
+
+Fig. 4. Timeline of the evolution of online single-robot CPP methods.
+
+coverage planning in belief space [31], and constriction-based
+decomposition for indoor environments [32].
+2) Rank-based methods: These methods aim to reduce the
+number of turns in the coverage path through decomposition,
+making them useful for applications where turning is expensive. Bochkarev and Smith [33] partitioned the environment
+to reduce the total number of coverage lines (i.e., straight-line
+sweep paths), and then sequenced these lines by solving a Generalized TSP. Ramesh et al. [24] extended this by proposing
+an optimal partitioning method that computes the minimum
+number of ranks in polynomial time, thereby minimizing the
+total number of turns. Each rank is a rectangular subarea
+that can be covered by a single coverage line. Fig. 3 shows
+an example of such partitioning. Ramesh et al. [34] further
+extended this method to achieve minimum-length coverage
+while treating turn reduction as a secondary objective.
+Strengths and Limitations: Subarea-decomposition methods
+simplify the coverage planning process by partitioning the
+workspace into obstacle-free subareas. Cellular decomposition
+methods provide a systematic way to handle obstacle-induced
+workspace topology, but their performance depends on the
+detection of connectivity changes or critical points, which can
+be difficult in complex environments. Rank-based methods
+reduce the number of turns, but they require optimization to
+determine a compact set of ranks and their traversal order.
+Therefore, decomposition-based methods are effective in simple and structured environments, however, their performance
+might degrade in complex obstacle-dense environments.
+B. Online Methods
+Online methods generate coverage paths incrementally in
+unknown environments based on sensor observations. At each
+planning step, the robot uses onboard sensor data to update
+an evolving map that records the occupancy state of the
+workspace, such as free, occupied, and unknown cells, as well
+as the coverage state of traversable cells. The updated map is
+then used to determine the next coverage decision.
+Fig. 4 shows the timeline of major developments in singlerobot online CPP. The methods in this category are further
+grouped into local methods, connectivity-aware local methods,
+and non-local methods. Table II summarizes the key features
+of representative single-robot online CPP methods.
+1) Local methods: These methods generate the coverage
+trajectory by selecting the next waypoint in the robot’s local
+neighborhood using lightweight decision rules. These methods
+
+Obstacle
+
+Robot
+
+Coverage path
+
+Robot
+location
+
+Robot’s local
+neighborhood
+
+Symbolic map
+
+Potential field
+
+Fig. 5. Illustration of the ε∗ [40] operation at level 0 of MAPS, where
+it selects the target cell from the robot’s local neighborhood.
+
+can be grouped into deterministic-rule based, potential-field
+based, and reward-function based methods.
+a) Deterministic-rule-based methods: These methods use
+deterministic rules to generate systematic coverage patterns.
+Gabriely and Rimon [35] proposed the spanning tree covering
+(STC) algorithm based on a two-resolution grid, where each
+coarse cell is divided into four fine cells that match the robot’s
+footprint. Then a spanning tree is expanded by selecting unvisited neighboring coarse cells. The covering path is generated
+by circumnavigating the tree; however, it leaves the partially
+occupied cells uncovered. Full spiral STC (FSSTC) [36]
+extended STC by including partially occupied cells in an
+augmented spanning tree enabling coverage at the robot’s
+footprint level. Gonzalez et al. [37] proposed the backtracking
+spiral algorithm (BSA), which follows the boundary of the
+uncovered area and obstacles on a fixed lateral side to generate
+a spiral coverage path. Ferranti et al. [38] proposed the brickand-mortar (BM) algorithm, which gradually expands blocks
+of inaccessible cells while avoiding decisions that disconnect
+accessible cells, thus allowing the robot to escape dead-ends
+via previously explored cells. Viet et al. [39] proposed the
+BA∗ algorithm, which follows a predefined directional priority
+order to produce back-and-forth motions.
+b) Potential-field-based methods: These methods construct
+potential-field representations on grid maps to guide waypoint
+selection. Luo and Yang [41] proposed the bio-inspired neural
+network (BINN) algorithm, where each grid cell corresponds
+to a neural activity such that uncovered cells provide excitatory
+inputs, and obstacle cells provide inhibitory inputs. The robot
+moves to the neighboring cell with the highest neural activity.
+
+5
+
+Frontier samples
+Obstacle
+
+Updated RCG
+Obstacle
+
+Laps
+
+Covered Area
+Robot
+
+Disjoint uncovered area
+
+Invalid target cell
+
+Valid target cell
+
+Local neighborhood
+Coverage path
+
+Fig. 6. Illustration of the connectivity-aware local method SP2E [45].
+It adapts the local spiral direction to select a target cell that attempts
+to preserve the connectivity of the uncovered area.
+
+The activity propagation allows the robot to move toward
+distant uncovered regions when local uncovered cells are not
+available. Later variants [42], [43] simplified the neural activity
+update to reduce computational cost. Song and Gupta [40]
+proposed the ε∗ algorithm, which uses multiscale adaptive potential surfaces (MAPS) to guide online coverage. By default,
+the algorithm operates at the lowest level of MAPS, where the
+robot selects the neighboring cell with the highest potential, as
+shown in Fig. 5. The higher-level potential surfaces of MAPS
+provide non-local information to escape from dead-ends.
+c) Reward-function-based methods: These methods use reward functions to guide waypoint selection. They usually
+combine multiple objectives into a unified decision rule.
+Hassan and Liu [44] proposed the predator-prey CPP (PPCPP)
+algorithm, in which each neighboring cell is evaluated by
+a reward function consisting of three terms: a predationavoidance reward that drives the robot away from a virtual
+stationary predator; a smoothness reward that favors straight
+motion; and a boundary reward that prioritizes covering the
+boundary of the uncovered area. The robot then selects the
+neighboring cell with the highest reward.
+Strengths and Limitations: Local methods are computationally efficient and easy to implement, thus suitable for real-time
+coverage in unknown environments. However, their decisions
+are based on local information, without considering the global
+structure of the scenario. As such, they may generate myopic
+waypoints, repeated traversal, dead ends, and coverage holes
+in complex environments. These limitations motivate later
+methods that incorporate connectivity preservation and global
+guidance in coverage decisions.
+2) Connectivity-aware local methods: These methods improve target-cell selection by considering whether visiting a
+neighboring cell would disconnect the remaining uncovered
+area. Li et al. [45] extended the BSA algorithm [37] by developing the SP2E algorithm, which adapts the local spiral direction so that the selected target cell preserves the connectivity
+of the uncovered area, as shown in Fig. 6. Several works [46],
+[47] improved the BINN algorithm [41] by avoiding target
+cells whose visitation would disconnect the uncovered area.
+Strengths and Limitations: By preventing locally selected
+cells from disconnecting the uncovered area, these methods re-
+
+Obstacle
+
+(a) Generation of frontier samples
+
+Obstacle
+
+(b) Updated RCG
+
+Fig. 7. Illustration of the sampling-based method C∗ [18] . During navigation, C∗ generates frontier samples within the newlydiscovered area by sensors. Then it updates the RCG using these
+samples to guide the formation of subsequent coverage trajectory.
+
+duce fragmentation-induced redundant travel. However, these
+methods still rely on local feasibility checks. In situations
+when all candidate target cells disconnect the uncovered area,
+these methods can still produce fragmented residual regions
+(i.e., coverage holes) leading to considerable redundant travel.
+3) Non-local methods: These methods use higher-level decision structures to guide the selection of non-local waypoints
+for coverage trajectory generation.
+a) Subarea-decomposition methods: These methods use online map updates to organize the uncovered area into nonuniform subareas and reason over their connectivity or traversal order. Li et al. [48] proposed the hierarchical coverage
+path planning (HCPP) algorithm, which aims to maintain the
+connectivity of the uncovered area through global and local
+aspects. Globally, the algorithm partitions the uncovered area
+into stripe-shaped subareas and represents their adjacency relationships as a graph. It then selects subareas whose coverage
+does not disconnect the uncovered area to form a global
+tour. Locally, if the current subarea is connected to the target
+subarea, the robot follows the boundary of the uncovered area
+to reach it; otherwise, a shortest collision-free path is used.
+Another line of work explicitly sequences disconnected
+uncovered subareas to guide local coverage. Shen et al. [49]
+proposed the connectivity-aware hierarchical coverage path
+planning (CAP) algorithm, which combines global sequencing
+of disconnected uncovered subareas with an adaptive local
+coverage strategy. The algorithm incrementally constructs a
+graph in which disconnected uncovered subareas are represented as nodes, and the edges encode the shortest collisionfree connections between them. A subarea traversal tour is
+then computed by solving a Traveling Salesman Problem.
+During local execution, it uses a local strategy in exploring
+subareas, i.e., subareas that contain unknown cells, and a
+shortest coverage path in explored subareas.
+b) Sampling-based methods: These methods use nonuniform sampling representations to provide non-local guidance for online coverage. Shen et al. [18] proposed a samplingbased algorithm, called C∗ , which provides near-optimal
+
+6
+
+Table II: Comparison of representative online single-robot CPP methods.
+Year Main Idea
+
+Coverage Guidance Decision Domain Strength
+
+BSA [37]
+
+Follows boundary of
+2005 uncovered area on a
+certain lateral side
+
+Deterministic
+rule
+
+BINN [41]
+
+Constructs a potential
+2008 field to guide target
+cell selection
+
+Potential
+field
+
+BA∗ [39]
+
+Follows a priority of
+2013 north-south-east-west
+to select target cells
+
+Deterministic
+rule
+
+ε∗ [40]
+
+Uses multiscale potential
+2018 field to pick target cell
+and escape dead-ends
+
+Multiscale
+potential
+field
+
+PPCPP [44]
+
+Uses a multi-objective
+2019 reward function to guide
+target cell selection
+
+Reward
+function
+
+SP2E [45]
+
+Adapts direction of spiral
+2023 path to keep connectivity
+of uncovered area
+
+Category Method
+
+Local
+
+Connectivityaware
+local
+
+Huo et al. [47]
+
+Avoids target cells
+2025 that would disconnect
+the uncovered area
+
+Repairs the interrupted
+Ramesh et al. [1] 2024 path portion using a
+rank-based method
+
+Local connectivity checks
+
+Robot’s local
+neighborhood
+
+Computationally
+efficient and easy
+to implement
+
+Prone to myopic
+waypoints in
+complex scenarios
+
+Robot’s local
+neighborhood
+
+Reduces
+fragmentationinduced redundant
+travel
+
+May still fragment
+uncovered area
+in complex scenarios
+
+Higher-level
+representation
+of environments
+
+Improves overall
+coverage efficiency
+through higher-level
+structural guidance
+
+Performance depends
+on the efficiency of
+higher-level decision
+structures
+
+Current full
+coverage path
+
+HCPP [48]
+
+Prioritizes subareas whose Connectivity2025 coverage keeps connectivity aware subarea
+of uncovered area
+tour
+
+CAP [49]
+
+Computes shortest traversal
+Shortest
+2025 tour of uncovered subareas
+subarea tour
+to guide local coverage
+
+C∗ [18]
+
+Creates a rapidly covering
+2026 graph incrementally to
+guide target cell selection
+
+Non
+-local
+
+Limitation
+
+Rapidly
+covering
+graph
+
+coverage in unknown environments. During navigation, C∗
+builds a rapidly covering graph (RCG), which is a minimumsufficient graphical representation of the obstacle-free space.
+RCG is incrementally constructed via progressive sampling
+and efficient graph pruning, as shown in Fig. 7. Since RCG is
+sparse, C∗ selects nonmyopic nodes as waypoints to generate
+the back-and-forth coverage pattern and escape from dead-end
+situations. In addition, it proactively detects potential coverage
+holes and adapts to the TSP-based optimal trajectories to cover
+such regions, thus improving the coverage performance.
+c) Path-repair methods: These methods assume that an
+initial coverage path is available from the current map and
+then treat online CPP as a path-repair problem to update the
+portions of the path that become invalid when new obstacles
+are detected. Ramesh et al. [1] partitioned the affected uncovered region into a minimum number of ranks, where each rank
+is a horizontal or vertical sweep over a strip of grid cells. A
+tour of these ranks is then computed to repair the path. Fu et
+al. [50], [51] instead split the interrupted path into contiguous
+segments and reconnect successive segments through collisionfree transitions. These methods are efficient when obstacleinduced interruptions remain local. However, their advantage
+may diminish when newly detected obstacles cause frequent
+or extensive fragmentation of the original coverage path.
+Strengths and Limitations: Non-local methods incorporate
+higher-level decision structures into online decision-making,
+
+which helps reduce myopic waypoint selection, dead ends,
+repeated backtracking, and fragmentation-induced redundant
+travel. However, their performance depends on the efficient
+construction, updating, and utilization of higher-level decision
+structures, such as subarea graphs, sampling-based representations, or repaired coverage paths.
+III. M ULTI -ROBOT CPP
+Multi-robot CPP extends single-robot CPP by using multiple robots to cover a target workspace collaboratively. In
+comparison to single-robot CPP, the multi-robot CPP problem
+is not limited to generating a single coverage trajectory,
+but also requires distributing coverage responsibilities among
+robots, balancing workloads, avoiding inter-robot conflicts,
+and coordinating local or global replanning. By exploiting
+multiple robots, multi-robot CPP can accelerate large-scale
+coverage, provide resilience to robot failures, and support
+distributed sensing and execution.
+Existing multi-robot CPP methods can be broadly classified
+as offline or online, depending on whether the environment
+is known before deployment. Offline methods exploit prior
+map information to partition the workspace, allocate robotspecific coverage tasks, and optimize coverage paths before
+execution. Online methods, in contrast, operate in unknown
+environments, update the map, reallocate coverage tasks, replan coverage paths, and avoid conflicts during execution.
+
+7
+
+Spanning tree
+…
+
+…
+
+Robot’s start position
+
+Blocked node
+
+Coverage path
+
+Fig. 8. Illustration of the spanning-tree-based method MSTC∗ [53].
+It partitions a global STC-based coverage path into robot-specific
+subpaths considering traversability constraints and workload capacity.
+
+A. Offline Methods
+The offline methods can be broadly classified into spanningtree-based and subarea-decomposition methods. Table III summarizes the key features of offline multi-robot CPP methods.
+1) Spanning-tree-based methods: These methods apply the
+STC algorithm [35] originally developed for single-robot CPP
+to multi-robot settings.
+a) Global STC path partitioning: In this line of work, a
+global STC path is first generated and then partitioned into
+segments to be distributed among multiple robots. Hazon and
+Kaminka extended STC to multi-robot STC (MSTC) [60],
+where the STC path is partitioned using the robots’ initial
+positions. Although this provides a simple partitioning rule, the
+resulting workload depends on the robots’ initial distribution.
+In general, optimizing multi-robot coverage using the STC
+framework requires determining robot-specific constraints and
+balancing their coverage times, which is NP-hard [61]. Therefore, later methods mainly rely on approximations and heuristics for workload balancing, turn reduction, completion-time
+minimization, priority handling, and conflict avoidance.
+Tang et al. [53] proposed MSTC∗ to improve the workload
+balance of MSTC considering the physical constraints of
+traversability and limited workload capacity. The method treats
+the global STC-based coverage path as a topological loop and
+partitions it into robot-specific subpaths, as shown in Fig. 8. It
+first generates a naive uniform partition of the STC path and
+then iterates it to produce balanced partitions. Lu et al. [54]
+further proposed TMSTC∗ to reduce turns by constructing a
+spanning tree using a minimum number of rectangular bricks
+before applying MSTC∗ for partitioning.
+b) Robot-specific tree construction: This line of work directly constructs robot-specific spanning trees instead of partitioning a single global STC path. Dong et al. [52] proposed
+the artificially weighted STC (AWSTC) algorithm, where each
+robot grows a spanning tree from its initial position using
+artificial weights that encourage expansion toward uncovered
+regions, separation from other robots, and reduction of repeated coverage. Tang and Ma [62] formulated time-optimal
+multi-robot CPP as a mixed-integer programming problem
+that computes robot-specific subtrees while minimizing the
+maximum subtree cost, and introduced scalable heuristics to
+
+reduce the search space. Tang et al. [63] further improved
+robot-specific subtrees through local neighborhood operators
+and post-processing for path deconfliction. Chen et al. [64]
+combined work-area allocation with turn-reduced spanning
+tree construction by assigning smooth work areas to robots
+and then merging tree branches according to turn cost.
+c) Priority-aware planning: Beyond workload balancing and
+path-length objectives, the priority-aware methods consider
+regional priorities across the workspace. Lee et al. [55] proposed PAMCPP, which assigns prioritized zones to robots,
+constructs zone-wise spanning trees according to the assigned
+visiting order, and then covers the residual region using a
+Steiner-tree-based workload-balancing scheme. Thus, the high
+priority zones are covered before the remaining area, while
+maintaining complete coverage.
+Strengths and Limitations: Spanning-tree-based methods
+provide systematic coverage; however, their performance depends strongly on how the global tree or robot-specific subtrees are constructed. Balancing workload, reducing turns,
+and avoiding inter-robot conflicts often require additional
+optimization or heuristic refinement.
+2) Subarea-decomposition methods: These methods partition the free space into subareas and then plan the traversal
+order between them and the local coverage path within each
+subarea. These methods provide a flexible framework for
+balancing the workload and improving local coverage quality.
+a) Workload-aware partitioning: This line of work focuses
+on balancing the coverage workload across robots. Karapetyan et al. [65] grouped Boustrophedon cells [26] into
+clusters and planned back-and-forth coverage for a robot
+within each cluster. Palacios-Gasós et al. [66] used geodesic
+power diagrams to compute equitable partitions according to
+importance-weighted workload. Tang et al. [56] represented
+the environment with disk-shaped coverage regions, clustered
+them using K-means, and assigned them to robots. A coverage
+path is then generated for each cluster. Collins et al. [67] partitioned the environment into square cells and clustered them
+using Lloyd’s algorithm [68]. An auction process reallocates
+contested boundary cells using a bias factor based on the
+distance between each robot’s initial position and its closest
+assigned cell. Choton et al. [69] decomposed the environment
+into trapezoidal subareas and used dynamic programming to
+merge and assign contiguous subareas for balanced coverage.
+b) Coverage-quality-aware partitioning: This line of work
+improves coverage quality via decomposition design. Modares
+et al. [70] assigned grid cells to robots based on an energy
+cost to form robot-specific subareas, and then generated a
+minimum-energy path within each subarea. Vandermeulen et
+al. [71] proposed turn-minimizing rank decomposition, where
+each rank is covered by a straight-line sweep and ranks are
+assigned via a minmax m-TSP formulation [72]. Agarwal
+and Akella [57] converted area coverage into a capacityconstrained line coverage problem by generating coverage
+lines from turn-reduced decomposition and routing multiple
+robots over them [73]. Cao et al. [58] built an adjacency graph
+over sweep-line-generated subareas and refined connected
+robot-specific graph partitions via node migration and swap
+operations, as shown in Fig. 9. A spanning tree is then built
+
+8
+
+Table III: Comparison of representative offline multi-robot CPP methods.
+Category
+
+Spanningtree-based
+
+Method
+
+Year
+
+Main Idea
+
+Planning
+Representation
+
+Allocation
+Unit
+
+Optimization
+Focus
+
+AWSTC [52]
+
+2020
+
+Grows robot-specific trees
+using weight-based grid
+cell selection strategy
+
+Robot-specific
+spanning tree
+
+Grid cell
+
+Workload balancing
+
+MSTC∗ [53]
+
+2021
+
+Partitions a global STCbased path into balanced
+robot-specific subpaths
+
+Global STC path
+
+Path segment
+
+Workload balancing
+
+TMSTC∗ [54]
+
+2023
+
+Generates a turn-reduced
+global STC path and
+partitions it using MSTC∗
+
+Global STC path
+
+Path segment
+
+Turn reduction
+
+2026
+
+Covers high-priority zones
+through zone-wise spanning
+trees, followed by Steinertree-based residual coverage
+
+Priority-zonewise spanning
+tree, Steiner tree
+in residual area
+
+Priority-zones
+and residual
+path segment
+
+Priority-weighted latency
+
+2020
+
+Constructs a disk-based
+representation of the space
+for task assignment and
+coverage path planning
+
+A set of diskshaped regions
+
+Disk-shaped
+regions
+
+Workload balancing
+
+2022
+
+Partitions the environment
+to reduce turns, generates
+coverage lines for task
+allocation and sequencing
+
+A set of subareas
+with coverage lines
+
+Coverage line
+
+Turn reduction
+
+Cao et al. [58]
+
+2026
+
+Partitions a subarea-based
+graph into connectivitypreserving subgraphs for
+coverage path generation
+
+Subarea-based
+adjacency graph
+
+Subgraph
+
+Connectivity preservation
+
+Huang et al. [59]
+
+2026
+
+Jointly optimizes subarea
+visiting orders and local
+coverage modes
+
+Trapezoidal
+subareas
+
+Subarea and
+its coverage
+mode
+
+Coverage path length
+
+PAMCPP [55]
+
+Tang et al. [56]
+
+Agarwal et al. [57]
+Subareadecomposition
+
+Subarea
+
+Subarea-based graph
+
+Assigned subgraph
+
+Fig. 9. Illustration of the subarea-decomposition method in [58].
+The environment is decomposed into subareas and represented as an
+adjacency graph, which is then partitioned into connected subgraphs
+assigned to individual robots for coverage path generation.
+
+within assigned subgraph to generate the final coverage path.
+c) Joint task allocation and path generation: A more integrated approach couples subarea allocation with local coverage
+path generation. Datsko et al. [74] generated multiple candidate back-and-forth paths for each Boustrophedon cell [26]
+and formulated path allocation and ordering as a Multiple
+Set Traveling Salesman Problem. Huang et al. [59] considered conflict-aware multi-robot coverage by jointly optimizing
+subarea visiting orders and intra-area coverage modes using
+a cooperative evolutionary algorithm, followed by spatiotemporal conflict detection and resolution.
+The above methods consider a single contiguous workspace.
+In many applications, however, robots must cover multiple
+
+physically separated areas, such as separated fields, inspection zones, or disaster-response regions. Xie and Chen [75]
+addressed this problem for multiple energy-constrained UAVs
+by jointly optimizing region visiting order and intra-region
+coverage paths. Zhang et al. [76] further allowed multiple
+UAVs to jointly cover the same region by optimizing region
+sequences and fractional coverage proportions. Later extension
+considered path repair after UAV failures [77]
+Strengths and Limitations: Subarea-decomposition methods
+provide greater flexibility by incorporating workload, energy,
+turn cost, and local coverage quality into the partitioning
+process. However, their performance depends strongly on
+decomposition quality, subarea assignment, and inter-subarea
+transition planning. Furthermore, the joint optimization of
+these coupled factors remains computationally challenging.
+B. Online Methods
+Online methods generate coverage decisions on the fly while
+the robots explore the environment, where each robot uses
+its sensor observations to update the occupancy map and
+coverage states of the workspace. The coverage decisions are
+made in a coordinated manner between multiple robots using
+shared information such as robot positions, local maps, task
+states, robot states (e.g., battery life), or other information.
+Existing methods can be classified into grid-based methods
+and subarea-decomposition methods. Table IV summarizes the
+key features of representative multi-robot online CPP methods.
+1) Grid-based methods: These methods utilize a grid map
+to make coverage decisions, where each robot usually selects
+
+9
+
+Robot
+Target cell
+
+Repulsive force
+
+Total repulsive force
+
+Local neighborhood
+
+Fig. 10. Illustration of the grid-based method APFCPP [78]. It
+computes total repulsive force for each robot and selects the nearest
+uncovered cell that is most aligned with this force as target cell.
+
+its next target grid cell within a local neighborhood, while
+inter-robot interference is handled by treating other robots as
+obstacles or introducing repulsive effects.
+Early grid-based methods extended single-robot CPP algorithms with inter-robot avoidance mechanisms. Viet et al. [79]
+proposed the BoB algorithm as a multi-robot extension of
+BA∗ [39], where each robot performs systematic back-andforth coverage under a predefined directional priority order
+and treats directions blocked by other robots as unavailable.
+Luo et al. [80] extended the BINN algorithm [41] to multirobot coverage through a neural dynamics (ND) model, where
+uncovered cells provide positive excitation, while obstacles
+and other robots provide inhibitory effects. Each robot selects
+the neighboring cell with the highest neural activity.
+Another line of grid-based methods promotes spatial separation through inter-robot distance terms or repulsive forces.
+Hassan et al. [81] proposed the decentralized predator-prey
+CPP (DecPPCPP) algorithm, which builds on PPCPP [44].
+Each robot treats the other robots as dynamic predators and
+evaluates neighboring uncovered cells using an aggregated
+distance term, which is incorporated into a multi-objective cost
+function for target-cell selection. Zhang et al. [82] extended
+this idea to the dual-environmental herd-foraging-based CPP
+(DHCPP) algorithm, which prioritizes cells near each robot’s
+starting position and gradually expands the covered region
+outward. Wang et al. [78] proposed the artificial potential
+field based CPP (APFCPP) algorithm, as shown in Fig. 10.
+It computes the total repulsive force from the other robots
+and selects, among the nearest uncovered cells in the local
+neighborhood, the one most aligned with this force.
+Several grid-based methods introduced centralized shortterm target cell assignment. Mitra and Saha [89] proposed
+the goal assignment-based multi-robot CPP (GAMRCPP) algorithm, which centrally assigns uncovered cells to robots
+within a planning horizon and generates collision-free paths
+to cover them. This method was further improved to reduce
+unnecessary replanning and robot idling time [84], [90].
+Strengths and Limitations: Grid-based methods are computationally efficient and easy to implement. However, since
+they allow all robots to operate over the entire space, they are
+more prone to inter-robot conflicts and overlapping paths in
+
+Fig. 11. Concepts of resilience and efficiency in the CARE algorithm [83], a subarea-decomposition method. It reallocates unfinished
+coverage tasks to a team of robots when a robot fails or becomes idle.
+
+cluttered environments. This motivates subarea-decomposition
+methods, which partition the environment and assign robots to
+distinct regions for coverage.
+2) Subarea-decomposition methods: These methods partition the environment into multiple non-uniform subareas
+and coordinate robots at the subarea level. Each robot is
+assigned one or more subareas and performs local coverage
+within them. This hierarchical structure enables more explicit
+workload allocation and helps reduce inter-robot interference.
+One representative direction focuses on resilient and efficient task reallocations. Song and Gupta [83] proposed the
+cooperative autonomy for resilience and efficiency (CARE)
+algorithm, where the concepts of team resilience and efficiency are depicted in Fig. 11. Each robot covers its assigned
+subarea using the ε∗ algorithm [40]. When a robot fails or
+becomes idle, task reallocation is performed using distributed
+supervisors and potential games, allowing feasible robots to
+take over unfinished subareas. Ma et al. [85] proposed the
+collaborative coverage improved BA∗ (CCIBA∗ ) algorithm,
+where each robot performs BA∗ -based coverage [39] within
+its assigned subarea. During execution, a global coordinator
+trigger predefined collaborative behaviors, including area division, recall-and-transfer, and area exchange, so that obstacleinduced residual regions or inefficient local tasks can be reassigned among neighboring robots with shorter travel distance.
+Another direction emphasizes workload-aware partitioning.
+Wang et al. [86] proposed the multi-agent cooperation (MAC)
+algorithm, which constructs the smallest rectangular region
+enclosing all uncovered cells, recursively partitions it into
+subareas, and obtains an initial allocation via K-means clustering. Then, pairwise optimization among nearby robots is
+done to balance workload. This method was later extended to
+multi-robot target coverage by maintaining a Delaunay graph
+over robot positions and target points for workload-balanced
+task allocation [91]. Cao et al. [87] proposed the adaptive
+balance evolution (ABE) algorithm, which adjusts subarea
+sizes according to the robots’ residual capacities.
+Subarea-decomposition methods can also integrate global
+structural guidance with local online coverage. Shen et al. [88]
+proposed the multi-robot connectivity-aware hierarchical coverage path planning (Multi-CAP) algorithm, as shown in
+Fig. 12. The method incrementally partitions the environment
+into connected subareas and maintains their adjacency graph
+as new obstacles are discovered. At the global level, subarea
+
+10
+
+Table IV: Comparison of representative online multi-robot CPP methods.
+Category
+
+Grid-based
+
+Subarea
+Generation
+
+Year Main Idea
+
+BoB [79]
+
+2015
+
+Selects target cells using
+a directional-priority rule
+
+Labels other robots’
+cells as obstacles
+
+ND [80]
+
+2017
+
+Uses activity landscape to
+guide target cell selection
+
+Sets negative activity
+to other robots’ cells
+
+DecPPCPP [81]
+
+Uses a predator-distance2020 based cost function to
+determine target cell
+
+APFCPP [78]
+
+Prioritizes neighboring
+2024 cells with smallest angle
+to total repulsive force
+
+None
+
+Reassigns unfinished
+2020 subareas when a robot
+fails or becomes idle
+
+Offline partitions
+the environment
+into regions
+
+CCIBA∗ [85]
+
+2022
+
+Reassigns local regions
+among nearby robots
+
+Offline capacityaware
+
+MAC [86]
+
+Assigns subareas via
+2025 k-means clustering and
+pairwise optimization
+
+ABE [87]
+
+Adjusts subarea size
+2025 according to robots’
+residual capacities
+
+Multi-CAP [88]
+
+Incrementally partitions
+the space into connected
+2025 subareas and updates
+subarea traversal tours
+to guide local coverage
+
+7
+
+6
+
+8
+
+7
+
+Limitation
+
+Prone to interrobot conflicts
+and overlapping
+paths in cluttered
+environments
+
+Treats other robots
+as obstacles
+
+CARE [83]
+
+Subareadecomposition
+
+Strength
+
+Computationally
+Treat other robots
+as dynamic predators efficient and
+easy to deploy
+Uses repulsive forces
+from other robots for
+spatial separation
+
+Centrally assigns target
+GAMRCPP [84] 2025 cells and plans collisionfree transition paths
+
+8
+
+Inter-robot Conflict
+Handling
+
+Method
+
+Online workloadAssigns each robot
+aware
+a unique set of
+subareas to promote
+Online residual
+spatial separation
+capacity-aware
+
+Enables global
+coordination and
+reduces interrobot conflicts
+
+Performance
+depends on
+partitioning
+quality
+
+Online
+connectivityaware
+
+allocation quality, and they usually require more computation
+and communication than grid-based methods.
+
+6
+
+IV. 3D CPP
+5
+
+4
+
+0
+
+1
+
+3
+
+9
+
+Exploring subarea
+Robot
+
+2
+
+5
+
+4
+
+0
+
+Explored subarea
+
+1
+
+3
+
+9
+
+Node
+
+2
+
+Edge
+
+Global tour
+
+Fig. 12. Illustration of the subarea-decomposition method MultiCAP [88]. It incrementally partitions the environment into connected
+subareas, maintains their adjacency relationships in a graph, and
+computes disjoint global tours to guide local coverage.
+
+assignment is formulated as an open multi-depot vehicle routing problem to compute disjoint robot tours, thereby reducing
+redundant travel and inter-robot conflicts. At the local level,
+each robot adapts its coverage strategy according to subarea
+observation status, using back-and-forth coverage in exploring
+subareas and shortest coverage paths in explored subareas.
+Strengths and Limitations: Subarea-decomposition methods
+use region-level coordination to improve workload management, reduce inter-robot conflicts, and support task reassignment or global tour updates as new areas are discovered.
+However, their performance depends on partitioning and re-
+
+3D CPP extends 2D CPP to workspaces or surfaces with
+complex 3D geometry, such as underwater terrains, mountainous environments, high-rise structures, and object surfaces.
+Compared with 2D CPP, it must account for surface geometry,
+elevation variation, sensing or viewpoint constraints, energy
+cost, and, in manipulator applications, kinematic feasibility.
+Existing methods can be broadly grouped by how they represent and exploit the 3D geometry. Layered-coverage methods
+reduce 3D CPP to a sequence of 2D coverage tasks over planar
+layers or subregions. Contour-aware methods exploit terrain
+contours or elevation structures to generate terrain-conforming
+paths with reduced vertical motion. Decomposition-based
+methods partition 3D surfaces into smaller patches according
+to geometric, topological, or kinematic properties, followed by
+patch sequencing and local coverage. Table V summarizes the
+key features of representative 3D CPP methods.
+A. Layered-coverage Methods
+Layered-coverage methods simplify 3D CPP by decomposing the environment into 2D layers (or planar regions),
+allowing the existing 2D CPP strategies to be used on these
+layers. The main challenge is to order, refine, and connect
+these layers while preserving inter-layer connectivity and
+handling disconnected regions.
+
+11
+
+Robot
+
+Path primitives
+
+Coverage path
+
+Level 1
+
+TSP-based primitive traversal
+
+Root node
+
+Level 2
+Coverage tree
+
+Fig. 13. Illustration of the layered-coverage method CT-CPP [6].
+It performs back-and-forth coverage within each planar subregion,
+projects detected terrain structures onto lower levels to identify
+disconnected subregions, and adds them to the coverage tree.
+
+Sadat et al. [92] proposed an online method for aerial coverage of unknown terrains, where the environment is assumed
+to be obstacle-free and represented as a coverage tree. Upperlevel nodes correspond to coarse coverage at higher altitudes,
+while lower-level nodes correspond to finer coverage at lower
+altitudes. The robot first covers the area coarsely and then
+recursively descends to cover subregions identified as regions
+of interest. This method was improved in [93] using Hilbert
+space filling curves to reduce the travel cost.
+Jung et al. [94] proposed an offline method for high-rise
+structure coverage. The method divides the target structure
+into height-based layers, generates candidate viewpoints from
+surface normals at voxel centers, and downsamples them using
+a voxel grid filter. A local inspection path is computed by
+solving a TSP over selected viewpoints. To reduce redundant
+inspection, viewpoints in the next layer are updated by removing duplicated observed surfaces, and all layer-wise paths are
+connected into a full coverage path.
+Shen et al. [6], [95], [96] proposed CT-CPP, which performs
+layered coverage in unknown obstacle-rich environments using
+a dynamic coverage tree, as shown in Fig. 13. The robot starts
+from the ocean surface and incrementally builds the tree in a
+top-down manner, where each node represents a disconnected
+planar subregion discovered at a specific level. During the
+coverage of each node, the robot collects data from the 3D
+terrain structures below and projects the obstacle information
+onto the plane below to form a 2D occupancy map. Then,
+the newly detected disconnected subregions are added to that
+node as child nodes. The updated coverage tree is then used to
+determine the subregion traversal sequence by solving a TSP.
+Strengths and Limitations: Layered-coverage methods reduce the complexity of 3D CPP by leveraging 2D CPP within
+individual layers; however, their performance depends on the
+layer construction and inter-layer transition strategy.
+B. Contour-aware Methods
+Contour-aware methods are mainly designed for terrains
+with significant elevation variations. Instead of treating the
+3D workspace as independent layers, these methods exploit
+terrain contours, elevation gradients, or geodesic structures to
+generate paths that better conform to the surface and reduce
+energy-consuming vertical motions.
+Galceran et al. [97] classified the terrain into planar and
+steep-slope areas using a bathymetric map. The method then
+
+Fig. 14. Illustration of the contour-aware method in [99]. It first
+generates path primitives along terrain contours and then optimizes
+their traversal order to obtain the full coverage path.
+
+plans back-and-forth coverage paths for planar areas using
+boustrophedon decomposition [26] while treating steep-slope
+areas as obstacles. For steep-slope areas, the terrain surface
+is sliced by horizontal planes at successive depth levels,
+with spacing determined by the coverage footprint, to obtain
+contour lines. These contours are shifted outward to maintain
+a safe distance and then linked to form the final coverage path.
+Wu et al. [98] generated a contour-aware spiral coverage
+path for mountainous terrain using geodesic distance fields.
+The method defines a geodesic source set on the terrain
+surface, consisting of the surface boundary and the peak
+and valley points. An exact geodesic distance field is then
+constructed from these sources, from which iso-contours are
+extracted and connected into a spiral coverage path. By
+incorporating terrain height extrema into the source set, the
+generated path tends to follow regions of similar elevation,
+thereby reducing uphill motion and energy cost.
+Shao et al. [99] proposed contour-aware method via path
+primitives, as shown in Fig. 14. It first extracts quantized
+elevation contours from the terrain surface. Seed points are
+then sampled from uncovered regions and grown bidirectionally along nearby contours to generate contour-aware path
+primitives. These primitives are connected into a complete
+coverage path by solving a TSP, where the transition cost
+accounts for the higher energy cost of climbs than descents.
+Strengths and Limitations: Contour-aware methods exploit
+terrain elevation structures by generating paths that conform
+to terrain contours. This helps reduce energy-intensive vertical
+motion and promotes more uniform surface coverage, which
+is particularly useful for mapping and terrain reconstruction.
+However, these methods usually require reliable terrain models, accurate contour extraction, and precise control, which
+limits their applicability in unknown environments.
+C. Decomposition-based Methods
+Decomposition-based methods operate directly on 3D surfaces by partitioning them into smaller patches for sequencing
+and local coverage path generation.
+One line of work decomposes surfaces using intrinsic geometric structures. As shown in Fig. 15, Lin et al. [100] built
+an intrinsic surface parameterization based on holomorphic
+quadratic differentials. This parameterization assigns natural
+coordinates to surface points and induce a structured trajectory
+field, where trajectories ending at zero points are treated
+as critical trajectories and used to partition the surface into
+
+12
+
+Table V: Comparison of representative 3D CPP methods.
+Category Method
+Sadat et al. [92]
+Layered- Jung et al. [94]
+coverage
+CT-CPP [6]
+
+Geometry
+Representation
+
+Coverage Path
+Generation
+
+Multi-resolution
+altitude layers
+
+Recursive descent
+to selected ROIs
+
+Layer-wise high-rise
+2018
+inspection
+
+Viewpoints created
+at different layers
+
+TSP-based viewpoint
+sequencing
+
+Constructs a dynamic
+2022 tree to track and guide
+online coverage process
+
+Disjoint subregions
+at different levels
+organized as a tree
+
+TSP-based subregions
+visiting and local back
+-and-forth coverage
+
+Year Main Idea
+2014
+
+Adapts coverage pattern
+by terrain type
+
+Planar and steep
+areas
+
+Uses geodesic distance
+2019 fields for energyefficient coverage
+
+Geodesic distance
+field
+
+Shao et al. [99]
+
+Generates and sequences
+contour-aware path
+2025
+primitives for energyefficient coverage
+
+Quantized elevation
+contours
+
+Lin et al. [100]
+
+Decomposes surfaces by
+critical trajectories and
+2017
+generates patch-wise
+coverage paths
+
+Intrinsic coordinate
+system from holomorphic quadratic
+differentials
+
+Galceran et al. [97] 2015
+
+Contour- Wu et al. [98]
+aware
+
+Decomposition
+-based
+
+Recursive coarseto-fine ROI coverage
+
+Strength
+
+Limitation
+
+Converts
+complex
+3D CPP
+into simple
+2D CPPs
+
+Performance
+depends on
+the layer design
+
+Back-and-forth paths in
+planar areas and contour
+Generates
+following in steep areas
+terrainExtracts iso-contours
+conforming
+and connects them into paths with
+a full coverage path
+reduced
+energyTSP-based traversal of
+intensive
+contour-aware path
+motion
+primitives
+
+Requires reliable
+terrain models,
+accurate contour
+extraction, and
+precise control
+
+Regular-trajectory
+tracing with Euler
+-cycle sequencing
+
+Yang et al. [9]
+
+Decomposes surfaces into
+Task-space labels
+Patch-wise path
+kinematically continuous
+induced by reachable generation in IK2020
+patches to reduce endIK configuration sets continuous patches
+effector lift-offs
+
+Wang et al. [101]
+
+Hierarchically clusters
+2025 surface points to reduce
+computational time
+
+Position-normal
+Upper-level exemplar
+surface clusters with TSP with lower-level
+IK-feasible exemplars joint-space TSP
+
+(a)
+
+(b)
+
+Fig. 15. Illustration of the decomposition-based method in [100]. (a)
+A three-hole surface is decomposed into connected surface patches
+d1 -d6 by critical trajectories connecting zero points p1 -p4 . (b) An
+Euler cycle is computed over the patches, starting from p1 , following
+the numbered directed edges, and finally returning to p1 .
+
+patches. Within each patch, regular trajectories are traced and
+connected into back-and-forth coverage paths, and the patch
+traversal order is organized via an Euler-cycle formulation.
+Another line of work incorporates manipulator kinematics
+into surface decomposition. A continuous task-space coverage path may correspond to disconnected inverse-kinematics
+configuration sets in the manipulator joint space, causing end-
+
+Directly
+handles
+complex
+3D surfaces
+via patchwise planning
+with kinematic
+constraints
+
+Requires reliable
+surface models,
+and mesh
+representations
+
+effector lift-offs. To reduce such lift-offs, Yang et al. [9]
+decomposed the surface according to joint-space continuity.
+For each surface point, the method computes non-singular
+inverse-kinematics configurations and groups them into disjoint sets according to their continuity in joint space. The
+resulting labels are mapped back to the task space, where
+surface points sharing the same reachable configuration labels
+are grouped into the same surface patch. Each patch can be
+covered without joint-space discontinuities. This framework
+was later extended to jointly optimize object placements and
+covered surface portions [102], use valid singular configurations to connect otherwise disconnected nonsingular sets [103],
+and develop a more efficient decomposition-refinement solver
+while preserving global optimality and completeness [104].
+Surface decomposition can also be achieved through mesh
+discretization or geometric clustering. Yang et al. [105] discretized the surface into a uniform unstructured mesh with
+a resolution determined by the coverage tool size. The mesh
+is refined by edge subdivision, and coverage waypoints are
+generated over the refined patches, mapped back to the original surface, and locally optimized to reduce overlap, gaps,
+and path irregularity. Do and Pham [106] partitioned the
+mesh into connected low-curvature clusters using constrained
+centroidal Voronoi tessellation [107]. Cluster centroids and
+proxy normals are used to define viewpoints, and the coverage
+path is obtained by solving a TSP over the centroids with
+geodesic edge costs. Wang and Gleicher [101] proposed a
+hierarchical method that reduces computation by decomposing
+the problem into smaller generalized TSPs. It first clusters
+
+13
+
+surface points by positional and normal similarity and selects
+representative exemplars. For each exemplar, feasible inversekinematics solutions that can reach all points in the same
+cluster are retained. An upper-level TSP over the exemplars
+then provides a guide path, followed by a lower-level TSP that
+generates the complete joint-space coverage path.
+Strengths and Limitations: Decomposition-based methods
+directly handle complex 3D surfaces, especially when geometric continuity, surface curvature, viewpoint quality, or manipulator feasibility must be considered. Their main limitation is
+the reliance on accurate surface models, mesh representations,
+or inverse-kinematics analysis, which increases computational
+complexity and limits applicability in unknown environments.
+
+(a) Energy-constrained robot
+
+(b) Curvature-constrained robot
+
+(c) Tethered robot
+
+(d) Reconfigurable robot
+
+V. C ONSTRAINED CPP
+Beyond environmental knowledge, workspace geometry,
+and robot-team size, CPP also depends on robot-specific constraints. As shown in Fig. 16, such constraints may arise from
+battery capacities, bounded-curvatures, tethered cable limits,
+and morphological restrictions. These constraints restrict feasible motions, require safe return or battery replenishment
+strategies, or require the robot to adapt its shape or footprint to different workspace conditions. This section reviews
+four classes of constrained CPP: energy-constrained CPP,
+curvature-constrained CPP, tethered CPP, and reconfigurable
+CPP. Table VI summarizes representative constraints, planning
+implications, CPP adaptations, benefits, and limitations.
+A. Energy-constrained CPP
+Energy-constrained robots operate with limited battery capacity, which restricts the duration and spatial extent of coverage operation. Thus, energy-constrained CPP methods must
+not only generate efficient coverage paths, but also ensure that
+the robot can return to a charging location or coordinate with
+replenishment resources (e.g., mobile charging robots) when
+its energy becomes low. Existing methods mainly address
+three settings: complete coverage with return-and-recharge
+scheduling, partial coverage optimization under a fixed energy
+budget, and coverage coordinated with mobile replenishment.
+1) Return-and-recharge methods: These methods achieve
+complete coverage by repeatedly alternating between coverage
+path execution and returning to the base station for recharging.
+The key issue is not only to decide which region to cover
+after each recharging, but also to ensure that every coverage
+decision preserves enough residual energy for a safe return
+to the charging station. Existing methods mainly differ in the
+coverage pattern and how they enforce return decision.
+One line of work uses the distance-to-base information to
+decide whether to return to the charge station during the
+coverage process. Shnaps and Rimon [108] adapted their
+shortest-path-potential framework for tethered coverage [109]
+of battery-limited robots. The robot follows equipotential
+contours in increasing potential order, covers higher-potential
+contours within each corridor, and returns to the base along
+the shortest known path when the battery becomes low. After
+recharging, it resumes from the uncovered corridor with the
+smallest estimated potential. Wei and Isler [110] similarly
+
+Fig. 16. Robot examples with different platform-specific constraints:
+(a) aerial robot performing partial coverage under a limited battery
+budget [114], (b) autonomous weed-mowing robot with boundedcurvature motion [14], (c) tethered underwater robot using a tethered
+cable for remote operation and communication [115], and (d) reconfigurable robot with morphological restrictions [116].
+
+exploited distance-to-base information through equidistance
+polylines. Their from-far-and-near strategy advances the robot
+to the furthest uncovered cell, follows equidistance contours
+for coverage, and retreats to the base station when the remaining energy becomes low. After recharging, the robot resumes
+coverage from the previously recorded retreat point.
+Shen et al. [111] proposed the ε∗ + algorithm, which uses
+the ε∗ algorithm for coverage [40] and computes a retreat
+path from each candidate target cell to the base station using
+the A∗ search [112]. If the remaining energy is insufficient
+to reach the target cell and return safely to the base station,
+the robot immediately retreats for recharging. After charging is
+complete, it resumes coverage from the nearest uncovered cell.
+Dogru and Marques [113] used boundary-following rules for
+both coverage and retreat. The robot follows the left contour
+of the covered or occupied area, stores the current path and
+adjacent strip-like uncovered area, and computes a retreat path
+to the base within this area. When energy becomes low, it
+retreats along this path while covering cells along the way.
+2) Partial-coverage methods: Instead of enforcing complete coverage, these methods optimize coverage quality under
+a fixed energy budget. Jensen-Nau et al. [114] represented the
+path as a sequence of connected waypoints with the length
+constrained by the robot’s energy budget. The waypoints
+are redistributed using a Voronoi-based mass-spring-damper
+model, where the path is optimized by minimizing the distance
+of points in the area to the nearest path waypoints. Unlike
+return-and-recharge methods, this formulation optimizes (partial) coverage quality given a path-length constraint rather than
+scheduling repeated recharging for complete coverage.
+3) Mobile energy-replenishment methods: These methods
+incorporate mobile energy-replenishment resources into the
+coverage process. Instead of returning to a fixed base, robots
+
+14
+
+Table VI: Summary of representative constrained CPP categories.
+Category
+
+Robot Constraint
+
+Planning Implication
+
+CPP Adaptation
+
+Strength
+
+Limitation
+
+Energyconstrained
+CPP
+
+Battery capacity,
+mission duration,
+recharge requirement
+
+Respects return feasibility,
+energy budget, or partial
+coverage objective
+
+Return-and-recharge;
+energy-budgeted partial
+coverage; mobile
+replenishment
+
+Improves practical
+deployability under
+limited endurance
+
+Higher computational
+time caused by
+scheduling and routing
+
+Curvatureconstrained
+CPP
+
+Minimum turning
+radius and heading
+continuity
+
+Sharp turns and arbitrary
+sweep connections may
+be infeasible
+
+Dubins/Reeds-Shepp
+path generation; turnminimizing decomposition and sequencing
+
+Produces executable
+paths for nonholonomic vehicles
+
+Increases path length
+and complicates decomposition, ordering,
+and boundary coverage
+
+Tethered CPP
+
+Cable length and
+topology
+
+Remains cable-feasible
+and avoid entanglement
+
+Distance-contour
+traversal, cablefeasible tree or
+graph search
+
+Extends operation time,
+communication reliability
+and robot’s safety
+
+Restricted by base
+location, obstacle
+topology, and cable
+configuration
+
+Variable footprint
+shape, or morphology
+
+Considers when and how
+the robot changes its
+configuration during
+decision-making
+
+Size/shape-aware target
+selection; reconfigurationcoupled coverage planning
+
+Improves access to
+narrow regions and
+coverage efficiency
+in open areas
+
+Requires modeling
+reconfiguration cost,
+footprint-dependent
+reachability, and
+transition feasibility
+
+Reconfigurable
+CPP
+
+coordinate with mobile stations or heterogeneous teammates
+for recharging. Karapetyan et al. [117] considered a heterogeneous UAV-UGV team, where both robots perform coverage
+and the UGV also serves as a mobile recharging station
+for the energy-constrained UAV. The method first computes
+coverage paths for both robots without considering energy
+constraints, partitions the UAV path into endurance-feasible
+coverage segments and the UGV path into corresponding
+rendezvous segments, and then uses bipartite graph matching
+to determine recharging rendezvous locations.
+Strengths and Limitations: Energy-constrained CPP supports long-duration missions. However, it introduces additional
+decisions on return timing, recharging location, and coverage
+resumption, and its performance may degrade under uncertain
+energy consumption, travel time, or rendezvous execution.
+B. Curvature-constrained CPP
+Curvature-constrained robots have a minimum turning radius and their motion is often described by the Dubins
+model [118], [119], which consists of straight-line segments
+and circular arcs with bounded curvature. Thus, the straightline sweep patterns with sharp turns must be modified to ensure curvature feasibility. Existing methods address this problem by incorporating Dubins costs or curvature-constrained
+motion primitives into target selection, or by decomposing the
+environment into subareas and optimizing their traversal order
+with curvature-constrained transition costs.
+Shen et al. [120] extended the ε∗ algorithm [40] to autonomous underwater vehicles for back-and-forth coverage
+pattern while selecting target cells based on the Dubins travel
+cost. The method discretizes the orientations in neighboring
+cells, and evaluates the Dubins paths from the current vehicle
+state to these candidate poses to find the path segment. Kan
+et al. [121] partitioned the environment into hexagonal cells
+whose size guarantees that the Dubins path covering each
+cell remains inside it. The robot then selects the neighboring
+uncovered cell with the largest number of covered or obstacle
+cells around it and follows a Dubins path to that cell. Maini et
+al. [14] developed two autonomous mowing planners, JUMP
+
+and SNAKE. JUMP follows a back-and-forth pattern and uses
+Dubins paths to visit nearby weeds before returning to the
+current lap. In contrast, SNAKE does not require such returns;
+it connects Dubins subpaths to weeds along the current motion
+direction, forming a more flexible serpentine trajectory.
+Lewis et al. [122] partitioned the environment into rectangular subareas, each of which can be covered by a single straight
+line. Each subarea is represented by two directed vertices
+corresponding to opposite coverage directions, and the edge
+weights are the Dubins path lengths between subarea exit and
+entry poses. The coverage order and direction are then determined by solving a generalized TSP. Karapetyan et al. [123]
+extended this framework to multi-robot systems by computing
+a single-robot Dubins coverage route and splitting it into balanced subtours through min-max optimization. Li et al. [124]
+further extended [122] to variable-speed curvature-constrained
+robots by sampling speed pairs, constructing variable-speed
+Dubins paths, pruning risky paths, and selecting minimumtime feasible transitions for TSP-based subarea sequencing.
+Strengths and Limitations: Curvature-constrained CPP produces executable paths for nonholonomic robots, but often
+increases travel distance and complicates target selection,
+subarea sequencing, and boundary coverage. Its performance
+depends on the motion model and orientation discretization.
+C. Tethered CPP
+A tethered robot is physically connected to a fixed base
+station through a cable, which can extend operation time,
+improve communication reliability, and enhance safety [125].
+In comparison to classical CPP, tethered CPP must consider cable-length limits, cable entanglement, and obstacleinduced topological constraints. Shnaps and Rimon [109]
+first established an offline tethered CPP method for known
+environments, which later served as the basis for their online
+algorithm. The method assigns each free cell a potential value
+defined by its shortest-path distance from the base station,
+which represents the minimum cable length required to reach
+that cell. Thus, only cells whose potential values do not exceed
+the cable length are considered reachable. Starting from the
+
+15
+
+base station, the robot follows increasing equipotential contours to cover the environment outward. When obstacles split
+the coverage front into different corridors, the corresponding
+split cells are stored in a stack, allowing the robot to cover
+one corridor first and later retreat along the cable path to
+cover the remaining corridors. The online version follows the
+same principle while updating potential values, split cells, and
+corridor partitions as new obstacles are discovered.
+Sharma et al. [126] incrementally constructed a tree map
+rooted at the base station, where each node corresponds to
+a free cell and its depth encodes contour distance from the
+base station. A modified depth-first search is then performed
+over the tree, alternating between forward traversal toward
+deeper contours and backtracking to the nearest node with
+unvisited reachable neighbors, while respecting the cablelength constraint. Peng et al. [127] adapted the spanning
+tree covering algorithm [35] to tethered CPP. The method
+constructs a spanning tree rooted at the base station over the
+coarse cells by a Dijkstra-like procedure that uses taut cableconfiguration length, rather than geometric path length, as the
+cost-to-come measure. The tree is circumnavigated to produce
+a coverage cycle with the cable fully retracted at the end.
+Strengths and Limitations: Tethered CPP extends operation
+time, improves communication reliability, and enhances safety,
+but is constrained by base location, entanglement risk, obstacle
+topology, and cable length. Its planning complexity increases
+when cable configurations must be updated in cluttered, unknown, or 3D environments.
+D. Reconfigurable CPP
+Reconfigurable CPP uses morphology adaptation as an additional planning degree of freedom. By changing shape or size,
+robots can improve accessibility in narrow or cluttered regions
+and increase coverage efficiency in open areas. Samarakoon
+et al. [128] used the BINN algorithm [41] to cover the main
+workspace with a fixed shape while reconfiguring the robot
+to cover cluttered regions around obstacles. Muthugala et
+al. [129] maintained occupancy grid maps for different robot
+sizes. Target cells are selected on the map associated with the
+smallest size using BINN [41], while the robot moves toward
+the target using the largest locally collision-free size; after
+arrival, cells covered by the current footprint are marked as
+covered. This method was later improved by considering the
+cost and side effects of reconfiguration. Muthugala et al. [130]
+introduced criteria to penalize unnecessary size changes and
+avoid moves that create isolated uncovered regions. Yi et
+al. [131] developed a BINN-based method which jointly
+determines target-cell selection and robot reconfiguration.
+Strengths and Limitations: Reconfigurable CPP improves
+coverage efficiency through morphology adaptation. However,
+it requires modeling reconfiguration cost, transition feasibility,
+and footprint-dependent reachability, and complicates planning
+when morphology decisions are coupled with target selection.
+VI. L EARNING -BASED CPP
+Recently, Learning-based CPP has emerged as a promising
+methodological direction. Existing methods integrate different
+
+learning techniques (e.g., supervised learning, graph neural
+networks, Q-learning, and reinforcement learning) into classical CPP frameworks to generate coverage paths, determine
+subarea traversal orders, allocate tasks among multiple robots,
+and coordinate coverage under robot-specific constraints. This
+section reviews representative learning-based CPP methods
+according to the planning components enhanced by learning.
+Table VII summarizes their key features in terms of CPP
+setting, learning-enhanced component, and learning technique.
+One line of work uses learning techniques in single-robot
+CPP to generate subarea traversal policies or coverage paths
+from known environment representations. Chen et al. [132]
+proposed the adaptive deep path (AD Path) algorithm, which
+uses reinforcement learning for subarea-level sequencing. It
+first applies Boustrophedon decomposition [26] to partition the
+environment into subareas, evaluates intra-subarea coverage
+and inter-subarea transition costs based on the entry and exit
+points of each subarea, and then learns the subarea traversal
+order. Shen et al. [133] proposed CPPNet, which employs
+supervised learning with a graph neural network (GNN) for
+near-optimal coverage path generation. For training phase,
+random environments are converted into adjacency-graph representations, and TSP tours are used as reference solutions
+to supervise edge-probability prediction. CPPNet predicts an
+edge-probability heat graph from an occupancy-grid representation, where each edge value indicates its likelihood of
+belonging to the optimal TSP tour. A greedy search is then
+performed on this graph to generate the coverage path. Beyond
+2D environments, Tiboni et al. [134] proposed PaintNet for
+spray painting on 3D objects. Given an object point cloud, the
+supervised learning generates 6D local path segments, where
+each point contains the spray gun position and orientation.
+These segments are concatenated into full painting paths.
+Another line of work uses learning techniques for multirobot coordination and task allocation. Tolstaya et al. [135]
+represented the environment as a spatial graph, with waypoints
+and robots as nodes and feasible movements as edges. A GNN
+is trained by behavior cloning to imitate an optimization-based
+vehicle-routing expert and select each robot’s next waypoint
+online. Hu et al. [136] proposed a multi-UAV distributed
+online cooperation (MDOC) method for coverage in unknown
+environments. Robots share coverage records and detected
+obstacles via an environmental map fusion mechanism. A distributed cooperative deep Q-learning algorithm selects actions
+to reduce completion time while avoiding overlap, missed coverage, and collisions. In energy-constrained problems, Zhao
+et al. [137] used multi-agent reinforcement learning (MARL)
+to dynamically allocate target subareas while accounting for
+energy consumption. Huang et al. [138] formulated multirobot CPP as a two-level TSP problem. A MARL framework
+determines high-level subarea allocation and visitation order,
+while preset TSP-based paths are used for local coverage.
+Learning techniques have also been used for constrained
+CPP. Theile et al. [139] studied UAV CPP under energy
+constraints, random start positions, multiple landing positions,
+and no-fly zones. They formulated the problem as a Markov
+decision process and trained a double deep Q-network with
+map-like input channels to learn a control policy that balances
+
+16
+
+Table VII: Comparison of representative learning-based CPP methods.
+CPP Setting
+
+Single-Robot CPP
+
+Multi-Robot CPP
+
+Constrained CPP
+
+Method
+
+Year
+
+Learning-Enhanced Component
+
+Learning Technique
+
+AD Path [132]
+
+2019
+
+Subarea traversal order
+
+Reinforcement learning
+
+CPPNet [133]
+
+2021
+
+Near-optimal coverage path generation
+
+GNN-based supervised learning
+
+PaintNet [134]
+
+2023
+
+6D Local painting path segment generation
+
+Supervised learning
+
+Tolstaya et al. [135]
+
+2021
+
+Online waypoint selection
+
+Behavior cloning and GNN
+
+MDOC [136]
+
+2023
+
+Distributed online action coordination
+
+Distributed cooperative deep Q-learning
+
+Zhao et al. [137]
+
+2023
+
+Energy-aware subarea allocation
+
+Multi-agent reinforcement learning
+
+Huang et al. [138]
+
+2025
+
+Subarea allocation with minimized travel distance
+
+Multi-agent reinforcement learning
+
+Theile et al. [139]
+
+2020
+
+UAV action selection under energy constraints
+
+Double deep Q-network
+
+Tang et al. [140]
+
+2022
+
+Coordination between worker coverage and
+mobile-station replenishment
+
+Multi-agent reinforcement learning
+
+Pey et al. [141]
+
+2024
+
+Coverage with morphology adaptation
+
+Multi-agent reinforcement learning
+
+target coverage, limited movement budget, and safe landing.
+Tang et al. [140] considered a worker-station multi-robot coverage system, where energy-constrained worker robots coordinate with a mobile station for replenishment. This problem is
+formulated as a MARL problem, where robots decide whether
+to continue coverage or coordinate with the station based
+on local observations. Pey et al. [141] formulated reconfigurable multi-robot CPP as a decentralized partially observable
+Markov decision process, where each robot selects motion
+and reconfiguration actions based on local observations and
+its current state. MARL is then used to coordinate coverage,
+obstacle avoidance, and morphology adaptation.
+Strengths and Limitations: Learning-based CPP is a relatively new direction. It shows potential in improving coverage
+efficiency by learning heuristics, traversal policies, or coordination strategies from data or interactions. However, these
+methods still provide weaker guarantees on completeness,
+safety, generalization, and robustness than classical CPP methods. This motivates hybrid frameworks that combine learned
+decision-making with formal planning mechanisms.
+VII. V ISUAL CPP
+Visual CPP is closely related to classical CPP, but differs
+in how coverage is achieved. Classical CPP requires the
+robot to physically traverse or sweep the target region, while
+visual CPP aims to inspect an object, structure, or scene by
+planning viewpoints that sufficiently observe its surface or
+geometry, as shown in Fig. 17. In literature, visual CPP is
+often discussed under related terms such as inspection path
+planning or view path planning [142]. Since the primary focus
+of this survey is classical CPP, this section briefly summarizes
+representative Visual CPP paradigms that are most relevant
+from the coverage-planning perspective.
+A. Classical Methods
+Given a target object, the classical Visual CPP methods
+first generate viewpoints to observe the surface, then select
+viewpoints based on coverage completeness, sensing quality,
+and travel cost, and finally compute a tour over the selected
+viewpoints using TSP formulations. Early methods solve a setcovering problem to obtain a compact viewpoint subset that
+satisfies complete coverage, while later extensions improve
+
+viewpoint quality by refining placement, optimizing viewpoint
+connections, or incorporating measurement uncertainty.
+Englot and Hover [143] sampled random viewpoints around
+the target object and built a roadmap where each surface
+primitive is observable from multiple viewpoints. Then, a
+compact subset is selected via set covering, followed by TSPbased tour generation for collision-free inspection. Jing et
+al. [144] generated random viewpoints, determined viewing
+directions from nearby surface patches, and selected a compact
+subset through set covering. This method was later extended to
+manipulator inspection [145], local path primitives instead of
+discrete viewpoints [146], and multi-robot visual CPP [147].
+Later methods used geometric structure to generate more
+informative viewpoint candidates. Zheng et al. [148] clustered
+triangular meshes using spatial proximity and normal-vector
+similarity, generated viewpoints from the clusters, and refined
+viewpoint positions using a local potential field. Zhang et
+al. [149] further improved this pipeline by clustering mesh
+facets according to normal directions and spatial density,
+projecting each cluster onto a 2D plane, generating viewpoints
+through projection-based rectangular coverage, and jointly
+optimizing viewpoint selection and sequencing with a multiobjective evolutionary framework [150]. Bircher et al. [151]
+initialized one feasible viewpoint for each mesh triangle and
+alternated between viewpoint resampling and tour optimization
+to preserve visibility while reducing travel cost. Almadhoun et
+al. [152] used adaptive viewpoint sampling to add viewpoints
+in regions with insufficient coverage or low reconstruction
+accuracy, and selected the next waypoint by balancing travel
+distance and expected information gain.
+Beyond geometric visibility, some methods incorporate reconstruction or measurement uncertainty into Visual CPP.
+Lindner et al. [153] addressed multi-view coverage for
+structure-from-motion reconstruction by estimating an upper
+bound on the expected reconstruction error. The method models image-plane projection errors, propagates the corresponding uncertainty into a 3D covariance estimate for each surface
+point, and updates this covariance as new views are added.
+The next viewpoint is selected to maximize reconstructionuncertainty reduction under geometric and dynamic constraints. Liu et al. [154] considered measurement uncertainty in
+robotic quality inspection by deriving admissible uncertainty
+
+17
+
+Viewpoint Generation
+
+Viewpoint Traversal and Mapping
+
+Structure Reconstruction
+
+Fig. 17. Illustration of a typical visual CPP pipeline. Candidate viewpoints are generated around the target surface, connected into an
+inspection path, and used to collect observations for reconstruction or inspection.
+
+ranges from tolerance specifications, generating feasible viewpoints, and selecting viewpoints that balance the number of
+views and average measurement uncertainty.
+Strengths and Limitations: Classical methods typically optimize viewpoints over the entire space and sequence them using
+TSP or related tour-optimization formulations. They are effective for simple or moderate-scale environments, but become
+computationally expensive in large or complex scenes due to
+dense viewpoints, visibility and collision checks, occlusion
+reasoning, and large-scale tour optimization. This motivates
+hierarchical methods that break the space into smaller planning
+units and coordinate local plans via a higher-level structure.
+B. Hierarchical planning Methods
+Hierarchical methods decompose the environment into subareas, compute a global visiting order among them, and solve
+smaller local coverage problems within each subarea. This
+reduces planning complexity, improves scalability, and allows
+complex regions to be planned at finer resolution.
+Cao et al. [155] proposed a multi-resolution Octree-based
+hierarchy for complex 3D environments. Feasible viewpoints
+are sampled and stored in an Octree, where denser or more
+complex regions are subdivided into finer subareas. A global
+TSP determines the visiting order of subareas, while local setcovering and TSP problems are solved in each leaf subspace
+to generate local coverage paths. Song et al. [142] addressed
+online 3D modeling in unknown environments by combining
+global coverage planning with local inspection. The environment is incrementally decomposed into sectors to form a
+topological map, where a global coverage path guides the robot
+toward unexplored sectors, and local inspection paths scan
+frontier regions around the current path. Morilla et al. [156]
+focused on large-scale outdoor visual coverage with multiple
+UAVs. A high-altitude reconnaissance flight first builds a
+coarse prior map, after which poorly observed or unobserved
+regions are detected, clustered, covered by sweep trajectories,
+and assigned to multiple drones through a vehicle-routingbased planner. Feng et al. [7] proposed a skeleton-guided
+hierarchy for aerial coverage of complex 3D scenes. A scene
+skeleton is extracted from the point cloud and decomposed
+into branches, each defining a subarea. The skeleton guides
+free-space identification and viewpoint sampling, while a
+hierarchical planner determines the global visiting order of
+subspaces and optimizes local coverage paths.
+VIII. C ONCLUSION AND F UTURE D IRECTIONS
+Conclusion: This survey presents a comprehensive and
+structured review of 125 representative works, primarily pub-
+
+lished between 2015 and 2026, while linking recent advances
+to classical CPP foundations. These reviewed methods are
+organized into six categories: single-robot CPP, multi-robot
+CPP, 3D CPP, constrained CPP, learning-based CPP, and visual
+CPP. For each category, we summarize the main problem
+formulations, representative algorithms, key ideas, strengths,
+and limitations. Several methodological trends are observed.
+• Subarea decomposition remains a central principle in CPP
+to reduce the complexity of offline coverage path generation in single-robot, multi-robot, and 3D CPP. It also
+provides higher-level decision structures for non-local
+waypoint selection in single-robot CPP, and reduces interrobot conflicts by assigning robots to distinct subareas in
+multi-robot CPP.
+• Online single-robot CPP has long relied on local methods
+for computational efficiency and ease of implementation.
+Recently, non-local methods have attracted increasing
+attention by incorporating higher-level decision structures
+to enable non-myopic waypoint selection and reduce dead
+ends and fragmentation-induced redundant travel.
+• Compared with single-robot CPP, multi-robot CPP can
+accelerate large-scale coverage, improve resilience to
+robot failures, and support parallel execution. Recent
+methods have moved from grid-cell-level coordination
+toward subarea-level coordination to reduce allocation
+complexity, improve workload balancing, lower coordination overhead, and mitigate inter-robot conflicts.
+• Learning-based CPP has emerged as a novel methodology that improves coverage efficiency, adaptability,
+and scalability by using data-driven models to guide
+path generation, subarea sequencing, task allocation, and
+coordination, often in combination with classical CPP.
+• Constrained and visual CPP extend the application scope
+of CPP. Constrained CPP adapts coverage planning to
+robot-specific feasibility requirements, such as tether
+length, energy budget, curvature limits, and morphology
+constraints, while visual CPP extends coverage from
+physical area traversal to sensing-driven tasks such as
+inspection, reconstruction, and monitoring by explicitly
+considering visibility, viewpoints, and sensing quality.
+Future Works: Several research directions deserve further
+attention in future:
+• Recently, non-local methods in online single-robot CPP
+have shown the value of higher-level decision structures.
+Extending such methods to multi-robot, 3D, and visual
+CPP remains a promising but underexplored direction.
+• Multi-robot CPP is important for large-scale coverage,
+but many methods still assume homogeneous robots and
+
+18
+
+reliable communication. In real applications, robots may
+differ in coverage footprint, speed, energy capacity, and
+motion constraints, while communication can be intermittent or locally restricted. Future work should develop
+multi-robot CPP methods for heterogeneous teams, limited communication, and robust task allocation.
+• Existing 3D and visual CPP methods often rely on accurate terrain models, surface meshes, visibility models,
+or prior geometric information. However, in many realworld tasks, geometry must be reconstructed online from
+noisy and incomplete sensor data. Future research should
+further integrate mapping, surface representation, uncertainty estimation, viewpoint selection, and path planning,
+especially for online 3D coverage and inspection tasks.
+• Learning-based methods have shown potential for improving coverage efficiency. However, these methods
+still lack guarantees on coverage completeness, safety,
+generalization, and robustness. Future research should
+explore hybrid frameworks that combine the adaptability
+of learning with the interpretability and guarantees of
+classical CPP methods. Learning may be used to guide
+sampling, predict difficult regions, estimate coverage cost,
+or accelerate high-level decisions, while classical planners provide feasibility and completeness mechanisms.
+• Embodied AI may extend CPP from geometry-driven
+coverage to task- and semantics-aware coverage by integrating semantic mapping, vision-language models, active
+perception, and embodied decision-making. This could
+help robots adapt coverage strategies to semantic regions,
+human instructions, and changing mission objectives.
+• Recent developments on motion planning in dynamic
+environments have highlighted the importance of realtime replanning, uncertainty-aware prediction, and riskaware decision-making [157], [158]. These techniques
+may provide useful foundations for extending online CPP
+from static environments to highly dynamic environments
+with moving obstacles, humans, or other robots.
+R EFERENCES
+[1] M. Ramesh, F. Imeson, B. Fidan, and S. L. Smith, “Anytime replanning
+of robot coverage paths for partially unknown environments,” IEEE
+Transactions on Robotics, vol. 40, pp. 4190–4206, 2024.
+[2] J. Song and S. Gupta, “SLAM based shape adaptive coverage control
+using autonomous vehicles,” in 2015 10th System of Systems Engineering Conference, 2015, pp. 268–273.
+[3] N. Palomeras, N. Hurtós, M. Carreras, and P. Ridao, “Autonomous
+mapping of underwater 3-D structures: From view planning to execution,” IEEE Robotics and Automation Letters, vol. 3, no. 3, pp. 1965–
+1971, 2018.
+[4] V. Yordanova and B. Gips, “Coverage path planning with track spacing
+adaptation for autonomous underwater vehicles,” IEEE Robotics and
+Automation Letters, vol. 5, no. 3, pp. 4774–4780, 2020.
+[5] Y. Ou, J. Fan, C. Zhou, S. Kang, Z. Zhang, Z.-G. Hou, and M. Tan,
+“Structured light-based underwater collision-free navigation and dense
+mapping system for refined exploration in unknown dark environments,” IEEE Transactions on Systems, Man, and Cybernetics, vol. 55,
+no. 1, pp. 110–123, 2025.
+[6] Z. Shen, J. Song, K. Mittal, and S. Gupta, “CT-CPP: Coverage path
+planning for 3D terrain reconstruction using dynamic coverage trees,”
+IEEE Robotics and Automation Letters, vol. 7, no. 1, pp. 135–142,
+2022.
+[7] C. Feng, H. Li, M. Zhang, X. Chen, B. Zhou, and S. Shen, “FCPlanner: A skeleton-guided planning framework for fast aerial coverage
+
+of complex 3D scenes,” in IEEE International Conference on Robotics
+and Automation, 2024, pp. 8686–8692.
+[8] E. Vidal, J. D. Hernández, K. Istenic, and M. Carreras, “Online
+view planning for inspecting unexplored underwater structures.” IEEE
+Robotics and Automation Letters, vol. 2, no. 3, pp. 1436–1443, 2017.
+[9] T. Yang, J. V. Miro, Q. Lai, Y. Wang, and R. Xiong, “Cellular decomposition for nonrepetitive coverage task with minimum discontinuities,”
+IEEE/ASME Transactions on Mechatronics, vol. 25, no. 4, pp. 1698–
+1708, 2020.
+[10] K. Yu, C. Guo, and J. Yi, “Complete and near-optimal path planning
+for simultaneous sensor-based inspection and footprint coverage in
+robotic crack filling,” in IEEE International Conference on Robotics
+and Automation, 2019, pp. 8812–8818.
+[11] V. Veeraraghavan, K. Hunte, J. Yi, and K. Yu, “Complete and nearoptimal robotic crack coverage and filling in civil infrastructure,” IEEE
+Transactions on Robotics, vol. 40, pp. 2850–2867, 2024.
+[12] A. S. Vempati, M. Kamel, N. Stilinovic, Q. Zhang, D. Reusser, I. Sa,
+J. Nieto, R. Siegwart, and P. Beardsley, “PaintCopter: An autonomous
+UAV for spray painting on three-dimensional surfaces,” IEEE Robotics
+and Automation Letters, vol. 3, no. 4, pp. 2862–2869, 2018.
+[13] P. N. Atkar, A. Greenfield, D. C. Conner, H. Choset, and A. A.
+Rizzi, “Uniform coverage of automotive surface patches,” International
+Journal of Robotics Research, vol. 24, no. 11, pp. 883–898, 2005.
+[14] P. Maini, B. M. Gonultas, and V. Isler, “Online coverage planning for
+an autonomous weed mowing robot with curvature constraints,” IEEE
+Robotics and Automation Letters, vol. 7, no. 2, pp. 5445–5452, 2022.
+[15] J. Jin and L. Tang, “Coverage path planning on three-dimensional
+terrain for arable farming,” Journal of Field Robotics, vol. 28, no. 3,
+pp. 424–440, 2011.
+[16] J. Song, S. Gupta, J. Hare, and S. Zhou, “Adaptive cleaning of oil spills
+by autonomous vehicles under partial information,” in OCEANS 2019
+MTS/IEEE San Diego, 2013, pp. 1–5.
+[17] K. Mukherjee, S. Gupta, A. Ray, and S. Phoha, “Symbolic analysis of
+sonar data for underwater target detection,” IEEE Journal of Oceanic
+Engineering, vol. 36, no. 2, pp. 219–230, 2011.
+[18] Z. Shen, J. P. Wilson, and S. Gupta, “C∗ : A coverage path planning
+algorithm for unknown environments using rapidly covering graphs,”
+IEEE Transactions on Robotics, vol. 42, pp. 1233–1253, 2026.
+[19] H. Choset, “Coverage for robotics–a survey of recent results,” Annals
+of mathematics and artificial intelligence, vol. 31, no. 1, pp. 113–126,
+2001.
+[20] E. Galceran and M. Carreras, “A survey on coverage path planning
+for robotics,” Robotics and Autonomous systems, vol. 61, no. 12, pp.
+1258–1276, 2013.
+[21] R. Bormann, F. Jordan, J. Hampp, and M. Hägele, “Indoor coverage
+path planning: Survey, implementation, analysis,” in IEEE International
+Conference on Robotics and Automation, 2018, pp. 1718–1725.
+[22] T. M. Cabreira, L. B. Brisolara, and F. J. Paulo R, “Survey on coverage
+path planning with unmanned aerial vehicles,” Drones, vol. 3, no. 1,
+p. 4, 2019.
+[23] M. Höffmann, S. Patel, and C. Büskens, “Optimal guidance track generation for precision agriculture: A review of coverage path planning
+techniques,” Journal of Field Robotics, vol. 41, no. 3, pp. 823–844,
+2024.
+[24] M. Ramesh, F. Imeson, B. Fidan, and S. L. Smith, “Optimal partitioning
+of non-convex environments for minimum turn coverage planning,”
+IEEE Robotics and Automation Letters, vol. 7, no. 4, pp. 9731–9738,
+2022.
+[25] J.-C. Latombe, “Exact cell decomposition,” in Robot motion planning.
+Springer, 1991, pp. 200–247.
+[26] H. Choset, “Coverage of known spaces: The boustrophedon cellular
+decomposition,” Autonomous Robots, vol. 9, no. 3, pp. 247–253, 2000.
+[27] E. U. Acar, H. Choset, A. A. Rizzi, P. N. Atkar, and D. Hull, “Morse
+decompositions for coverage tasks,” International Journal of Robotics
+Research, vol. 21, no. 4, pp. 331–344, 2002.
+[28] J. W. Milnor, Morse theory. Princeton university press, 1963, no. 51.
+[29] E. U. Acar and H. Choset, “Sensor-based coverage of unknown
+environments: Incremental construction of morse decompositions,”
+International Journal of Robotics Research, vol. 21, no. 4, pp. 345–366,
+2002.
+[30] A. Xu, C. Viriyasuthee, and I. Rekleitis, “Efficient complete coverage
+of a known arbitrary environment with applications to aerial operations,” Autonomous Robots, vol. 36, no. 4, pp. 365–381, 2014.
+[31] R. Schirmer, P. Biber, and C. Stachniss, “Coverage path planning
+in belief space,” in IEEE International Conference on Robotics and
+Automation, 2019, pp. 7604–7610.
+
+19
+
+[32] S. Brown and S. L. Waslander, “The constriction decomposition method
+for coverage path planning,” in IEEE/RSJ International Conference on
+Intelligent Robots and Systems, 2016, pp. 3233–3238.
+[33] S. Bochkarev and S. L. Smith, “On minimizing turns in robot coverage
+path planning,” in IEEE International Conference on Automation
+Science and Engineering, 2016, pp. 1237–1242.
+[34] M. Ramesh, F. Imeson, B. Fidan, and S. L. Smith, “Minimum-length
+coverage path planning for grid environments with approximation
+guarantees,” IEEE Robotics and Automation Letters, vol. 10, no. 10,
+pp. 10 674–10 681, 2025.
+[35] Y. Gabriely and E. Rimon, “Spanning-tree based coverage of continuous areas by a mobile robot,” Annals of Mathematics and Artificial
+Intelligence, vol. 31, no. 1-4, pp. 77–98, 2001.
+[36] Y. Gabriely and E. Rimon, “Competitive on-line coverage of grid
+environments by a mobile robot,” Computational Geometry, vol. 24,
+no. 3, pp. 197–224, 2003.
+[37] E. Gonzalez, O. Alvarez, Y. Diaz, C. Parra, and C. Bustacara, “BSA:
+a complete coverage algorithm,” in IEEE International Conference on
+Robotics and Automation, 2005, pp. 2040–2044.
+[38] E. Ferranti, N. Trigoni, and M. Levene, “Brick&Mortar: An on-line
+multi-agent exploration algorithm,” in IEEE International Conference
+on Robotics and Automation, 2007, pp. 761–767.
+[39] H. H. Viet, V.-H. Dang, M. N. U. Laskar, and T. Chung, “BA*:
+an online complete coverage algorithm for cleaning robots,” Applied
+Intelligence, vol. 39, no. 2, pp. 217–235, 2013.
+[40] J. Song and S. Gupta, “ϵ⋆ : An online coverage path planning algorithm,” IEEE Transactions on Robotics, vol. 34, no. 2, pp. 526–533,
+2018.
+[41] C. Luo and S. X. Yang, “A bioinspired neural network for real-time
+concurrent map building and complete coverage robot navigation in
+unknown environments,” IEEE Transactions on Neural Networks and
+Learning Systems, vol. 19, no. 7, pp. 1279–1298, 2008.
+[42] B. Sun, D. Zhu, C. Tian, and C. Luo, “Complete coverage autonomous
+underwater vehicles path planning based on glasius bio-inspired neural
+network algorithm for discrete and centralized programming,” IEEE
+Transactions on Cognitive and Developmental Systems, vol. 11, no. 1,
+pp. 73–84, 2019.
+[43] W. Cai, S. Zhang, M. Zhang, and C. Wang, “Improved BINN-based
+underwater topography scanning coverage path planning for auv in
+internet of underwater things,” IEEE Internet of Things Journal, vol. 10,
+no. 20, pp. 18 375–18 386, 2023.
+[44] M. Hassan and D. Liu, “PPCPP: A predator–prey-based approach to
+adaptive coverage path planning,” IEEE Transactions on Robotics,
+vol. 36, no. 1, pp. 284–301, 2019.
+[45] L. Li, D. Shi, S. Jin, S. Yang, Y. Lian, and H. Liu, “SP2E: Online
+spiral coverage with proactive prevention extremum for unknown
+environments,” Journal of Intelligent & Robotic Systems, vol. 108,
+no. 2, p. 30, 2023.
+[46] L. Han, X. Tan, Q. Wu, and X. Deng, “An improved algorithm for
+complete coverage path planning based on biologically inspired neural
+network,” IEEE Transactions on Cognitive and Developmental Systems,
+vol. 15, no. 3, pp. 1605–1617, 2023.
+[47] L. Huo, Y. Liu, Z. Chen, Y. Yang, X. Yan, H. Xia, and Q. Sun,
+“Complete coverage path planning algorithm based on improved biologically inspired neural networks in spray painting,” IEEE Robotics
+and Automation Letters, vol. 10, no. 6, pp. 5697–5704, 2025.
+[48] L. Li, D. Shi, S. Jin, X. Zhou, Y. Li, and B. Bai, “Hierarchy coverage
+path planning with proactive extremum prevention in unknown environments,” IEEE Robotics and Automation Letters, vol. 10, no. 4, pp.
+3358–3365, 2025.
+[49] Z. Shen, B. Shirose, P. Sriganesh, and M. Travers, “CAP: A
+connectivity-aware hierarchical coverage path planning algorithm for
+unknown environments using coverage guidance graph,” in IEEE/RSJ
+International Conference on Intelligent Robots and Systems, 2025, pp.
+13 244–13 249.
+[50] J. Fu, W. Yao, G. Sun, J. Liu, and L. Wu, “Full coverage path planning
+recombination framework for unmanned vehicles with multi-objective
+constraints,” IEEE Transactions on Industrial Electronics, vol. 71,
+no. 8, pp. 9276–9286, 2024.
+[51] J. Fu, H. Zhu, K. Zhang, T. Ma, J. Liu, and Y. Li, “Online exploratory
+coverage path planning of incremental slam for autonomous vehicles,”
+IEEE Transactions on Industrial Informatics, vol. 22, no. 3, pp. 1861–
+1870, 2026.
+[52] W. Dong, S. Liu, Y. Ding, X. Sheng, and X. Zhu, “An artificially
+weighted spanning tree coverage algorithm for decentralized flying
+robots,” IEEE Transactions on Automation Science and Engineering,
+vol. 17, no. 4, pp. 1689–1698, 2020.
+
+[53] J. Tang, C. Sun, and X. Zhang, “MSTC*: Multi-robot coverage path
+planning under physical constrain,” in IEEE International Conference
+on Robotics and Automation, 2021, pp. 2518–2524.
+[54] J. Lu, B. Zeng, J. Tang, T. L. Lam, and J. Wen, “TMSTC*: A path
+planning algorithm for minimizing turns in multi-robot coverage,”
+IEEE Robotics and Automation Letters, vol. 8, no. 8, pp. 5275–5282,
+2023.
+[55] K. Lee, H. Kim, J. Li, and J. Park, “Priority-aware multi-robot coverage
+path planning,” IEEE Robotics and Automation Letters, vol. 11, no. 3,
+pp. 3534–3541, 2026.
+[56] Y. Tang, R. Zhou, G. Sun, B. Di, and R. Xiong, “A novel cooperative
+path planning for multirobot persistent coverage in complex environments,” IEEE Sensors Journal, vol. 20, no. 8, pp. 4485–4495, 2020.
+[57] S. Agarwal and S. Akella, “Area coverage with multiple capacityconstrained robots,” IEEE Robotics and Automation Letters, vol. 7,
+no. 2, pp. 3734–3741, 2022.
+[58] M. Cao, Z. Yang, and H. Miao, “Multi-UAV coverage path planning
+based on balanced graph partitioning,” IEEE Robotics and Automation
+Letters, vol. 11, no. 4, pp. 4409–4416, 2026.
+[59] T. Huang, X.-W. Ma, X.-T. Liu, and Y.-J. Gong, “CoMAEA: A
+collision-avoiding multi-agent evolutionary algorithm for coverage path
+planning,” IEEE Transactions on Evolutionary Computation, 2026.
+[60] N. Hazon and G. A. Kaminka, “Redundancy, efficiency and robustness
+in multi-robot coverage,” in IEEE International Conference on Robotics
+and Automation, 2005, pp. 735–741.
+[61] X. Zheng, S. Koenig, D. Kempe, and S. Jain, “Multirobot forest
+coverage for weighted and unweighted terrain,” IEEE Transactions on
+Robotics, vol. 26, no. 6, pp. 1018–1031, 2010.
+[62] J. Tang and H. Ma, “Mixed integer programming for time-optimal
+multi-robot coverage path planning with efficient heuristics,” IEEE
+Robotics and Automation Letters, vol. 8, no. 10, pp. 6491–6498, 2023.
+[63] J. Tang, Z. Mao, and H. Ma, “Large-scale multirobot coverage path
+planning on grids with path deconfliction,” IEEE Transactions on
+Robotics, vol. 41, pp. 3348–3367, 2025.
+[64] Y. Chen, Z. Zeng, Z. Lai, W. Jiang, H. Lu, H. Zhang, and Y. Wang,
+“Dynamic task-priority coverage planning for efficient multi-robot
+collaboration,” IEEE Transactions on Industrial Electronics, vol. 73,
+no. 2, pp. 2521–2532, 2026.
+[65] N. Karapetyan, K. Benson, C. McKinney, P. Taslakian, and I. Rekleitis,
+“Efficient multi-robot coverage of a known environment,” in IEEE/RSJ
+International Conference on Intelligent Robots and Systems, 2017, pp.
+1846–1852.
+[66] J. M. Palacios-Gasós, D. Tardioli, E. Montijano, and C. Sagüés,
+“Equitable persistent coverage of non-convex environments with graphbased planning,” International Journal of Robotics Research, vol. 38,
+no. 14, pp. 1674–1694, 2019.
+[67] L. Collins, P. Ghassemi, E. T. Esfahani, D. Doermann, K. Dantu, and
+S. Chowdhury, “Scalable coverage path planning of multi-robot teams
+for monitoring non-convex areas,” in IEEE International Conference
+on Robotics and Automation, 2021, pp. 7393–7399.
+[68] S. Lloyd, “Least squares quantization in pcm,” IEEE Transactions on
+Information Theory, vol. 28, no. 2, pp. 129–137, 1982.
+[69] J. C. Choton and P. Prabhakar, “Optimal multi-robot coverage path
+planning for agricultural fields using motion dynamics,” in IEEE International Conference on Robotics and Automation, 2023, pp. 11 817–
+11 823.
+[70] J. Modares, F. Ghanei, N. Mastronarde, and K. Dantu, “UB-ANC
+planner: Energy efficient coverage path planning with multiple drones,”
+in IEEE International Conference on Robotics and Automation, 2017,
+pp. 6182–6189.
+[71] I. Vandermeulen, R. Groß, and A. Kolling, “Turn-minimizing multirobot coverage,” in IEEE International Conference on Robotics and
+Automation, 2019, pp. 1014–1020.
+[72] Y. Wang, Y. Chen, and Y. Lin, “Memetic algorithm based on sequential
+variable neighborhood descent for the minmax multiple traveling
+salesman problem,” Computers & Industrial Engineering, vol. 106, pp.
+105–122, 2017.
+[73] S. Agarwal and S. Akella, “Line coverage with multiple robots,” in
+IEEE International Conference on Robotics and Automation, 2020, pp.
+3248–3254.
+[74] D. Datsko, F. Nekovar, R. Penicka, and M. Saska, “Energy-aware multiuav coverage mission planning with optimal speed of flight,” IEEE
+Robotics and Automation Letters, vol. 9, no. 3, pp. 2893–2900, 2024.
+[75] J. Xie and J. Chen, “Multiregional coverage path planning for multiple
+energy constrained UAVs,” IEEE Transactions on Intelligent Transportation Systems, vol. 23, no. 10, pp. 17 366–17 381, 2022.
+
+20
+
+[76] C. Zhang, C. Xu, X. Cheng, X. Li, G. Li, and B. He, “Multi-region
+joint coverage for environmental monitoring using energy-constrained
+UAVs,” IEEE Transactions on Instrumentation and Measurement,
+vol. 74, pp. 1–13, 2025.
+[77] C. Luo, J. Guo, Z. Liu, L. Liu, and C. Luo, “Real-time pathreconfigurable coverage planning for multi-UAV missions over disjoint
+areas,” IEEE Robotics and Automation Letters, vol. 11, no. 2, pp. 1226–
+1233, 2026.
+[78] Z. Wang, X. Zhao, J. Zhang, N. Yang, P. Wang, J. Tang, J. Zhang, and
+L. Shi, “APF-CPP: An artificial potential field based multi-robot online
+coverage path planning approach,” IEEE Robotics and Automation
+Letters, vol. 9, no. 11, pp. 9199–9206, 2024.
+[79] H. H. Viet, V.-H. Dang, S. Choi, and T. C. Chung, “BoB: an online coverage approach for multi-robot systems,” Applied Intelligence, vol. 42,
+no. 2, pp. 157–173, 2015.
+[80] C. Luo, S. X. Yang, X. Li, and M. Q.-H. Meng, “Neural-dynamicsdriven complete area coverage navigation through cooperation of
+multiple mobile robots,” IEEE Transactions on Industrial Electronics,
+vol. 64, no. 1, pp. 750–760, 2017.
+[81] M. Hassan, D. Mustafic, and D. Liu, “Dec-PPCPP: A decentralized
+predator–prey-based approach to adaptive coverage path planning amid
+moving obstacles,” in IEEE/RSJ International Conference on Intelligent
+Robots and Systems, 2020, pp. 11 732–11 739.
+[82] J. Zhang, P. Zu, K. Liu, and M. Zhou, “A herd-foraging-based approach
+to adaptive coverage path planning in dual environments,” IEEE
+Transactions on Cybernetics, vol. 54, no. 3, pp. 1882–1893, 2024.
+[83] J. Song and S. Gupta, “CARE: Cooperative autonomy for resilience
+and efficiency of robot teams for complete coverage of unknown
+environments under robot failures,” Autonomous Robots, vol. 44, pp.
+647–671, 2020.
+[84] R. Mitra and I. Saha, “Online concurrent multi-robot coverage path
+planning,” in IEEE/RSJ International Conference on Intelligent Robots
+and Systems, 2025, pp. 8691–8698.
+[85] Y. Ma, Y. Zhao, Z. Li, H. Bi, J. Wang, R. Malekian, and M. A.
+Sotelo, “CCIBA*: An improved BA* based collaborative coverage path
+planning method for multiple unmanned surface mapping vehicles,”
+IEEE Transactions on Intelligent Transportation Systems, vol. 23,
+no. 10, pp. 19 578–19 588, 2022.
+[86] Z. Wang, X. Lyu, J. Zhang, P. Wang, Y. Zhong, and L. Shi, “MACPlanner: A novel task allocation and path planning framework for
+multi-robot online coverage processes,” IEEE Robotics and Automation
+Letters, vol. 10, no. 5, pp. 4404–4411, 2025.
+[87] Z. Cao, H. Fan, X. Hu, Y. Chen, and S. Kang, “Complete coverage
+search for multiple autonomous underwater vehicles based on neuronal
+activity reassignment,” IEEE Transactions on Intelligent Transportation
+Systems, vol. 26, no. 7, pp. 9693–9710, 2025.
+[88] Z. Shen, B. Shirose, P. Sriganesh, B. Vundurthy, H. Choset, and
+M. Travers, “Multi-CAP: A multi-robot connectivity-aware hierarchical
+coverage path planning algorithm for unknown environments,” arXiv
+preprint arXiv:2509.14941, 2025.
+[89] R. Mitra and I. Saha, “Scalable online coverage path planning for multirobot systems,” in IEEE/RSJ International Conference on Intelligent
+Robots and Systems, 2022, pp. 10 102–10 109.
+[90] R. Mitra and I. Saha, “Online on-demand multi-robot coverage path
+planning,” in IEEE International Conference on Robotics and Automation, 2024, pp. 14 583–14 589.
+[91] P. Wang, Z. Wang, L. Shi, and M. Q.-H. Meng, “DMT-CPP: A
+delaunay-graph-based framework for real-time multi-robot online target
+coverage,” IEEE Robotics and Automation Letters, 2026.
+[92] S. A. Sadat, J. Wawerla, and R. T. Vaughan, “Recursive non-uniform
+coverage of unknown terrains for UAVs,” in IEEE/RSJ international
+conference on intelligent robots and systems, 2014, pp. 1742–1747.
+[93] S. A. Sadat, J. Wawerla, and R. Vaughan, “Fractal trajectories for online
+non-uniform aerial coverage,” in IEEE International Conference on
+Robotics and Automation, 2015, pp. 2971–2976.
+[94] S. Jung, S. Song, P. Youn, and H. Myung, “Multi-layer coverage path
+planner for autonomous structural inspection of high-rise structures,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems,
+2018, pp. 1–9.
+[95] Z. Shen, J. Song, K. Mittal, and S. Gupta, “An autonomous integrated
+system for 3-D underwater terrain map reconstruction,” in Proceedings
+OCEANS’16 MTS/IEEE, 2016, pp. 1–6.
+[96] Z. Shen, J. Song, K. Mittal, and S. Gupta, “Autonomous 3-D mapping
+and safe-path planning for underwater terrain reconstruction using
+multi-level coverage trees,” in Proceedings OCEANS’17 MTS/IEEE,
+2017, pp. 1–6.
+
+[97] E. Galceran, R. Campos, N. Palomeras, D. Ribas, M. Carreras, and
+P. Ridao, “Coverage path planning with real-time replanning and
+surface reconstruction for inspection of three-dimensional underwater
+structures using autonomous underwater vehicles,” Journal of Field
+Robotics, vol. 32, no. 7, pp. 952–983, 2015.
+[98] C. Wu, C. Dai, X. Gong, Y.-J. Liu, J. Wang, X. D. Gu, and C. C. Wang,
+“Energy-efficient coverage path planning for general terrain surfaces,”
+IEEE Robotics and Automation Letters, vol. 4, no. 3, pp. 2584–2591,
+2019.
+[99] Q. Shao, X. Mao, and W. Xu, “Energy-aware UAV coverage planning
+in mountainous terrain via contour-aligned path generation,” IEEE
+Robotics and Automation Letters, vol. 10, no. 12, pp. 12 373–12 380,
+2025.
+[100] Y.-Y. Lin, C.-C. Ni, N. Lei, X. David Gu, and J. Gao, “Robot coverage
+path planning for general surfaces using quadratic differentials,” in
+IEEE International Conference on Robotics and Automation, 2017, pp.
+5005–5011.
+[101] Y. Wang and M. Gleicher, “Hierarchically accelerated coverage path
+planning for redundant manipulators,” in IEEE International Conference on Robotics and Automation, 2025, pp. 12 098–12 104.
+[102] T. Yang, J. V. Miro, Y. Wang, and R. Xiong, “Optimal object placement
+for minimum discontinuity non-revisiting coverage task,” in IEEE
+International Conference on Robotics and Automation, 2021, pp. 8422–
+8428.
+[103] T. Yang, L. Huang, J. V. Miró, Y. Wang, and R. Xiong, “Optimal
+non-redundant manipulator surface coverage with rank-deficient manipulability constraints.” in Robotics: Science and Systems, 2024.
+[104] T. Yang, J. V. Miro, Y. Wang, and R. Xiong, “An improved maximal
+continuity graph solver for non-redundant manipulator non-revisiting
+coverage,” IEEE Transactions on Automation Science and Engineering,
+vol. 22, pp. 3822–3834, 2024.
+[105] T. Yang, J. V. Miro, M. Nguyen, Y. Wang, and R. Xiong, “Templatefree nonrevisiting uniform coverage path planning on curved surfaces,”
+IEEE/ASME Transactions on Mechatronics, vol. 28, no. 4, pp. 1853–
+1861, 2023.
+[106] V.-T. Do and Q.-C. Pham, “Geometry-aware coverage path planning for
+depowdering on complex 3D surfaces,” IEEE Robotics and Automation
+Letters, vol. 8, no. 9, pp. 5552–5559, 2023.
+[107] H. Nguyen, J. Burkardt, M. Gunzburger, L. Ju, and Y. Saka, “Constrained CVT meshes and a comparison of triangular mesh generators,”
+Computational Geometry, vol. 42, no. 1, pp. 1–19, 2009.
+[108] I. Shnaps and E. Rimon, “Online coverage of planar environments
+by a battery powered autonomous mobile robot,” IEEE Transactions
+on Automation Science and Engineering, vol. 13, no. 2, pp. 425–436,
+2016.
+[109] I. Shnaps and E. Rimon, “Online coverage by a tethered autonomous
+mobile robot in planar unknown environments,” IEEE Transactions on
+Robotics, vol. 30, no. 4, pp. 966–974, 2014.
+[110] M. Wei and V. Isler, “Coverage path planning under the energy constraint,” in IEEE International Conference on Robotics and Automation,
+2018, pp. 368–373.
+[111] Z. Shen, J. P. Wilson, and S. Gupta, “ϵ⋆ +: An online coverage path
+planning algorithm for energy-constrained autonomous vehicles,” in
+Global Oceans 2020: Singapore – U.S. Gulf Coast, 2020, pp. 1–6.
+[112] P. E. Hart, N. J. Nilsson, and B. Raphael, “A formal basis for the
+heuristic determination of minimum cost paths,” IEEE Transactions on
+Systems, Man, and Cybernetics, vol. 4, no. 2, pp. 100–107, 1968.
+[113] S. Dogru and L. Marques, “ECO-CPP: Energy constrained online
+coverage path planning,” Robotics and Autonomous Systems, vol. 157,
+p. 104242, 2022.
+[114] K. R. Jensen-Nau, T. Hermans, and K. K. Leang, “Near-optimal areacoverage path planning of energy-constrained aerial robots with application in autonomous environmental monitoring,” IEEE Transactions
+on Automation Science and Engineering, vol. 18, no. 3, pp. 1453–1468,
+2020.
+[115] J. Wang, Y. Tang, S. Li, Y. Lu, J. Li, T. Liu, Z. Jiang, C. Chen,
+Y. Cheng, D. Yu et al., “The haidou-1 hybrid underwater vehicle for
+the mariana trench science exploration to 10,908 m depth,” Journal of
+Field Robotics, vol. 41, no. 4, pp. 1054–1079, 2024.
+[116] Y. Tu and T. L. Lam, “Configuration identification for a freeform modular self-reconfigurable robot-FreeSN,” IEEE Transactions on Robotics,
+vol. 39, no. 6, pp. 4636–4652, 2023.
+[117] N. Karapetyan, A. B. Asghar, A. Bhaskar, G. Shi, D. Manocha, and
+P. Tokekar, “AG-CVG: Coverage planning with a mobile recharging
+ugv and an energy-constrained UAV,” in IEEE International Conference
+on Robotics and Automation, 2024, pp. 2617–2623.
+
+21
+
+[118] L. E. Dubins, “On curves of minimal length with a constraint on
+average curvature, and with prescribed initial and terminal positions
+and tangents,” American Journal of Mathematics, vol. 79, no. 3, pp.
+497–516, 1957.
+[119] J. P. Wilson, S. Gupta, and T. A. Wettergren, “Generalized multi-speed
+dubins motion model,” IEEE Transactions on Robotics, vol. 41, pp.
+2861–2878, 2025.
+[120] Z. Shen, J. P. Wilson, and S. Gupta, “An online coverage path
+planning algorithm for curvature-constrained AUVs,” in OCEANS 2019
+MTS/IEEE SEATTLE. IEEE, 2019, pp. 1–5.
+[121] X. Kan, H. Teng, and K. Karydis, “Online exploration and coverage
+planning in unknown obstacle-cluttered environments,” IEEE Robotics
+and Automation Letters, vol. 5, no. 4, pp. 5969–5976, 2020.
+[122] J. S. Lewis, W. Edwards, K. Benson, I. Rekleitis, and J. M. O’Kane,
+“Semi-boustrophedon coverage with a dubins vehicle,” in IEEE/RSJ
+International Conference on Intelligent Robots and Systems, 2017, pp.
+5630–5637.
+[123] N. Karapetyan, J. Moulton, J. S. Lewis, A. Q. Li, J. M. O’Kane, and
+I. Rekleitis, “Multi-robot dubins coverage with autonomous surface vehicles,” in IEEE International Conference on Robotics and Automation,
+2018, pp. 2373–2379.
+[124] L. Li, D. Shi, S. Jin, Y. Sun, X. Zhou, S. Yang, and H. Liu,
+“Collision-free coverage path planning for the variable-speed curvatureconstrained robot,” in IEEE International Conference on Robotics and
+Automation, 2023, pp. 3600–3606.
+[125] M. Cao, K. Cao, S. Yuan, T.-M. Nguyen, and L. Xie, “NEPTUNE:
+Nonentangling trajectory planning for multiple tethered unmanned
+vehicles,” IEEE Transactions on Robotics, vol. 39, no. 4, pp. 2786–
+2804, 2023.
+[126] G. Sharma, P. Poudel, A. Dutta, V. Zeinali, T. T. Khoei, and J.-H.
+Kim, “A 2-approximation algorithm for the online tethered coverage
+problem.” in Robotics: Science and systems, 2019.
+[127] X. Peng, F. Schwarzentruber, O. Simonin, and C. Solnon, “Spanningtree based coverage for a tethered robot,” IEEE Robotics and Automation Letters, vol. 10, no. 2, pp. 1888–1895, 2025.
+[128] S. B. P. Samarakoon, M. V. J. Muthugala, and M. R. Elara, “Online
+complete coverage path planning of a reconfigurable robot using glasius bio-inspired neural network and genetic algorithm,” in IEEE/RSJ
+International Conference on Intelligent Robots and Systems, 2022, pp.
+5744–5751.
+[129] M. V. J. Muthugala, S. B. P. Samarakoon, and M. R. Elara, “Online
+coverage path planning scheme for a size-variable robot,” in IEEE
+International Conference on Robotics and Automation, 2023, pp. 5688–
+5694.
+[130] M. V. J. Muthugala, S. B. P. Samarakoon, I. Wijegunawardana, and
+M. R. Elara, “Improving coverage performance of a size-reconfigurable
+robot based on overlapping and reconfiguration reduction criteria,” in
+IEEE International Conference on Robotics and Automation, 2025, pp.
+7902–7908.
+[131] L. Yi, A. A. Hayat, A. W. Y. Sang, A. V. Le, T. Qinrui, and M. R.
+Elara, “Complete coverage path planning for omnidirectional selfreconfigurable cleaning robot using a GBNN,” IEEE Transactions on
+Automation Science and Engineering, vol. 23, pp. 2212–2230, 2026.
+[132] X. Chen, T. M. Tucker, T. R. Kurfess, and R. Vuduc, “Adaptive
+deep path: Efficient coverage of a known environment under various
+configurations,” in IEEE/RSJ International Conference on Intelligent
+Robots and Systems, 2019, pp. 3549–3556.
+[133] Z. Shen, P. Agrawal, J. P. Wilson, R. Harvey, and S. Gupta, “CPPNet: A
+coverage path planning network,” in OCEANS 2021: San Diego–Porto.
+IEEE, 2021, pp. 1–5.
+[134] G. Tiboni, R. Camoriano, and T. Tommasi, “PaintNet: Unstructured
+multi-path learning from 3D point clouds for robotic spray painting,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems,
+2023, pp. 3857–3864.
+[135] E. Tolstaya, J. Paulos, V. Kumar, and A. Ribeiro, “Multi-robot coverage
+and exploration using spatial graph neural networks,” in IEEE/RSJ
+International Conference on Intelligent Robots and Systems, 2021, pp.
+8944–8950.
+[136] W. Hu, Y. Yu, S. Liu, C. She, L. Guo, B. Vucetic, and Y. Li,
+“Multi-UAV coverage path planning: A distributed online cooperation
+method,” IEEE Transactions on Vehicular Technology, vol. 72, no. 9,
+pp. 11 727–11 740, 2023.
+[137] C. Zhao, J. Liu, S.-U. Yoon, X. Li, H. Li, and Z. Zhang, “Energy
+constrained multi-agent reinforcement learning for coverage path planning,” in IEEE/RSJ International Conference on Intelligent Robots and
+Systems, 2023, pp. 5590–5597.
+[138] Y. Huang, Y. Wang, Z. Li, H. Zhang, and C. Zhang, “A hierarchical
+multi robot coverage strategy for large maps with reinforcement
+
+learning and dense segmented siamese network,” IEEE Robotics and
+Automation Letters, vol. 10, no. 1, pp. 444–451, 2025.
+[139] M. Theile, H. Bayerlein, R. Nai, D. Gesbert, and M. Caccamo, “UAV
+coverage path planning under varying power constraints using deep
+reinforcement learning,” in IEEE/RSJ International Conference on
+Intelligent Robots and Systems, 2020, pp. 1444–1449.
+[140] J. Tang, Y. Gao, and T. L. Lam, “Learning to coordinate for a workerstation multi-robot system in planar coverage tasks,” IEEE Robotics
+and Automation Letters, vol. 7, no. 4, pp. 12 315–12 322, 2022.
+[141] J. J. J. Pey, S. B. P. Samarakoon, M. V. J. Muthugala, and M. R.
+Elara, “A decentralized partially observable markov decision process
+for dynamic obstacle avoidance and complete area coverage using
+multiple reconfigurable robots,” in IEEE/RSJ International Conference
+on Intelligent Robots and Systems, 2024, pp. 8023–8030.
+[142] S. Song, D. Kim, and S. Jo, “Online coverage and inspection planning
+for 3D modeling,” Autonomous Robots, vol. 44, no. 8, pp. 1431–1450,
+2020.
+[143] B. Englot and F. S. Hover, “Three-dimensional coverage planning for
+an underwater inspection robot,” International Journal of Robotics
+Research, vol. 32, no. 9-10, pp. 1048–1073, 2013.
+[144] W. Jing, J. Polden, W. Lin, and K. Shimada, “Sampling-based view
+planning for 3D visual coverage task with unmanned aerial vehicle,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems,
+2016, pp. 1808–1815.
+[145] W. Jing, J. Polden, C. F. Goh, M. Rajaraman, W. Lin, and K. Shimada,
+“Sampling-based coverage motion planning for industrial inspection
+application with redundant robotic system,” in IEEE/RSJ International
+Conference on Intelligent Robots and Systems, 2017, pp. 5211–5218.
+[146] W. Jing, D. Deng, Z. Xiao, Y. Liu, and K. Shimada, “Coverage
+path planning using path primitive sampling and primitive coverage
+graph for visual inspection,” in IEEE/RSJ International Conference on
+Intelligent Robots and Systems, 2019, pp. 1472–1479.
+[147] W. Jing, D. Deng, Y. Wu, and K. Shimada, “Multi-UAV coverage
+path planning for the inspection of large and complex structures,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems,
+2020, pp. 1480–1486.
+[148] Y. Zheng, G. Liu, Y. Ding, and G. Tian, “A new clustering-based view
+planning method for building inspection with drone,” IEEE Robotics
+and Automation Letters, vol. 9, no. 11, pp. 9781–9788, 2024.
+[149] T. Zhang, G. Liu, and G. Tian, “A novel view planning with joint
+optimization for efficient 3D building inspection,” IEEE Robotics and
+Automation Letters, vol. 11, no. 2, pp. 1162–1169, 2026.
+[150] A. Gupta, Y.-S. Ong, and L. Feng, “Multifactorial evolution: Toward
+evolutionary multitasking,” IEEE Transactions on Evolutionary Computation, vol. 20, no. 3, pp. 343–357, 2015.
+[151] A. Bircher, M. Kamel, K. Alexis, M. Burri, P. Oettershagen, S. Omari,
+T. Mantel, and R. Siegwart, “Three-dimensional coverage path planning
+via viewpoint resampling and tour optimization for aerial robots,”
+Autonomous Robots, vol. 40, no. 6, pp. 1059–1078, 2016.
+[152] R. Almadhoun, T. Taha, D. Gan, J. Dias, Y. Zweiri, and L. Seneviratne,
+“Coverage path planning with adaptive viewpoint sampling to construct
+3D models of complex structures for the purpose of inspection,” in
+IEEE/RSJ International Conference on Intelligent Robots and Systems,
+2018, pp. 7047–7054.
+[153] S. Lindner, C. Garbe, and K. Mombaur, “Optimization based multiview coverage path planning for autonomous structure from motion
+recordings,” IEEE Robotics and Automation Letters, vol. 4, no. 4, pp.
+3278–3285, 2019.
+[154] Y. Liu, W. Zhao, H. Liu, Y. Wang, and X. Yue, “Coverage path
+planning for robotic quality inspection with control on measurement
+uncertainty,” IEEE/ASME Transactions on Mechatronics, vol. 27, no. 5,
+pp. 3482–3493, 2022.
+[155] C. Cao, J. Zhang, M. Travers, and H. Choset, “Hierarchical coverage
+path planning in complex 3D environments,” in IEEE International
+Conference on Robotics and Automation, 2020, pp. 3206–3212.
+[156] D. Morilla-Cabello, L. Bartolomei, L. Teixeira, E. Montijano, and
+M. Chli, “Sweep-Your-Map: Efficient coverage planning for aerial
+teams in large-scale environments,” IEEE Robotics and Automation
+Letters, vol. 7, no. 4, pp. 10 810–10 817, 2022.
+[157] Z. Shen, J. P. Wilson, S. Gupta, and R. Harvey, “SMART: Selfmorphing adaptive replanning tree,” IEEE Robotics and Automation
+Letters, vol. 8, no. 11, pp. 7312–7319, 2023.
+[158] Z. Shen, Y. Ou, S. Gupta, S. Zhao, D. Zhou, G. Wang, Z. Ren, J. Fan,
+and L. Cheng, “Motion planning in dynamic environments: A survey
+from classical to modern methods,” arXiv preprint arXiv:2606.02677,
+2026.
+
+

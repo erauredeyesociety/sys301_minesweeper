@@ -1,0 +1,4 @@
+# PDFs of published papers are NOT tracked: copyright, and they bloat the repo.
+# The .txt sidecars and bibliography.md ARE tracked so grep and the Intro Report keep working.
+# Convention: docs/plans/2026-08-25-docs-rag-and-literature-workflow.md
+*.pdf

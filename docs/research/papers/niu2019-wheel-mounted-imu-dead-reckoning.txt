@@ -1,0 +1,1385 @@
+1
+
+Wheel-INS: A Wheel-mounted MEMS IMU-based
+Dead Reckoning System
+
+arXiv:1912.07805v4 [cs.RO] 24 Apr 2021
+
+Xiaoji Niu, Yibin Wu, and Jian Kuang
+
+Abstract—To improve the accuracy and robustness of the
+inertial navigation systems (INS) for wheeled robots without
+adding additional component cost, we propose Wheel-INS, a
+complete dead reckoning solution based on a wheel-mounted
+microelectromechanical system (MEMS) inertial measurement
+unit (IMU). There are two major advantages by mounting an
+IMU to the center of a non-steering wheel of the ground vehicle.
+Firstly, the gyroscope outputs can be used to calculate the wheel
+speed, so as to replace the traditional odometer to mitigate the
+error drift of INS. Secondly, with the rotation of the wheel, the
+constant bias error of the inertial sensor can be canceled to
+some extent. The installation scheme of the wheel-mounted IMU
+(Wheel-IMU), the system characteristics, and the dead reckoning
+error analysis are described. Experimental results show that the
+maximum position drift of Wheel-INS in the horizontal plane is
+less than 1.8% of the total traveled distance, reduced by 23%
+compared to the conventional odometer-aided INS (ODO/INS).
+In addition, Wheel-INS outperforms ODO/INS because of its
+inherent immunity to constant bias error of gyroscopes. The
+source code and experimental datasets used in this paper
+is made available to the community (https://github.com/i2NavWHU/Wheel-INS).
+Index Terms—Dead reckoning, wheel-mounted IMU, state
+estimation, wheeled robot, rotation modulation.
+
+N OMENCLATURE
+a) Matrices are denoted as uppercase bold letters.
+b) Vectors are denoted as lowercase bold italic letters.
+c) Scalars are denoted as lowercase italic letters.
+d) Coordinate frames involved in the vector transformation
+are denoted as superscript and subscript. For vectors, the
+superscript denotes the projected coordinate system.
+e) ˆ∗, estimated or computed values.
+f) e
+∗, observed or measured values.
+g) ax , element of vector a in the x axis.
+I. I NTRODUCTION
+Positioning and heading estimation is essential for autonomous mobile robots as it provides important information
+for the navigation and control loop [1]. Current position
+tracking systems have relied heavily on the Global Navigation Satellite System (GNSS) and other radio signal-based
+techniques [2]. Although GNSS can provide centimeter-level
+[3] positioning results in open-sky scenarios, it deteriorates
+in complex environments such as urban canyons and forests
+owing to multipath and signal blockage. Moreover, GNSS
+This work was funded in part by the National Key Research and Development Program of China (No. 2016YFB0501800 and No. 2016YFB0502202).
+The authors are with the GNSS Research Center, Wuhan University, Wuhan,
+China. {xjniu, ybwu, kuang}@whu.edu.cn.
+
+is completely unavailable for indoor navigation. Therefore,
+investigation of relative positioning methods to bridge GNSS
+outages is crucial to improve the robustness and reliability of
+the navigation system of mobile robots [4].
+The inertial navigation system (INS) is a self-contained
+approach, exhibiting significant superiority when considering
+system tolerance to disturbance in the surrounding environment. With the rapid development of microelectromechanical
+system (MEMS) technology, MEMS inertial measurement
+units (IMU) have found wide application for motion detection,
+robot navigation, pedestrian dead reckoning and more because
+of their small size, low cost, light weight, and low power
+consumption [5]. Nonetheless, because of the significant noise
+and bias instability of MEMS IMU, the positioning errors
+of INS drift quickly with time. Hence, aiding information is
+required to suppress the error accumulation of INS.
+The wheel odometer, a common sensor for ground wheeled
+robots, is extensively utilized to provide either distance or
+velocity information of the vehicle to suppress INS error
+drift thanks to its short-distance stability [6, 7]. It has been
+proven that odometer and non-holonomic constraints (NHC)
+contribute significantly to restrain both the positioning and attitude errors and enhance the stability of INS [8, 9]. However,
+reliability of the odometer data depends on road conditions
+and vehicle maneuvers, which degenerates if relative slippage
+occurs between the tires and contacting surface [7]. In addition, fusing information from different systems is challenging
+because of different standards, hardware modification, data
+transfer synchronization, and difficulties in obtaining reliability information along with the data [10].
+Can we use only one sensor modal to implement the similar
+information fusion scheme as the conventional odometer-aided
+INS (ODO/INS)? The answer is yes. By mounting the IMU to
+the wheel center, the wheel velocity can be calculated with
+the gyroscope outputs and the wheel radius, replacing the
+traditional wheel encoder or odometer. Furthermore, rotating
+the IMU around a certain axis with a fixed speed can modulate
+the constant bias of inertial sensors into sinusoidal signal
+which can be canceled after integral over one rotation period,
+i.e., rotary INS [5, 11]. Traditionally, an additional heavy,
+expensive, and sophisticated controllable rotation platform
+is required to perform the rotary INS, which negates the
+advantages. Note that the wheels of a wheeled robot are inherent rotation devices. Although the rotation rate of the robot
+wheel cannot be controlled precisely, it can be approximately
+considered as constant during one cycle. Therefore, such a
+wheel-mounted MEMS IMU (Wheel-IMU) can be regarded
+as a noninvasive sensor which can take advantages of the
+
+2
+
+rotation modulation and obtain the wheel velocity to provide
+high-accuracy self-contained state estimates without additional
+cost.
+Few studies have been conducted with a focus on the
+Wheel-IMU based state estimators. The most representative
+solution is a 2-dimensional (2D) dead reckoning (DR) system
+developed in [10, 12]. In this system, the data of the two
+accelerometers perpendicular to the rotation axis are used
+to determine the wheel rotation angle. Then, this angle is
+multiplied by the wheel radius to obtain the traveled distance.
+Gyroscope outputs are utilized to calculate the vehicle heading.
+Although this system has evolved into a commercial product,
+there are two major deficiencies. Firstly, the algorithm relies on
+the assumption of uniform vehicle motion, which is susceptible
+to continuous acceleration. Secondly, the misalignment errors
+between the IMU and the wheel center are not addressed.
+In this study, a complete Wheel-IMU based DR system
+(Wheel-INS) is proposed. Fig. 1 shows the system structure.
+Note that the DR system mentioned in this paper refers to the
+general method of calculating the relative vehicle position with
+the pose increment (e.g., INS), not just the traditional traveled
+distance and heading-based 2D DR system. In Wheel-INS, the
+forward INS mechanization is performed to predict the state of
+the vehicle. At the same time, the wheel velocity calculated
+by the gyroscope outputs and wheel radius is treated as an
+external observation with NHC to update the state. For the sake
+of simplicity and efficiency, we use the error-state extended
+Kalman filter (EKF) to implement the information fusion and
+state estimation. The state corrections estimated by the filter
+are fed back to update the vehicle pose and compensate the
+IMU outputs. Particularly, the main contributions of this article
+are:
+• A complete DR system based on a wheel-mounted IMU
+is proposed and implemented, where the gyroscope data
+are used to calculate the wheel speed to replace the
+conventional odometer.
+• The installation scheme of Wheel-IMU is explained and
+the misalignment errors between Wheel-IMU and the
+wheel are defined and analyzed.
+• We illustrate that the position and heading accuracy
+of Wheel-INS is much higher than ODO/INS through
+extensive field experiments. Furthermore, we show that
+Wheel-INS exhibits significant advantage in terms of
+immunity to constant gyroscope bias error.
+The remainder of this paper is organized as follows. In
+Section II, the proposed installation scheme of Wheel-IMU
+and its rotation characteristics are described firstly; then, the
+misalignment errors between Wheel-IMU and the wheel are
+defined and analyzed. Implementation details of Wheel-INS,
+including the error state model and observation model, are presented in Section III. Experimental results are explained and
+discussed in Section IV. Section V provides some conclusions
+and directions for future work.
+II. P REREQUISITES
+Unlike the conventional ODO/INS in which the IMU is
+placed on the vehicle body or in the trunk, in the proposed
+
+Fig. 1. Overview of the structure of Wheel-INS. ω and f are the angular rate
+and specific force measured by Wheel-IMU, respectively; PVA represents the
+position, velocity, and attitude of Wheel-IMU.
+
+design, the IMU is mounted on the wheel to take advantages
+of the inherent rotation platform of the vehicle. In this section,
+the installation scheme of Wheel-IMU and the coordinate systems involved in Wheel-INS are introduced. Subsequently, the
+dynamic characteristics of Wheel-IMU and the misalignment
+errors between the wheel and Wheel-IMU are defined and
+analyzed.
+
+A. Installation Scheme and Coordinate Systems
+Fig. 2 illustrates the installation of Wheel-IMU and the
+definition of the related coordinate systems. To make the
+DR system indicate the vehicle state intuitively without being
+affected by vehicle maneuvers, the IMU has to be placed
+on a non-steering wheel of the vehicle. The v-frame denotes
+the vehicle coordinate system, with the x-axis pointing to
+the advancement direction of the host vehicle, z-axis pointing
+down, and y-axis directing right to complete a right-handed
+orthogonal frame, i.e., the forward-right-down system. The
+origin of the v-frame is usually set at the vehicle mass center.
+The w-frame denotes the wheel coordinate system. Its origin
+is at the rotation center of the wheel. Its x-axis points to the
+right of the vehicle, and its y- and z-axes are parallel to the
+wheel surface to complete a right-handed orthogonal frame.
+The b-frame denotes the IMU coordinate system, in which
+the accelerations and angular rates generated by the strapdown
+accelerometers and gyroscopes are resolved [13]. The b-frame
+axes are the same as the IMU’s body axes. The x-axis of
+the Wheel-IMU is aligned to the wheel rotation axis, pointing
+to the right of the vehicle, so as to avoid the singularity of
+the pitch angle (±90◦ ). Therefore, it can be considered that
+there only exists a periodic rolling angle between the w-frame
+and the v-frame given a stable vehicle structure. At the same
+time, the heading difference between the Wheel-IMU and the
+vehicle can be approximated as fixed (equal to 90◦ ), namely,
+ψbn = ψvn + π/2
+
+(1)
+
+where ψbn and ψvn denote the IMU heading and vehicle
+heading, respectively. n indicates the n-frame, which is a locallevel frame with the origin coinciding with the b-frame, xaxis directing at the geodetic north, y-axis east, and z-axis
+downward vertically, i.e., the north-east-down system.
+
+3
+
+Wheel-IMU can be modulated into sinusoid signals. Thus, the
+velocity errors in the east and down directions, as well as
+the pitch and heading error caused by the IMU measurement
+errors can be eliminated. However, if the Wheel-IMU x-axis is
+not parallel to the rotation axis, the rotation modulation would
+be dysfunctional.
+C. Misalignment Errors
+
+Fig. 2. Installation scheme of Wheel-IMU and the definitions of the vehicle
+frame (v-frame), wheel frame (w-frame), and IMU body frame (b-frame).
+The position and attitude misalignment errors between the b-frame and the
+w-frame are also depicted.
+
+B. Rotation of Wheel-IMU
+With the movement of the vehicle, Wheel-IMU continuously rotates around the rotation axis of the wheel, i.e., the
+xw axis in Fig. 2. Without loss of generality, we assume that
+the x-axis of Wheel-IMU coincides with that of the w-frame,
+pointing to the north and the gyroscope bias and the rotation
+angular rate of the wheel remain constant in one revolution.
+The constant measurement errors of the gyroscope of WheelIMU projected onto the n-frame can be written as
+ 
+
+εx
+1
+0
+0
+Cnb δεb = 0 cosωt −sinωt εy 
+0 sinωt cosωt
+εz
+
+
+(2)
+εx
+= εy cosωt − εz sinωt
+εy sinωt + εz cosωt
+where ω is the IMU rotation angular rate; Cnb is the rotation
+matrix from the b-frame to the n-frame; δεb = (εx , εy , εz )T
+are the constant gyroscope errors in three axes. The IMU
+attitude error caused by the gyroscope error can be obtained
+by integrating Eq. 2, i.e.,
+R
+
+
+Z
+ε
+Tc x
+R
+Cnb δεb = R Tc εy cosωt − εz sinωt
+(3)
+Tc
+ε
+sinωt
++
+ε
+cosωt
+z
+Tc y
+where Tc denotes the rotation period of the wheel. These
+equations show that because of the wheel rotation, the constant
+measurement error in the non-rotating axes of the gyroscope
+are modulated into sine wave in the n-frame. After an integral
+period, the accumulated pitch and heading error are canceled.
+The IMU velocity errors caused by the accelerometer errors
+can be analyzed in a similar way. More detailed explanation
+of the rotation modulation can be found in [5, 14].
+In conclusion, by rotating the IMU around a fixed axis,
+the IMU measurement errors in the other two axes of the
+
+In Wheel-INS, the observations are from the v-frame, including the vehicle speed and the NHC. Fusing the measurements in the vehicle frame with INS requires the knowledge
+of the installation relationship between the vehicle and WheelIMU. However, the misalignment problem is inevitable in
+any real system combining information from more than one
+sensor, which, if not handled properly, could cripple the system
+performance [15].
+As illustrated in Fig. 2, the misalignment errors include
+the position misalignment (called “lever arm”), pointing from
+the IMU center to the wheel rotation center expressed in
+the b-frame, and the attitude misalignment (called “mounting
+angles”), from the b-frame to the w-frame. The lever arm
+not only introduces potential errors to the projection of IMU
+velocity from the b-frame to the v-frame (cf. Eq. 12), but also
+brings centripetal acceleration to the accelerometer measurements, which would cause significant error in the DR system,
+especially when the vehicle moves at high speed. In practice,
+the lever arm can be determined by averaging multiple manual
+measurements. If the accuracy of the averaged results cannot
+meet the requirements, it can also be augmented into the state
+vector to be estimated online.
+The attitude misalignment can be described as a set of
+Euler angles, δφ, δθ, and δψ. It can not only weaken the
+effect of the rotation modulation, but also cause incomplete
+projection of the real rotation angular rate on the x-axis of the
+gyroscope. Furthermore, Eq. 1 holds only when the mounting
+angles are effectively compensated. In addition, the attitude
+misalignment would introduce a periodic difference between
+the calculated vehicle heading and the real value. Because the
+roll mounting angle has no impact in Wheel-INS, we only take
+into consideration the pitch and heading misalignment angles.
+Note that the attitude misalignment problem in Wheel-INS is
+similar to that of IMU-based pipeline inspection gauges (PIGs)
+[16, 17]. The authors in [17] proposed a complete method to
+calibrate the mounting angles between the PIG frame and the
+IMU body frame, in which details of the calibration procedure
+and error analysis can be found. In our experiments (cf.
+Section V), we used this approach to calibrate and compensate
+the mounting angles before data processing.
+III. M ETHODOLOGY
+Although the constant bias of Wheel-IMU in the axes
+perpendicular to the rotation axis can be canceled by rotation,
+errors in the rotation axis and other types of random error still
+lead to rapid position drift in INS. Therefore, other means are
+required to limit the error accumulation.
+Vehicle motion information (including the forward velocity
+and NHC) is a classical measurement to fuse with INS for
+
+4
+
+ego-motion estimation of wheeled robots. In this study, the
+gyroscope measurements of Wheel-IMU and the wheel radius
+are used to calculate the wheel velocity without the requirement to install an external odometer or access to the onboard
+encoder of the vehicle. Additionally, the error-state EKF is
+employed to implement the information fusion. It is a widely
+used approach which recasts the problem of state estimation
+from the state domain to error-state domain, generating a linear
+state model [6, 18, 19]. In this section, the state model and
+the observation model of Wheel-INS are described.
+A. Error State Model
+In Wheel-INS, conventional strapdown inertial navigation
+system is utilized to predict the vehicle state. The kinematic
+equations are described at length in the literature [6, 20, 21];
+thus, we do not go into details here. For simplicity and
+efficiency, we use the error-state Kalman filter to mitigate the
+nonlinearity problem.
+Because of the rotation of the wheel, the y-axis and z-axis
+of the inertial sensor change their directions around the x-axis
+periodically; thus, it is difficult for the filter to distinguish
+and estimate the sensor errors in these two axes effectively.
+The scale factor error of the gyroscope in the x-axis can
+converge soon in the system, as it can cause obvious error with
+the rotation of the wheel, whereas the gyroscope scale factor
+errors in the y-axis and z-axis are unobservable. Furthermore,
+the scale factor error of acceleration in the y-axis and z-axis
+can also be estimated jointly because they sense the gravity
+alternatively, and the horizontal motion assumption of the
+vehicle can make the errors evident.
+Although only estimating the observable states may reduce
+some computation cost, the cross-coupling errors of the inertial
+sensor triads couple the errors in the three axis together,
+especially for MEMS sensors; thus, the system performance
+degrades if we simply remove the unobservable sensor errors
+from the state vector, e.g., only estimating the scale factor
+error of the gyroscope in the x-axis, not that in the y- and zaxes. A performance comparison of Wheel-INS with different
+dimensions of state vector is presented in Section IV-B. The
+results indicate that the 21 dimensional state vector has better
+positioning performance. Therefore, the 21-state is employed
+in Wheel-INS, including three dimensional position errors,
+three dimensional velocity errors, attitude errors, residual bias
+errors and scale factor errors of the gyroscope and accelerometer. The state vector can be written as
+h
+T
+x(t) = (δr n )
+
+(δv n )
+
+T
+
+φT
+
+bT
+g
+
+bT
+a
+
+sT
+g
+
+sT
+a
+
+iT
+n
+
+(4)
+n
+
+where δ indicates the uncertainty of the variables; δr , δv
+and φ indicate the position, velocity and attitude errors of
+INS, respectively; bg and ba denote the residual bias errors
+of the gyroscope and the accelerometer, respectively; sg and
+sa are the residual scale factor errors of the gyroscope and
+accelerometer, respectively. In this paper, we only focus on
+the dead reckoning performance of Wheel-INS, and the initial
+heading of Wheel-INS is set by the reference system in our
+experiments. Therefore, the heading error in the state vector
+
+can be regarded as accumulated heading error rather than the
+absolute error.
+Several models have been developed to describe the timedependent behavior of these errors [6]. We adopt the Phi-angle
+model here. As Wheel-INS is a local DR system based on lowcost MEMS sensor, we do not take the earth rotation and the
+variation of the n-frame into consideration. Thus, a simplified
+error state model can be expressed as
+ n
+n
+
+ δ ṙ = δv
+δ v̇ n = −φ × f n + Cnb δfb
+(5)
+
+
+n
+b
+φ̇ = −Cb δωib
+b
+where δωib
+and δf b are the errors of the gyroscope and
+accelerometer measurements, respectively, which can be exb
+b
+pressed as δωib
+= bg + diag(ωib
+)sg and δf b = ba +
+b
+diag(f )sa ; diag(·) is the diagonal matrix form of a vector.
+We choose the first-order Gauss-Markov process [22, 23]
+to model the sensor errors. The continuous-time model and
+discrete-time model are written as
+1
+ẋ = − x + w
+T
+(6)
+xk+1 = e−∆tk+1 /T xk + wk
+
+where x is the random variable; T is the correlation time of
+the process, and w is the driving white noise.
+The continuous-time dynamic model for the error state can
+be written as
+ẋ(t) = F(t)x(t) + G(t)w(t)
+
+(7)
+
+where x(t) is shown as Eq. 4; F(t) is the system transition
+matrix; G(t) is the system noise distribution matrix; w(t) =
+
+T
+(wg )T (wa )T (wbg )T (wba )T (wsg )T (wsa )T
+is the system
+noise, including the noises of the gyroscope, accelerometer,
+gyroscope bias error, accelerometer bias error, gyroscope scale
+factor error and accelerometer scale factor error. Details about
+matrices F(t) and G(t) can be found in Appendix. It can be
+observed that the system matrices are sparse which render the
+computational efficiency of Wheel-INS extremely high.
+It is worth mentioning that the scale factor error of the
+wheel may degrade the performance of Wheel-INS in some
+cases, and it cannot be substituted or assimilated by the errors
+of Wheel-IMU because they impact the navigation results in
+different ways. The scale factor error of the wheel should be
+estimated online if other absolute positioning information is
+available, such as GNSS.
+B. Observation Model
+The forward wheel velocity calculated by the gyroscope
+readings of Wheel-IMU and wheel radius can be written as
+v
+vewheel
+=ω
+ex r − ev = (ωx + δωx )r − ev
+v
+= vwheel
++ rδωx − ev
+
+(8)
+
+v
+v
+where vewheel
+and vwheel
+are the observed and true vehicle
+forward velocity, respectively; ω
+ex is the gyroscope output in
+the x-axis; ωx is the true value of the angular rate in the x-axis
+of Wheel-IMU; δωx is the gyroscope measurement error; r is
+
+5
+
+the wheel radius, and ev is the observation noise, modeled as
+Gaussian white noise.
+The motion of the wheeled robots is generally governed
+by two non-holonomic constraints [15, 24], which refers to
+the fact that the velocity of the wheeled vehicle in the plane
+perpendicular to the forward direction is almost zero when the
+vehicle does not slide on the ground or jump off the ground
+[6, 25]. By integrating with NHC, the 3D velocity observation
+can be expressed as
+ v
+T
+v
+ewheel
+0 0 − ev
+v
+= vewheel
+(9)
+Because Wheel-IMU rotates with the wheel, the roll angle of
+the Wheel-IMU with respect to the v-frame changes periodically. In consequent, the pitch angle of the vehicle cannot
+be obtained with the Wheel-IMU alone. In other words, it
+cannot be determined whether the vehicle is moving uphill
+or downhill by Wheel-INS. Therefore, we must assume that
+the vehicle is moving on a horizontal surface. Actually, this
+assumption does not cause significant error to the DR system,
+as illustrated by the car experiments in Section IV. According
+to Eq. 1, the Euler angles of the vehicle can be represented as
+
+ n 
+0
+φv
+
+0
+(10)
+ϕnv =  θvn  = 
+ψbn − π/2
+ψvn
+where ϕnv is the attitude of the vehicle with respect to the
+n-frame; φ, θ, and ψ are the roll, pitch, and heading angle
+of the vehicle, respectively. The corresponding rotation matrix
+can be calculated by
+
+
+cosψvn −sinψvn 0
+(11)
+Cvn =  sinψvn cosψvn 0
+0
+0
+1
+By performing the perturbation analysis, the INS-indicated
+velocity in the v-frame can be written as
+ b
+v n
+v n
+v
+b
+v̂wheel
+= Ĉn v̂IM
+U + Ĉn Ĉb ω̂nb × lwheel
+n
+n
+≈ Cvn (I+δψ×)(vIM
+U +δvIM U )
+b
+b
+b
+×+δωnb
+×)lwheel
++Cvn (I+δψ×)(I − δφ×)Cnb (ωnb
+
+
+v
+n
+n
+b
+v
+b
+≈ vwheel
++Cvn δvIM
+U +Cn (Cb (ωnb ×)lwheel )× φ
+ n
+
+n
+b
+b
+−Cvn (vIM
+U ×)+(Cb (ωnb ×)lwheel )× δψ
+b
+b
+−Cvn Cnb (lwheel
+×)δωib
+
+(12)
+where Cvn is the rotation matrix from the n-frame to the vframe, which can be transformed from the Euler angles ϕnv
+b
+by Eq. 11; ωnb
+is the angular rate vector of the b-frame
+b
+with respect to the n-frame projected to the b-frame; lwheel
+indicates the lever arm vector from the Wheel-IMU to the
+wheel center projected in the b-frame; δψ is the attitude error
+of the vehicle, which is only related to the heading
+ error in the
+T
+state vector; thus, it can be written as δψ = 0 0 δψbn .
+Then, the velocity error observation equation in the v-frame
+can be written as
+v
+v
+ewheel
+δzv = v̂wheel
+−v
+ n b
+
+v
+b
+n
+= Cvn δvIM
+U +Cn (Cb (ωnb ×)lwheel )× φ
+ n
+
+(13)
+n
+b
+b
+−Cvn (vIM
+U ×)+(Cb (ωnb ×)lwheel )× δψ
+b
+b
+−Cvn Cnb (lwheel
+×)δωib
+
+Although the heading error can be limited effectively by
+the continuous rotation with the wheel, it accumulates when
+the vehicle remains stationary for a long time. In this case,
+zero-integrated heading rate measurements (ZIHRs) [6] can be
+performed to correct the heading. It is worth mentioning that
+the Wheel-IMU is more sensitive to vehicle motion; hence, it
+can perceive the vehicle motion more accurately than the IMU
+placed on the vehicle body.
+IV. E XPERIMENTAL R ESULTS
+This section presents real-world experimental results to
+illustrate the positioning performance of Wheel-INS and analyze its characteristics. Firstly, the experimental conditions
+are described. Secondly, we compare the DR performance
+between Wheel-INS and ODO/INS. We also conduct experiments to illustrate the insensitivity to constant gyroscope bias
+of Wheel-INS. Finally, we discuss the key characteristics of
+Wheel-INS by well-designed tests, including the influence of
+the mounting angles and the comparison of the positioning
+results with different dimensions of the state vector.
+A. Experimental Description
+Field tests were conducted in three different scenarios in
+Wuhan City, China, using two different wheeled vehicles. One
+was the Pioneer 3DX robot, a typical differential wheeled
+robot, and the other was a car. The Pioneer robot was used
+for two trajectories and the car for one trajectory. Fig. 3
+shows the experimental platforms. The MEMS IMU used in
+the experiments was self-developed, including four ICM20602
+inertial sensor chips, a chargeable battery module, a SD card
+for data collection, a micro processor, and a Bluetooth module
+for communication and data transmission. One can connect an
+android mobile phone to the MEMS IMU through Bluetooth
+communication to start and end the data collection. We collected the outputs of two chips in one trajectory as two sets
+of experimental data for post-processing. The MEMS IMUs
+were carefully placed on the wheel to make them as close
+as possible to the wheel center. To compare its performance
+with that of ODO/INS, a MEMS IMU of the same type was
+placed on the vehicle roof. The wheel odometer data was also
+recorded in the experiments. For the car, the wheel speed data
+came from an externally installed odometer. The root-meansquared error (RMSE) of the wheel velocity measurements of
+the two vehicles were 0.03 m/s and 0.08 m/s, respectively.
+As shown in Fig. 3, the two vehicles were also equipped
+with high-accuracy IMUs to provide pose ground truth: a
+POS320 (MAP Space Time Navigation Technology Co., Ltd.,
+China) for the robot experiments and a LD A15 (Leador
+Spatial Information Technology Co., Ltd., China) for the car
+experiments. Their main technique parameters are listed in
+Table I. The reference data were processed through a smoothed
+post-processed kinematic (PPK)/INS integration method.
+Fig. 4 shows the three test trajectories. Track I is a loopback
+trajectory in a small-scale environment in the Information
+Department of Wuhan University, on which the robot moved
+for approximately five times. Track II is a polyline trajectory
+with no return in Huazhong Agriculture University. Track III
+
+6
+
+(a) Track I: small-scale repeated trajectory in crossroads in the Information
+Department of Wuhan University.
+
+(a) Pioneer 3DX robot.
+
+(b) Track II: polyline trajectory with no return in experimental farms in
+Huazhong Agriculture University.
+
+(b) Pedestrain car.
+Fig. 3. Experimental platforms.
+TABLE I
+T ECHNICAL PARAMETERS OF THE IMU S U SED IN THE T ESTS
+Gyro Bias
+(deg/h)
+
+*
+
+IMU
+
+ARW√
+(deg/ h)
+
+Acc.*Bias
+(m/s2 )
+
+VRW√
+(m/s/ h)
+
+LD A15
+
+0.02
+
+0.003
+
+0.00015
+
+0.03
+
+POS320
+
+0.5
+
+0.05
+
+0.00025
+
+0.1
+
+ICM20602
+
+200
+
+0.24
+
+0.01
+
+3
+
+*
+
+* ARW denotes the angle random walk; Acc. denotes the accelerometer;
+
+VRW denotes the velocity random walk.
+
+(c) Track III: large-scale loop trajectory in Wuhan University campus
+Fig. 4. Experimental trajectories.
+
+is a large loop trajectory in the campus of Wuhan University,
+on which the car traveled for approximately two times. The
+vehicle motion information of all the six tests is presented in
+Table II.
+The initial heading and position of both Wheel-INS and
+ODO/INS were given by the reference system directly. On
+the one hand, the attitude misalignment between the reference
+IMU and the vehicle was calibrated and compensated in
+advance. On the other hand, we focused mainly on the DR
+performance of Wheel-INS. Therefore, the heading estimation
+error of the systems can be considered as the accumulated error
+without initial heading bias. However, other initial alignment
+methods should be investigated for practical applications because a reference system is not always available. Additionally,
+the static IMU data before the vehicle started moving were
+
+used to obtain the initial roll and pitch angle, as well as
+the initial value of the gyroscope bias. Other inertial sensor
+errors were set as zero. The initial states in ODO/INS were
+determined in the same way.
+B. Performance
+ODO/INS
+
+Comparison
+
+between
+
+Wheel-INS
+
+and
+
+1) Comparison of Position and Heading Accuracy: Fig. 5
+compares the positioning and heading errors of Wheel-INS and
+ODO/INS in Test 1, Test 3 and Test 5, respectively. We argue
+that calculating the misclosure error or the maximum position
+drift of the entire trajectory to demonstrate the positioning
+
+7
+
+(a) Estimated trajectories against ground truth in Test 1.
+
+(b) Positioning and heading errors in Test 1.
+
+(c) Estimated trajectories against ground truth in Test 3.
+
+(d) Positioning and heading errors in Test 3.
+
+(e) Estimated trajectories against ground truth in Test 5.
+
+(f) Positioning and heading errors in Test 5.
+
+Fig. 5. Estimated trajectories and corresponding position and heading errors of Wheel-INS and ODO/INS in three experiments.
+
+8
+
+TABLE II
+V EHICLE M OTION I NFORMATION IN THE E XPERIMENTS
+Test
+1
+2
+3
+4
+5
+6
+
+Track
+
+Vehicle
+
+I
+
+Average
+speed (m/s)
+
+Total
+distance (m)
+
+1.39
+
+≈1227
+
+1.25
+
+≈1146
+
+4.70
+
+≈12199
+
+•
+
+In most experiments, Wheel-INS outperforms ODO/INS
+in both terms of position and heading estimation
+accuracy. In Test 1, the positioning accuracy of the
+two systems are at a similar level while the heading
+estimation error of Wheel-INS is slightly smaller than
+that of ODO/INS. However, in Test 2, the mean position
+drift rate of ODO/INS is less than half of that of
+Wheel-INS. As we explained previously, we firstly
+calculated and compensated the gyroscope bias using
+the static IMU data before the vehicles started moving
+in our experiments. And during a short period of time
+(e.g., 15 min for Track I), the gyroscope bias could
+remain stable; thus it only caused small heading drift
+in ODO/INS. Therefore, the advantages of Wheel-INS
+comparing with ODO/INS are not obvious in Test 1 and
+Test 2.
+
+•
+
+In Track II (Test 3 and Test 4), there were many bumpy
+road sections. It can be observed from Fig. 5(c) and
+(d) that the DR errors of ODO/INS vibrate significantly
+while the errors of Wheel-INS are smoother. In this
+situation, the ground vehicles shook severely thereby
+broke the assumption of NHC. In addition, because
+the lever arm between the wheel center and the IMU
+attached on the vehicle body is larger than that in
+Wheel-INS, a more noticeable error would be generated
+in ODO/INS during the velocity projection when fusing
+the vehicle velocity with INS. As a result, the positioning
+error of ODO/INS would be larger and more unstable
+than that of Wheel-INS in bumpy roads.
+
+•
+
+In Track III (Test 5 and Test 6), the experiments were
+conducted using a car. It is obvious that the performance
+of Wheel-INS in these two tests are better than that in
+other experiments in which the wheeled robot was used
+as the test platform. The reason can be summarized as
+twofold. Firstly, the wheel and axle structure of a car is
+much stabler than that of a robot which provides a great
+condition for Wheel-INS. For example, the assumption
+of NHC is more convinced for cars. Secondly, the speed
+of the car was faster than the robot in our experiments
+(cf. Table II). A relatively faster wheel speed would allow
+Wheel-INS gain more form the rotation modulation,
+resulting in higher accuracy in heading.
+
+•
+
+Moreover, in Track III, the car moved along a largescale trajectory with many continuous uphill and downhill
+roads (the maximum gradient was about 10◦ ), but the
+positioning accuracy of Wheel-INS is still considerable
+in Test 5 and Test 6. These results indicate that although
+the algorithm require the vehicle to move on a horizontal
+plane, it would not introduce significant error if there are
+some degrees of incline in the road. That is to say, WheelINS can be applied to most of the regular city roads.
+
+Pioneer 3DX
+II
+III
+
+Car
+
+performance of a DR system is not optimal. The reason is that
+the loops in the trajectory can suppress the error accumulation
+to some extent thus make these methods not strict, especially
+for INS in which the position error usually drifts along one
+direction. It can be observed from Fig. 5(a) and (b) that when
+the robot turns around, the positioning error starts to drift along
+the opposite direction. Therefore, we adopted a different metric
+to evaluate the system performance. Firstly, we accumulated
+the moving distance of the robot by a certain increment (l).
+Then, we calculated the maximum horizontal position error
+drift rate within each distance (l, 2l, 3l, ...). Finally, the
+mean value (MEAN) and standard deviation (STD, 1σ) of
+these segmented drift rates were computed as the indicator
+of positioning performance. This approach is similar to the
+odometry evaluation metric used in the KITTI dataset [26], but
+we segmented the trajectory only from the starting point. With
+regard to the heading error, the maximum (MAX) and RMSE
+were calculated as the evaluation criterion. In our experiments,
+we chose l as 100 m. Table III lists the error statistics of
+Wheel-INS and ODO/INS in all the six experiments.
+TABLE III
+P OSITIONING AND H EADING E RROR S TATISTICS OF W HEEL -INS AND
+ODO/INS
+Test
+1
+2
+3
+4
+5
+6
+
+System
+Wheel-INS
+ODO/INS
+Wheel-INS
+ODO/INS
+Wheel-INS
+ODO/INS
+Wheel-INS
+ODO/INS
+Wheel-INS
+ODO/INS
+Wheel-INS
+ODO/INS
+
+Position drift rate (%)
+MEAN
+STD
+0.59
+0.58
+1.43
+0.57
+1.17
+2.25
+1.78
+2.20
+0.62
+1.14
+0.83
+1.62
+
+0.30
+0.45
+0.54
+0.32
+0.27
+0.68
+0.26
+0.88
+0.42
+0.65
+0.43
+1.04
+
+Heading error (◦ )
+RMS
+MAX
+1.93
+2.11
+3.88
+2.82
+2.16
+2.88
+4.44
+5.77
+0.96
+1.38
+1.60
+2.65
+
+4.79
+5.11
+7.93
+4.79
+4.56
+8.00
+10.88
+9.87
+1.91
+3.30
+4.97
+6.72
+
+From the comparison of positioning and heading performance between Wheel-INS and ODO/INS, the following information can be obtained.
+• In all the six experiments, the horizontal position drift
+rates of Wheel-INS are between 0.50% and 1.80%, and
+the same figures of ODO/INS are between 0.50% and
+2.30%. The average positioning and heading accuracy
+of Wheel-INS have been respectively improved by 23%
+and 15% comparing with ODO/INS.
+
+As for the velocity estimation, the mean RMS of the
+horizontal velocity error of Wheel-INS and ODO/INS in all
+the six experiments are 0.16 m/s and 0.17 m/s, respectively.
+
+9
+
+(a) Trajectories of Wheel-INS with different gyroscope bias in Test 1.
+
+(b) Trajectories of ODO/INS with different gyroscope bias in Test 1.
+
+Fig. 6. Estimated trajectories of Wheel-INS and ODO/INS given different conditions on initial gyroscope bias.“no initbg” indicates that the initial gyroscope
+bias was not compensated; “10e” indicates that ten times of earth rotation angular rate was manually added to the raw gyroscope data; “50e” indicates that
+fifty times of earth rotation angular velocity was added.
+
+In both Wheel-INS and ODO/INS, the observations of the
+filter systems are the forward velocity of the vehicle and
+NHC. As there is no significant difference between the wheel
+speed provided by Wheel-IMU and the encoder, the velocity
+estimation accuracy of the two systems are at a similar level.
+2) Comparison of Sensitivity to Constant Gyroscope Bias:
+To illustrate the rotation modulation effect in Wheel-INS, we
+conducted a set of comparative experiments of Test 1 given
+different level of gyroscope bias. Firstly, we did not estimated
+and compensated the initial gyroscope bias. Secondly, we
+intentionally add some constant errors onto the raw gyroscope
+data of Wheel-IMU and the IMU mounted on the robot body.
+Hereby ten times and fifty times of earth rotation angular rate
+(≈ 15◦ /h) were respectively added. Then we compare the
+positioning performance of Wheel-INS and ODO/INS under
+these conditions. As shown in Fig. 6, it is evident that the
+estimated trajectories of Wheel-INS change negligibly even
+ten and fifty times of earth rotation angular rate was added,
+while the trajectories of ODO/INS dramatically drift when the
+initial gyroscope bias error was not estimated in advance and
+it gets worse when more gyroscope bias was added. As the
+gyroscope bias cannot be effectively estimated by integrating
+vehicle motion measurements (forward velocity and NHC) in
+ODO/INS, it can induce large heading drift. However, the
+constant gyroscope error does not degrade the performance
+of Wheel-INS thanks to the rotation modulation. Therefore,
+Wheel-INS is significantly more insensitive to the constant
+gyroscope bias than ODO/INS.
+Note that although zero-velocity updates (ZUPTs) [9, 27]
+and ZIHRs also benefit to the estimation of gyroscope bias,
+they are merely random signals which cannot be relied on.
+In addition, mistakes in detecting the static time frame of the
+vehicle would instead undermine the stability of the system.
+C. Discussion on the Characteristics of Wheel-INS
+
+1) Influence of Mounting Angles: Fig. 7 shows the calculated vehicle trajectory and the corresponding positioning
+and heading errors of Wheel-INS in Test 1 before and after
+compensating the mounting angles. The estimated values of
+the heading (δφ) and pitch mounting angle (δθ) in Test 1
+were -4.5◦ and 2.5◦ , respectively. It can be observed that the
+DR performance deteriorates when the mounting angles of
+Wheel-IMU are not compensated. As discussed in Section IIC, the reason is that the mounting angles weaken the rotation
+modulation effect and invalidate Eq. 1 and Eq. 10, thereby
+introducing errors when fusing INS with the wheel velocity
+and NHC. From Eq. 12 we can learn that given the same
+mounting angles, a higher vehicle velocity leads to a larger
+error of the INS-indicated wheel velocity in the v-frame.
+Moreover, as shown in Fig. 6(b), if the mounting angles are
+not compensated in advance, a sine signal would be modulated
+onto the heading estimation. This is due to that the heading
+axis (x-axis) of Wheel-IMU is not parallel to the rotation
+axis of the wheel, and the difference between them changes
+periodically with the rotation of the wheel.
+2) Comparison of Different State Dimension: As discussed
+in Section III-A, we chose the 21-, 15-, and 9-dimensional
+state vectors in Wheel-INS respectively in Test 1 to compare
+their positioning performance. The 21-state is shown as Eq.
+4. The 15-state does not include the scale factor error of the
+gyroscope and accelerometer, and the 9-state does not include
+all the IMU error terms. The corresponding navigation errors
+of the three experiments are shown in Fig. 8.
+It can be observed from Fig. 8 that the positioning error
+significantly increases when the dimension of the state vector
+is reduced to 9; the performance of the 15-state Wheel-INS is
+also worse than that of the 21-state Wheel-INS. Although the
+constant sensor bias of the IMU in the axis perpendicular to
+the rotation axis can be canceled to some extent, other error
+components can still cause large error if they are not estimated
+
+10
+
+(a) Estimated trajectories of Wheel-INS with/without mounting angle calibration against ground truth in Test 1.
+
+(b) Positioning and heading errors of Wheel-INS with/without mounting
+angle calibration in Test 1.
+
+Fig. 7. Estimated trajectories and corresponding position and heading errors under different conditions in Test 1. “calib” indicates that the IMU mounting
+angles were calibrated and compensated beforehand, whereas “noncalib” indicates that they were not handled.
+
+in the filter system. In addition, as the accelerometers in the
+y- and z-axes perceive gravity alternatively and the vehicle is
+assumed to move on a horizontal plane, the scale factor errors
+of the accelerometer in the y- and z-axes can be estimated by
+Wheel-INS.
+
+Fig. 8. Comparison of the DR errors of Wheel-INS with different state
+dimensions in Test 1. “21”, “15D” , and “9D” indicate the 21-, 15-, and
+9-state, respectively.
+
+and compensated. For example, the cross-coupling errors have
+a more negative impact in Wheel-INS because the dynamic
+condition of Wheel-IMU is significantly higher than that of
+the IMU placed on the vehicle body in traditional ODO/INS.
+Fig. 9 depicts the STD of the inertial sensor errors estimation in the 21-state Wheel-INS in Test 1. As discussed in
+Section III-A, the IMU errors in the y- and z-axes are mixed
+because they are parallel to the wheel plane and alternatively
+change their directions, making it difficult for the filter to distinguish them. This effect explains why the STD of the sensor
+error estimation in the y- and z-axes are almost coincident, as
+shown in all the subplots in Fig. 9. With regard to the scale
+factor error, because Wheel-IMU rotates around the x-axis, a
+large rotation angular rate makes the gyroscopes scale factor
+error in the x-axis observable. Therefore, it can soon converge
+
+Fig. 9. The STD of the estimates of the inertial sensor residual error in
+Wheel-INS (21-state) in Test 1.
+
+V. C ONCLUSION
+A complete DR solution based on a wheel-mounted MEMS
+IMU is proposed in this study. The key objectives of this
+system is to: 1) only use one IMU to achieve the similar
+information fusion scheme as ODO/INS; 2) take advantages of
+the inherent rotation platform of the wheeled robot to spread
+
+11
+
+the INS drift errors to all directions, so as to improve the
+ego-motion estimation accuracy.
+Field tests in different environments with different vehicles
+demonstrate that the maximum horizontal position drift of
+Wheel-INS is less than 1.8% of the total traveled distance.
+The positioning and heading accuracy of Wheel-INS have
+respectively improved by 23% and 15% against ODO/INS.
+Moreover, benefit from the rotation modulation, Wheel-INS
+illustrates significant resilience to the gyroscope bias comparing with the conventional ODO/INS. Generally, a stabler wheel
+and axle structure and a relatively higher wheel speed would
+be beneficial for Wheel-INS.
+The characteristics of Wheel-INS have also been analyzed
+and discussed. The misalignment errors of Wheel-IMU are
+defined and emphasized; they must be compensated in advance
+to obtain more robust and precise state estimates. Additionally,
+the observability of the inertial sensor errors are analyzed by
+their covariance propagated in the EKF. Because the residual
+sensor errors of the Wheel-IMU in the directions perpendicular
+to the rotation axis are coupled to each other, they cannot be
+distinguished and estimated by the EKF. Experimental results
+show that the 21-state EKF can achieve better performance.
+To promote Wheel-INS in practical long-term navigation
+applications of wheeled robots, one major issue need to be
+solved: power supply. Energy-harvesting techniques can be
+considered to achieve an “install and forget” solution.
+Future research directions include investigating approaches
+to use the vehicle attitude indicated by another IMU mounted
+on the vehicle body to extend Wheel-INS from 2D DR to 3D
+navigation. Furthermore, using two Wheel-IMUs mounted on
+left and right wheels is a promising design to obtain double
+information and take advantages of the spatial constraint
+between them to make the state estimation more robust.
+A PPENDIX
+According to the error-state model in Eq. 5 and Eq . 6, the
+matrices F(t) and G(t) that appear in Eq. 7 are given by
+
+03
+03
+03
+03
+03
+A
+03
+Cnb
+03
+B 
+
+n
+03 −Cb
+03
+D
+03 
+
+03
+03
+03 
+03 − T1bg I3
+
+03
+03
+− T1ba I3
+03
+03 
+
+
+03
+03
+03
+− T1sg I3
+03 
+1
+03
+03
+03
+03
+− Tsa I3
+(14)
+
+
+03
+03 03 03 03 03
+Cnb
+0
+03 03 03 03 
+3
+
+
+ 03 −Cnb 03 03 03 03 
+
+
+03 I3 03 03 03 
+G(t) = 
+(15)
+ 03
+
+ 03
+
+0
+0
+I
+0
+0
+3
+3
+3
+3
+3
+
+ 03
+03 03 03 I3 03 
+03
+03 03 03 03 I3
+
+
+03
+03
+
+03
+
+
+F(t) = 03
+0
+ 3
+
+03
+03
+
+I3
+03
+03
+03
+03
+03
+03
+
+where 03 is the 3×3 zero matrix; I3 is the 3×3 identity matrix;
+b
+A is (Cnb f b )×; B is Cnb diag(f b ); D is −Cnb diag(ωib
+); Tbg ,
+Tba , Tsg , Tsa are the correlation time of the Gauss-Markov
+processes corresponding to each inertial sensor error.
+
+ACKNOWLEDGMENT
+The authors would like to thank Mr. Taiyu Li, Mr. Tao
+Liu and Mr. Hailiang Tang for their help in carrying out the
+experiments.
+R EFERENCES
+[1] S. Kuutti, S. Fallah, K. Katsaros, M. Dianati, F. Mccullough,
+and A. Mouzakitis, “A survey of the state-of-the-art localization
+techniques and their potentials for autonomous vehicle applications,” IEEE Internet Things J., vol. 5, no. 2, pp. 829–846, 2018.
+[2] M. S. Grewal, A. P. Andrews, and C. G. Bartone, Global
+navigation satellite systems, inertial navigation, and integration.
+Wiley, 2020.
+[3] P. Teunissen and O. Montenbruck, Springer handbook of global
+navigation satellite systems. Springer, 2017.
+[4] R. Zekavat and R. M. Buehrer, Handbook of position location:
+Theory, practice and advances. Wiley, 2019.
+[5] S. Du, “Rotary inertial navigation system with a low-cost mems
+imu and its integration with gnss,” Ph.D. dissertation, University
+of Calgary, Calgary, Canada, 2015.
+[6] E.-H. Shin, “Estimation techniques for low-cost inertial navigation,” Ph.D. dissertation, University of Calgary, Calgary,
+Canada, 2005.
+[7] Y. Wu, C. Goodall, and N. El-Sheimy, “Self-calibration for
+imu/odometer land navigation: Simulation and test results,” in
+Proc. the Int. Technol. Meeting Institute of Navig., 2010, pp.
+839–849.
+[8] S. Godha, “Performance evaluation of low cost mems-based
+imu integrated with gps for land vehicle navigation application,”
+Master’s thesis, University of Calgary, Calgary, Canada, 2006.
+[9] G. Dissanayake, S. Sukkarieh, E. Nebot, and H. Durrant-Whyte,
+“The aiding of a low-cost strapdown inertial measurement unit
+using vehicle model constraints for land vehicle applications,”
+IEEE Trans. Robot. Autom., vol. 17, no. 5, pp. 731–747, 2001.
+[10] J. Collin, “Mems imu carouseling for ground vehicles,” IEEE
+Trans. Veh. Technol., vol. 64, no. 6, pp. 2242–2251, 2014.
+[11] E. S. Geller, “Inertial system platform rotation,” IEEE Trans.
+Aerosp. Electron. Syst., vol. AES-4, no. 4, pp. 557–568, 1968.
+[12] J. Collin, M. Kirkko-Jaakkola, and J. Takala, “Effect of
+carouseling on angular rate sensor error processes,” IEEE Trans.
+Instrum. Meas., vol. 64, no. 1, pp. 230–240, 2014.
+[13] B. M. Scherzinger and D. B. Reid, “Modified strapdown inertial
+navigator error models,” in Proc. IEEE/ION Position Locat.
+Navig. Symp., 1994, pp. 426–430.
+[14] K. Abdul Rahim, “Heading drift mitigation for low-cost inertial
+pedestrian navigation,” Ph.D. dissertation, University of Nottingham, Nottingham, UK, 2012.
+[15] Y. Wu, M. Wu, X. Hu, and D. Hu, “Self-calibration for land
+navigation using inertial sensors and odometer: Observability
+analysis,” in Proc. AIAA Guidance, Navig., and Control Conf.,
+2009, p. 5970.
+[16] Q. Chen, X. Niu, J. Kuang, and J. Liu, “Imu mounting angle
+calibration for pipeline surveying apparatus,” IEEE Trans. Instrum. Meas., vol. 69, no. 4, pp. 1765–1774, 2019.
+[17] Q. Chen, Q. Zhang, and X. Niu, “Estimate the pitch and
+heading mounting angles of the imu for land vehicular gnss/ins
+integrated system,” IEEE Trans. Intell. Transp. Syst., pp. 1–13,
+2020.
+[18] S. I. Roumeliotis, G. S. Sukhatme, and G. A. Bekey, “Circumventing dynamic modeling: evaluation of the error-state kalman
+filter applied to mobile robot localization,” in Proc. IEEE Int.
+Conf. on Robot. Autom., vol. 2, 1999, pp. 1656–1663.
+[19] V. Madyastha, V. Ravindra, S. Mallikarjunan, and A. Goyal,
+“Extended kalman filter vs. error state kalman filter for aircraft
+attitude estimation,” in Proc. AIAA Guidance, Navig., and
+Control Conf., 2011.
+[20] P. D. Groves, Principles of GNSS, Inertial, and Multisensor
+Integrated Navigation Systems. Artech House, 2013.
+
+12
+
+[21] K. R. Britting, Inertial navigation systems analysis. Artech
+House, 2010.
+[22] P. S. Maybeck, Stochastic models, estimation, and control.
+Academic press, 1982.
+[23] R. G. Brown and P. Y. Hwang, Introduction to random signals
+and applied Kalman filtering. Wiley, 1992.
+[24] R. Siegwart, I. R. Nourbakhsh, and D. Scaramuzza, Introduction
+to autonomous mobile robots. MIT press, 2011.
+[25] S. Sukkarieh, “Low cost, high integrity, aided inertial navigation
+systems for autonomous land vehicles,” Ph.D. dissertation,
+University of Sydney, Sydney, Australia, 2000.
+[26] A. Geiger, P. Lenz, and R. Urtasun, “Are we ready for autonomous driving? the kitti vision benchmark suite,” in Proc.
+IEEE Conf. Comput. Vis. Pattern. Recog., 2012, pp. 3354–3361.
+[27] C. Kilic, J. N. Gross, N. Ohi, R. Watson, J. Strader, T. Swiger,
+S. Harper, and Y. Gu, “Improved planetary rover inertial navigation and wheel odometry performance through periodic use
+of zero-type constraints,” in Proc. IEEE/RSJ Int. Conf. Intell.
+Robots Syst., 2019, pp. 552–559.
+
+Yibin Wu received the B.Eng. degree (with honors)
+in Navigation Engineering and the M. Eng. degree
+from Wuhan University, Wuhan, China, in 2017 and
+2020, respectively. His research interests focus on
+inertial navigation, multi-sensor fusion, and mobile
+robot state estimation.
+
+Jian Kuang received the B.Eng. degree and Ph.D.
+degree in Geodesy and Survey Engineering from
+Wuhan University, Wuhan, China, in 2013 and 2019,
+respectively. He is currently a Postdoctoral Fellow
+with the GNSS Research Center in Wuhan University, Wuhan, China. His research interests focus on
+inertial navigation, pedestrian navigation, and indoor
+positioning.
+
+Xiaoji Niu received the B.Eng. degree (with honors) in Mechanical Engineering and the Ph.D. from
+Tsinghua University, Beijing, China, in 1997 and
+2002, respectively. From 2003 to 2007, he was a
+Post-Doctoral Fellow with the Department of Geomatics Engineering, University of Calgary. From
+2007 to 2009, he was a senior scientist with SiRF
+Technology, Inc. He is currently a Professor of the
+GNSS Research Center and the Artificial Intelligence Institute of Wuhan University, Wuhan, China.
+His research interests focus on INS, GNSS/INS
+integration for land vehicle navigation and pedestrian navigation.
+
+
