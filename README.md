@@ -11,12 +11,54 @@ deliverables. This repository holds all of it.
 ## Quick start
 
 ```bash
+./find_spike_prime.py       # is the hub connected and usable?  (Linux, Windows, macOS)
 ./inventory.py              # current Schrute Buck balance
 ./inventory.py --verbose    # full budget statement
+./scripts/stack.sh status   # is the research/retrieval stack up?
 ```
 
-No robot code exists yet — deliberately. The mission is unknown and the hub's API generation is
-unidentified. See [docs/todo.md](docs/todo.md) for what happens next.
+## Getting code onto the robot
+
+**You cannot `pip install` anything onto the hub.** It runs LEGO's own MicroPython. A "program" is a
+**single file** dropped into one of the hub's **20 slots (0–19)**. You edit on your computer, push the
+file into a slot over USB, then **unplug the cable** — the hub runs it standalone.
+
+```
+edit src/*.py  →  push into a slot over USB  →  unplug  →  hub runs it on its own
+```
+
+**The route** (same on Linux and Windows — one VS Code extension, USB serial at 115200):
+
+```bash
+# 1. Is the hub there?
+./find_spike_prime.py --verbose        # Windows: python find_spike_prime.py --verbose
+
+# 2. Install the uploader
+code --install-extension PeterStaev.lego-spikeprime-mindstorms-vscode
+
+# 3. First line of your program, so it skips the prompts:
+#    # LEGO slot:5 autostart
+```
+
+**Linux one-time setup** — do this *before* first plugging in, or ModemManager will corrupt the session
+and it will look like broken hardware:
+
+```bash
+sudo usermod -aG dialout $USER      # then log out and back in
+sudo systemctl disable --now ModemManager
+```
+
+**Windows:** if Device Manager shows the hub with a warning triangle under *Ports (COM & LPT)*, install
+the LEGO SPIKE app once for the driver, then close it — **do not let it update the hub.**
+
+⚠ **Identify the Hub OS read-only first** — the extension version depends on it (v2.x+ is Hub OS 3 only),
+and opening the LEGO app on a version mismatch triggers an update prompt that
+[ADR-0001](docs/decisions/0001-stock-lego-firmware-only.md) forbids accepting.
+
+Full procedure, fallbacks, and troubleshooting: **[docs/runbooks/upload-to-hub.md](docs/runbooks/upload-to-hub.md)**
+
+Robot code is a deliberate skeleton so far — the mission is only partly known and the hub's API
+generation is unidentified. See [docs/todo.md](docs/todo.md).
 
 ## Where to look
 

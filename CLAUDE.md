@@ -37,9 +37,12 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
    command lives in a `scripts/` helper with an explicit timeout that exits.
 4. **Git mutations are human-only.** Never `git add`/`commit`/`push`. Reads are fine. Propose the exact
    commands at a real milestone and let the operator run them.
-5. **Never fabricate a result.** No invented sensor readings, no "should be around 70%", no reporting a
+5. **Never touch hardware unasked.** The operator says when the hub is connected; until then it is
+   absent. Never initiate a connection, pairing, scan, or hub-touching script on your own.
+6. **Never fabricate a result.** No invented sensor readings, no "should be around 70%", no reporting a
    hub result while the hub is unplugged, no green over untested hardware. If it wasn't run, say so.
-6. **Never invent the mission, the arena, the build, or a teammate's name.**
+7. **Never invent the mission, the arena, the build, or a teammate's name.**
+8. **"Measured" means on real hardware.** Say "computed" or "confirmed against \<source\>" for anything else — [docs/lessons_learned/say-which-kind-of-verified.md](docs/lessons_learned/say-which-kind-of-verified.md).
 
 ## Hard facts
 
@@ -65,10 +68,13 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
 - **Host:** native Ubuntu 22.04, Python 3.10.12, user in `dialout`, google-chrome present. LEGO does not
   officially support Linux desktop.
 - **Architecture:** **flat `src/`**, no packages ([ADR-0004](docs/decisions/0004-flat-src-supersedes-package-split.md),
-  superseding ADR-0002). `config` · `calibration` · `detector` · `sweep` · `result` · `odometry` are
-  **pure** — they import nothing hub-only and run on the host with no robot attached. `sensors.py` is the
-  **only** module that touches the LEGO API; it detects the API generation at import and returns `None`
-  (never `0`) when it cannot read. A floor test enforces the boundary — that test *is* the architecture.
+  superseding ADR-0002). **The filename is the rule:** `hub_*.py` may touch the LEGO API, nothing else may.
+  Pure — `config` · `calibration` · `detector` · `sweep` · `result` · `odometry` · `classify` · `telemetry`,
+  all host-runnable with no robot. Hub-facing — `hub_api` · `hub_color` · `hub_distance` · `hub_motors` ·
+  `hub_imu` · `hub_ui` · `hub_selfcheck`, **one file per device**. Every reader returns `None`, never `0`,
+  when it cannot read. **`./scripts/check-docs.py` enforces the boundary** — there is no test suite
+  ([ADR-0005](docs/decisions/0005-no-test-suite-verify-on-hardware.md)), so that check is its only guard.
+  `src/main.py` is deliberately unwritten: it is where every open unknown converges.
 - **Budget:** `./inventory.py` (`--verbose` for a statement) is the live Schrute Buck ledger and the single
   source of truth. Edit the `ENTRIES` list; don't build a parallel markdown table.
 
@@ -107,19 +113,39 @@ Docs routing — every folder has an `INDEX.md`, and **no `.md` in the repo root
 **Diagrams are mermaid, never ASCII art** — ```` ```mermaid ```` blocks, `flowchart` / `stateDiagram-v2`.
 Command output and code stay as plain fenced blocks.
 
+**Script the ritual; don't re-improvise it inline.** Prefer a `scripts/` helper over a long shell
+one-liner — the operator has to approve complex commands, and a re-typed pipeline drifts from the
+tested one. After touching docs or `src/`, run **`./scripts/check-docs.py`** (links · INDEX coverage ·
+no stray root `.md` · the `src/` purity boundary · every module imports on the host; `--fix-rag`
+re-ingests). If you find yourself running the same multi-step thing twice, that is the signal to write
+it down as a script — [docs/directives/automation-first.md](docs/directives/automation-first.md).
+
 **Record the measurement, not just the conclusion.** "Threshold 45" is useless in the report; "floor
 20±3%, target 68±4% on classroom carpet under overhead fluorescents, 2026-09-03, threshold 45 with 8-point
 hysteresis" is a results section. The Intro Report gets written *from* this repo.
 
-**Testing:** `tests/persistent/` is a small protected host-side floor over the **pure** `src/` modules. Never
-delete, skip, or loosen a floor test to make a change pass. Anything needing the hub is a **diagnostic**
-in `scripts/`, not a test. No coverage targets, no load tests.
+**Testing: there is none, by decision** ([ADR-0005](docs/decisions/0005-no-test-suite-verify-on-hardware.md)).
+No `tests/`, no pytest, and **do not create any without a new ADR**. Verification is: the interpreter (a
+module that won't import is broken), throwaway one-liners while developing, and the robot on the floor.
+The `src/` import boundary is the one standing check, in `./scripts/check-docs.py`.
+Full reasoning, and why minimalism replaces both a debugger and a suite: [test_methodology.md](test_methodology.md).
+
+**Report the conclusion, not the transcript** (operator, 2026-08-26). Say what a check found; don't paste
+the command that found it. This does **not** loosen the rule against reporting an unobserved result — the
+verification still happens, it just isn't narrated. Paste output when it's surprising, when it *is* the
+deliverable, or when asked.
 
 **Retrieval.** This project has a **docs-rag** over its own `docs/` at `http://127.0.0.1:10060`
 ([runbook](docs/runbooks/docs-rag.md)). ⚠ **It is only PARTIALLY working: search yes, `/api/ask` no.**
 That distinction is the whole value — `ask` synthesises an answer so you don't read and reason over
 chunks yourself; search alone still makes you do that work and burn the tokens. Until `ask` works,
-docs-rag saves you *finding* the file, not *reading* it. Check with `./scripts/stack.sh status`, which
+docs-rag saves you *finding* the file, not *reading* it.
+
+> **Temporary pass, granted by the operator 2026-08-26:** use search-only docs-rag anyway. It is
+> genuinely useful for locating the right file in a 90-file tree, and the VPN outage blocking `ask` is
+> not a reason to leave it idle. **This is revocable — the operator will say when to stop.** It does
+> **not** change the status: the honest answer to "is the docs-rag working?" is still **PARTIAL**, and
+> it stays that way until `/api/ask` answers. Check with `./scripts/stack.sh status`, which
 reports search and ask separately. **The fix is remote `qwen3.5:9b` on skytracker, gated on the ERAU
 VPN — not a local model. No sub-5B, and never pull a generation model on initiative: shared GPU is
 operator-gated** ([ADR-0006](docs/decisions/0006-docs-rag-llm-is-operator-gated.md)), and **ResearchHub** for

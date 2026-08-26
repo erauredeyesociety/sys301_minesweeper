@@ -24,19 +24,20 @@ and parameterize, so an answer changes a value, not the architecture.
 - [ ] Port map recorded as single source of truth → [hardware/port-map.md](./hardware/port-map.md)
 
 ## M1b — Planning depth (done 2026-08-26)
-- [x] Code scaffold: flat `src/` — pure logic + `sensors.py` adapter ([ADR-0004](./decisions/0004-flat-src-supersedes-package-split.md)); no test suite ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md))
+- [x] Code scaffold: flat `src/` — pure logic + the `hub_*.py` modules adapter ([ADR-0004](./decisions/0004-flat-src-supersedes-package-split.md)); no test suite ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md))
 - [x] Bench measurement plan + drivetrain runbook · telemetry plan · hub compute limits + SLAM verdict
 - [x] 12 papers on disk → [research/papers/INDEX.md](./research/papers/INDEX.md)
-- [ ] **In flight:** sensor-suite architecture · spin-scan localization · sensor mounting geometry
-- [ ] **Owed after those land:** unified pattern → sensors → ports → cost matrix
+- [x] Sensor suite architecture · spin-scan localization · sensor mounting geometry · Bluetooth (control + telemetry) · analysis theory (detection + motion) · mission algorithm spec
+- [x] Unified matrix → [plans/sensor-decision-matrix.md](./plans/sensor-decision-matrix.md)
+- [x] `scripts/setup-host.sh` · `find_spike_prime.py` · `scripts/check-docs.py`
 
 ## M2 — Mission capability (Sprint 2, 1–8 SEP)
-- [ ] `src/` pure logic + `tests/persistent/` floor — **writable now, no hub needed**
+- [x] `src/` pure logic written — config · calibration · detector · sweep · result · odometry · sensors. **No test floor** ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)); the import boundary is guarded by `./scripts/check-docs.py`
 - [ ] Detection: run-start calibration + hysteresis edge counter (reflected light, not color ID)
 - [ ] Sweep: boustrophedon lanes + heading hold + per-lane re-square + boundary handling
 - [ ] Yellow classification only if the professor confirms decoys exist (FR-2b)
 - [ ] Standalone reporting on the hub — count on the light matrix, no laptop
-- [ ] **Must-not-break paths** (each gets a floor test): edge-counting state machine · sweep state machine · calibration math · the `src/` import boundary
+- [ ] **Must-not-break paths** — verified on the robot, not by tests ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)): edge-counting state machine · sweep state machine · calibration math. The `src/` import boundary is the one exception, checked by `./scripts/check-docs.py`
 
 ## M3 — Demo readiness (by 10 SEP)
 - [ ] Sensor mounting geometry decided from research **before** the Supplier buys blocks
@@ -48,7 +49,7 @@ and parameterize, so an answer changes a value, not the architecture.
 - [ ] Daily journal entries, every class day → [course/journal/INDEX.md](./course/journal/INDEX.md)
 - [ ] Mid-project check-in survey (1 SEP) · Peer evaluations + journal (15 SEP)
 - [ ] Intro Report, CSER 2022 Word template (18 SEP) → [course/report/INDEX.md](./course/report/INDEX.md)
-- [ ] Early: does the CSER `.docx` survive a LibreOffice round-trip? Cheap now, expensive on 17 SEP
+- [x] ~~CSER `.docx` LibreOffice round-trip~~ — **it survives**: 20 styles + trim size intact, one sample image/OLE lost. [findings/cser-template-libreoffice-roundtrip.md](./findings/cser-template-libreoffice-roundtrip.md)
 
 ## Script infrastructure
 - [ ] `scripts/setup-host.sh` → `identify-hub.sh` → `deploy.sh` → `read-output.sh` → `pre-demo-check.sh`

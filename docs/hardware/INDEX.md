@@ -14,6 +14,7 @@ and what it cost. Written down so the code, the report, and the next class sessi
 | File | Purpose |
 |---|---|
 | [port-map.md](./port-map.md) | **Single source of truth** for hub port assignments. Scope [TR-5](../scope.md#technical-tr): the code reads this, it does not scatter port literals. |
+| [design-description.md](./design-description.md) | **Start here.** The design in plain sentences — proposed vs resulting, side by side. No brick inventory: *"the colour sensor is mounted flat, facing down, near the front"* is the right altitude |
 | [build-record.md](./build-record.md) | Skeleton the operator fills in by describing the build: drive configuration, sensor mounting, wheel geometry, photos. |
 
 ## Budget — the ledger is a script, not a document

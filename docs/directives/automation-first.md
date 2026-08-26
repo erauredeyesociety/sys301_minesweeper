@@ -19,6 +19,10 @@ comes does not fail — it *hangs*, taking the session and the rest of the class
 
 | Script | Does | Hub? |
 |---|---|---|
+| `check-docs.py` | **Repo hygiene, one command.** Links resolve · every docs folder has an INDEX · no stray root `.md` · the `src/` purity boundary · every `src/` module imports on the host. `--fix-rag` re-ingests after. **Run it instead of re-typing these checks** | No |
+| `../find_spike_prime.py` | Is the hub connected and openable? Linux/Windows/macOS. Never sends, never waits | No — reads the port list only |
+| `stack.sh` | `up`/`status`/`down` for ollama → docs-rag → ResearchHub tunnel → skytracker | No |
+| `rh-query.sh` · `rh-tunnel.sh` · `sky-ollama.sh` | Retrieval tunnels, with stale detection and repair | No |
 | `setup-host.sh` | Ubuntu prep: `dialout`, ModemManager interference on `/dev/ttyACM*`, udev rule, Python deps. **Write this first** | No |
 | `identify-hub.sh` | Read-only: hub present? which device node? which Hub OS / API generation? | Yes |
 | `deploy.sh` | Put a program on the hub and **verify it landed** | Yes |

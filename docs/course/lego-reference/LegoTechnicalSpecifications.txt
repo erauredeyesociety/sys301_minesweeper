@@ -1,0 +1,481 @@
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Large Hub
+
+
+Hardware name            Technic™ Large Hub
+Description              The Hub is a programmable control unit that LEGO® sensors and motors can be attached to.
+                         The Hub has an intuitive light and button interface and can work autonomously or in streaming mode.
+Key features             • 5x5 LED matrix white display
+                         • Six input/output ports
+                         • Six-axis Gyro Sensor (three-axis accelerometer and three-axis gyroscope)
+                         • Three-button navigation, including light interface
+                         • Speaker
+
+
+
+
+                                                                                                                                      LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                         • Connectivity to devices using USB and Bluetooth
+                         • MicroPython operating system
+                         • The Hub has a Technic build geometry that allows for versatile building and easy integration into models
+Connector type           LEGO Power Functions 2.0 (LPF2) for connection to LEGO sensors and motors
+Hub capabilities         5x5 LED matrix white display:
+                         • 25 white LEDs
+                         • Each LED is programmable
+                         • Each LED can be dimmed in 10-step increments
+
+                         Input/output ports:
+                         • 6x LPF2 input/output ports (ports A, B, C, D, E , and F)
+                         • 115 kB port speed (ports E and F are prepared for “high-speed”)
+                         • Autodetection of sensors and motors
+                         • Ports can be chosen freely when pairing motors
+
+                         Six-axis Gyro Sensor:
+                         • Three-axis accelerometer
+                         • Three-axis gyroscope
+                         • Able to report:
+                           • Gyroscope mode (three-axis)
+                           • Accelerometer/tilt mode (three-axis)
+                           • Gestures as tap, free fall, and shake
+
+                         Three-button interface:
+                         • Center Button:
+                           • Turns the Hub on/off
+                           • Executes selected programs
+                           • RGB light LEDs inside the button that communicate system status and are programmable
+                         • Left/Right Button:
+                           • Navigates programs on the Hub
+
+                         Speaker:
+                         • Used for interface sounds
+                         • Maximum sound quality is 12 bit 16 KHz (mono)
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Large Hub
+
+
+                         Wireless connectivity:
+                         • Enables users to connect wirelessly to smart devices (phones, tablets, laptops, etc.) and LEGO® LPF2 remotes
+                           and wireless components using Bluetooth
+                           • Bluetooth Classic 4.2 (BTC)
+                           • Bluetooth Low Energy 4.2 (BLE)
+                         • Connectivity to smart devices (laptops, tablets, etc.) is only supported with BTC
+                         • Programs, sounds, and firmware can be updated wirelessly (BTC only)
+                         • Minimum range: 10 meters (line-of-sight, without obstructions, indoors)
+
+
+
+
+                                                                                                                                          LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                         • The Hub can have a maximum of four BLE and one Bluetooth connections to compatible wireless components
+                         • Connection interface button on the Hub enables users to turn wireless functionality on/off
+                           • RGB light LED indicates connectivity status ("Bluetooth on/off," “connected,” “out of range”)
+
+                         Power supply:
+                         • Specially designed rechargeable battery is required
+                           • Charges inside the Hub via micro USB cable
+                           • Can be removed from the Hub without the use of tools
+                         • RGB color LED indicates power/charging status
+
+                         Size and weight:
+                         • Hub Weight 63 g (without battery)
+                         • Hub Dimensions: L88.0 x W56.0 x H32.0 mm.
+
+                         System:
+                         • The Hub is powered by a 100MHz M4 320 KB RAM 1M FLASH processor
+                         • 32 MB of memory for programs, sound, and content
+                         • Embedded MicroPython operating system
+                           • Provides an open platform for advanced users and third-parties
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Essential
+Technical Specifications
+LEGO® Technic™ Small Angular Motor
+
+
+Hardware name     LEGO® Technic™ Small Angular Motor
+
+Description       The motor is designed to function as both a motor and sensor. Using the integrated advanced Rotation Sensor, the motor can
+                  report both speed and position. The motor can also sense direct user input if the output is rotated by hand.
+
+Key features      • Speed Sensor (measures percentage of maximum design speed)
+                  • Measures relative position (in degrees)
+                  • Measures absolute position (in degrees)
+                      • When programming in Scratch, the absolute position is 0-360 degrees
+                      • When programming in Python, the absolute position is +/- 180 degrees
+                  • Rotating disc output with crosshole and building interface
+                  • The motor has a Technic build geometry that allows for versatile building and easy integration into models
+
+Connector type    LEGO Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+
+
+
+
+                                                                                                                                               LEGO, the LEGO logo, the Minifigure and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2021 The LEGO Group. All rights reserved.
+Wire length       250 mm
+
+Motor output      Voltage Range
+                  • Min: 3.3 V
+                  • Max: 6 V
+
+                  No Load
+                  • Torque: 0 Ncm
+                  • Speed: 110 RPM +/- 15%
+                  • Current consumption: 55 mA +/- 15%
+
+                  Maximum Efficiency
+                  • Torque: 1.8 Ncm
+                  • Speed: 85 RPM +/- 15%
+                  • Current consumption: 170 mA +/- 15%
+
+                  Stall
+                  • Torque: 5 Ncm
+                  • Speed: 0 RPM
+                  • Current consumption: 340 mA +/- 15%
+
+                  All performance data is based on a 5 V power supply.
+
+Sensor input      Rotation Sensor
+                  • Resolution: 360 counts per revolution
+                      • Resolution is the number of counts the sensor makes for every full revolution (360 degrees) on the output axle
+                  • Accuracy:
+                      • Sensor input accuracy is +/- 1 degree
+                      • Motor can be controlled with an accuracy of +/-3 degrees
+                  • Update rate: 100 Hz
+                      • Update rate is defined as the frequency at which a new sensor reading, position, and speed are available
+
+
+The LEGO® Education SPIKE™ App might not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Medium Angular Motor
+
+
+Hardware name            Technic™ Medium Angular Motor
+Description              The motor is designed to function in as both a motor and sensor. With the integrated advanced
+                         Rotation Sensor, the motor can report both speed and position. The motor can also sense direct
+                         user input measures if the output is rotated by hand.
+Key features             • Speed sensor (measures percentage of maximum design speed)
+                         • Relative position in degrees
+                         • Absolute position in degrees (-/+ 180 degrees)
+                         • Crosshole output on one side, rotating disc with crosshole and building interface on the other side
+
+
+
+
+                                                                                                                                 LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                         • The motor has a Technic build geometry that allows for versatile building and easy integration
+                           into models
+Connector type           LEGO® Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+Wire length              250 mm
+Motor output             Voltage range:
+                         • Min: 5V
+                         • Max: 9V
+
+                         No load:
+                         • Torque: 0 Ncm
+                         • Speed: 185 RPM +/- 15%
+                         • Current consumption: 110mA +/- 15%
+
+                         Maximum efficiency:
+                         • Torque: 3.5 Ncm
+                         • Speed: 135RPM +/- 15%
+                         • Current consumption: 280mA +/- 15%
+
+                         Stall:
+                         • Torque: 18 Ncm
+                         • Speed: 0 RPM
+                         • Current consumption: 800mA +/- 15%
+
+                         All performance data is based on a 7.2V power supply.
+Sensor input             Rotation Sensor:
+                         • Resolution: 360 counts per revolution
+                           • Resolution is the number of counts the sensor makes for every full revolution (360 degrees)
+                             on the output axle
+                         • Accuracy: ≤+/- 3 degrees
+                           • Accuracy is defined as the tolerances in the sensor combined with the gearbox slack
+                         • Update rate: 100 Hz
+                           • Update rate is defined as the frequency at which a new sensor reading, position, and
+                             speed are available
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Large Angular Motor
+
+
+Hardware name            Technic™ Large Angular Motor
+Description              The motor is designed to function in models as both a motor and sensor. With the
+                         integrated advanced Rotation Sensor, the motor can report both speed and position.
+                         The motor can also sense direct user input if the output is rotated by hand.
+Key features             • Speed Sensor (measures percentage of maximum design speed)
+                         • Relative position in degrees
+                         • Absolute position in degrees (-/+ 180 degrees)
+                         •	Crosshole output on one side, rotating disc with Crosshole and building interface on the other side
+
+
+
+
+                                                                                                                                  LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                         •	The motor has a Technic build geometry that allows for versatile building and easy
+                            integration into models
+Connector type           LEGO® Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+Wire length              250 mm
+Motor output             Voltage range:
+                         • Min: 5V
+                         • Max: 9V
+
+                         No load:
+                         • Torque: 0 Ncm
+                         • Speed: 175 RPM +/- 15%
+                         • Current consumption: 135 mA +/- 15%
+
+                         Maximum efficiency:
+                         • Torque: 8 Ncm
+                         • Speed: 135 RPM +/- 15%
+                         • Current consumption: 430 mA +/- 15%
+
+                         Stall:
+                         • Torque: 25 Ncm
+                         • Speed: 0 RPM
+                         • Current consumption: 1900 mA +/- 15%
+
+                         All performance data is based on a 7.2V power supply.
+Sensor input             Rotation Sensor:
+                         • Resolution: 360 counts per revolution
+                           • Resolution is the number of counts the sensor makes for every full revolution
+                              (360 degrees) on the output axle
+                         • Accuracy: ≤+/- 3 degrees
+                           • Accuracy is defined as the tolerances in the sensor combined with the gearbox slack
+                         • Update rate: 100 Hz
+                           • Update rate is defined as the frequency at which a new sensor reading, position,
+                              and speed are available
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Color Sensor
+
+
+Hardware name            Technic™ Color Sensor
+Description              The sensor can detect color, reflectivity, or ambient light. The sensor can also be used
+                         as a light output.
+Key features             • Color sensing (RGB, HSV, and LEGO® colors)
+                         • Reflectivity sensing (for line following)
+                         • Ambient light sensing
+                         • Emission of white light
+                         • The sensor has a Technic build geometry that allows for versatile building and easy
+
+
+
+
+                                                                                                                    LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                           integration into models
+Connector type           LEGO Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+Wire length              250 mm
+Sensor sample rate       100 Hz
+Sensor input             Color sensing:
+                         • Optimal reading distance: 16 mm (depending on object size, color, and surface)
+                         • Output range:
+                           • No object
+                           • White (LEGO:01; R:244, G:244, B:244)
+                           • Blue (LEGO:23; R:30, G:90, B:168)
+                           • Black (LEGO:26; R:0, G:0, B:0)
+                           • Green (LEGO:28; R:0, G:133, B:43)
+                           • Yellow (LEGO:24; R:250, G:200, B:10)
+                           • Red (LEGO:21; R:180, G:0, B:0)
+                           • Medium azur (LEGO:322; R:104, G:195, B226)
+                           • Bright reddish violet (LEGO:124; R:144, G:31, B:118)
+
+                         Reflectivity sensing:
+                         • Optimal reading distance: 16 mm (depending on object size, color, and surface)
+                         • Output range:
+                           • Non-reflective/nothing = 0%
+                           • Very reflective= 100%
+
+                         Ambient light sensing:
+                         • Output range:
+                           • Dark = 0%
+                           • Bright = 100%
+Sensor output            LED output:
+                         • Color: white - temperature 4000K
+                         • Controlled individually (3 LEDs in total)
+                         • Cannot be used while sensor is in color/light sensing mode
+                         • Output power: controllable from 0-100% increments of 1%
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Distance Sensor
+
+
+Hardware name             Technic™ Distance Sensor
+Description               The sensor can measure the distance to an object or surface using ultrasonic tech-
+                          nology. In addition, the sensor has a light output around the “eyes,” which is divided
+                          into four segments that can be activated individually. The back of the sensor can be
+                          removed and used as “break-out” access to the LPF2 wired platform for third-party
+                          suppliers and advanced users.
+Key features              Distance Sensor:
+                          • Distance Sensing from 50 to 2000 mm
+
+
+
+
+                                                                                                                   LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+                          • Fast distance sensing from 50 to 300 mm
+                          • White light output around the sensor “eyes” divided into four segments – two upper
+                            and two lower segments
+
+                          Back of the sensor (break-out):
+                          • Can be detached from the front of the sensor by removing two screws
+                          • Provides access to an 8-pin female header that allows direct and easy access to the
+                            LPF2 system for adding third-party sensors and boards
+
+                          The sensor has a Technic build geometry that allows for versatile building and easy
+                          integration into models
+Connector type            LEGO® Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+Wire length               250 mm (fixed to sensor)
+Sensor sample rate        100 Hz (with ultrasonic function)
+Sensor input              Distance sensing:
+                          • Range total: 50-2000 mm +/- 20 mm
+                          • Entrance angle: +/- 35 degrees (varies according to the distance)
+                          • Sensor output resolution: 1 mm
+
+                          Fast Distance sensing:
+                          • Range total: 50-300 mm +/- 15 mm
+                          • Entrance angle: +/- 35 degrees (varies according to the distance)
+                          • Sensor output resolution: 1 mm
+Sensor output             LED output:
+                          • Color: white 4000K
+                          • Controlled individually (4 segment LEDs in total)
+                          • Output power: controllable from 0-100% in increments of 1%
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Prime
+Technical Specifications
+Technic™ Force Sensor
+
+
+Hardware name             Technic™ Force Sensor
+Description               The sensor can detect simple touch and measure force.
+Key features              • Touch sensing
+                          • Tap sensing
+                          • Force sensing
+                          • The sensor has a Technic build geometry that allows for versatile building and
+                            easy integration into models
+Connector type            LEGO® Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs
+
+
+
+
+                                                                                                             LEGO, the LEGO logo, the Minifigure, MINDSTORMS and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2019 The LEGO Group. All rights reserved.
+Wire length               250 mm (fixed to sensor)
+Sensor sample rate        100 Hz
+Sensor input              Touch sensing:
+                          • Activation zone: 0-2 mm
+                            • Threshold point is defined in firmware 1 mm +/- 0.5 mm
+                          • Activation force: 0.5-1.0 newton +/- 10%
+                          • Sensor output is binary (1=activated or 0=not activated)
+
+                          Tap sensing:
+                          • Activation zone: 0-2 mm
+                            • Threshold point is defined in firmware 1 mm +/- 0.5 mm
+                          • Activation force: 0.5-1.0 newton +/- 10%
+                          • Sensor data output: 0-3
+                          • Applicable to the following:
+                            • Single tap
+                            • Quick tap
+                            • Press and hold
+
+                          Force sensing:
+                          • Activation zone: 2-8 mm
+                          • Activation force: 2.5-10 newtons
+                          • Sensor output resolution: 0.1 newton steps
+                            • Sensor output is limited to a fixed max output value: 10 newtons
+                          • Sensor output accuracy: +/- 0.65 newton
+
+                          Force-filter sensing (high speed “peak” sensing):
+                          • Like the force sensing mode
+                          • Internal sensor sample rate: 1kHz
+                          • Keeps the maximum value until reset by the Hub firmware or powered down
+The LEGO® Education SPIKE™ app may not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+LEGO® Education
+SPIKE™ Essential
+Technical Specifications
+LEGO® Technic™ 3x3 Color Light Matrix
+
+
+Hardware name     LEGO® Technic™ 3x3 RGB Light Matrix
+
+Description       The RGB Light Matrix is a programmable light matrix with the capability to turn on each segment separately and
+                  in different colors.
+
+Key features      • 3X3 RGB LED matrix display
+                  • 9 RGB LEDs
+                  • Each LED is programmable in 10 different colors
+                  • Each LED can be dimmed in 10-step increments
+                  • The transitions between 2 frames can be instant (standard), faded, or swiped
+                  • The Light Matrix has a Technic build geometry that allows for versatile building and easy integration into models
+
+Connector type    LEGO® Power Functions 2.0 (LPF2) for connection to LEGO Smarthubs.
+
+
+
+
+                                                                                                                                        LEGO, the LEGO logo, the Minifigure and the SPIKE logo are trademarks and/or copyrights of the LEGO Group. ©2021 The LEGO Group. All rights reserved.
+Wire length       250 mm
+
+
+
+The LEGO® Education SPIKE™ App might not support all hardware features and functionalities.
+
+
+
+
+LEGOeducation.com
+

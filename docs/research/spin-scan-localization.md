@@ -45,10 +45,10 @@ rectangle every wall looks like every other wall. See § Impact on the SLAM verd
 
 | # | Idea | Cost | Verdict |
 |---|---|---|---|
-| **1** | **Forward range reads at zero extra angle** — no spin at all, just read the wall you are already driving at | ~free once the sensor is owned | **TAKE.** Bounds *along-track* position, which the wall bump does **not** ([./detection-and-sweep-techniques.md](./detection-and-sweep-techniques.md) line 782: a bump corrects heading, not offset) |
-| **2** | **One spin-scan at run start** to measure the arena and set the initial pose | one ~3 s scan, once | **TAKE, conditional on walls (KU-P3).** Its real value is not "closing KU-P1" — it is that the sweep stops being *hard-coded* to KU-P1's answer |
+| **1** | **Forward range reads at zero extra angle** — no spin at all, just read the wall you are already driving at | ~free once the sensor is owned | **TAKE.** Bounds *along-track* position, which the wall bump does **not** ([./detection-and-sweep-techniques.md](./detection-and-sweep-techniques.md) § Gyro heading hold, caveat 1: a bump corrects heading, not offset) |
+| **2** | **One spin-scan at run start** to confirm the arena and set the initial pose | one ~3 s scan, once | **TAKE, conditional on walls (KU-P3) *and* on the robot already being within ±476 mm of centre** (§ 6.2 — that condition is tighter than it looks, and reaching it is circular unless the drivetrain bootstraps the size first). Its real value is not "closing KU-P1" — it is a second, exteroceptive check on a number the drive already estimated |
 | **3** | **Fixed-angle spot checks** — turn to a known heading, take one reading | a turn each | **CONDITIONAL.** Only worth it where the geometry is not already free (#1) |
-| **4** | **Spin-scan at every lane end**, to re-square heading | **1.9–3.2 min added to a run already at 8–23 min** | **REJECT.** Buys ~±3.5° of heading where a mechanical wall bump derives **0.6°** — five times worse for a large slice of the budget |
+| **4** | **Spin-scan at every lane end**, to re-square heading | **1.9–3.2 min added to a run already at 8–23 min** | **REJECT.** Buys ~±3.5° of heading where a mechanical wall bump derives **0.6°** — ~5.8× worse for a large slice of the budget |
 
 **One thing that should change in another document today:** [./hub-compute-limits.md](./hub-compute-limits.md)
 § 4.5 and § 4.6 call the 45604 a *"time-of-flight beam."* It is **ultrasonic**
@@ -78,9 +78,12 @@ Two mechanizations, and they are not close.
 The cable is the decider. A continuously rotating sensor winds its own lead every revolution and there is
 no LEGO part that fixes it; the only survivable form of B is a **bounded oscillation** (say ±90°, unwind
 on the return), which is a genuinely nice idea — it scans without scrubbing the wheels — but still costs a
-port, ~10 SB, and a mast, to feed a sensor that resolves 70°. The trade study wants that port and that
-money for a **second colour sensor**, where it multiplies the swath and directly attacks the KU-P1
-coverage problem ([../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md) § 1).
+port, ~10 SB, and a mast, to feed a sensor that resolves 70°. The competing claim on that port and that money is a **second colour sensor**, which multiplies the swath
+and attacks the KU-P1 coverage problem directly — though note the trade study is careful here: its port
+budget is § 6.1, and its § 1 decision table finds a 2nd sensor justified only in the *"find all, hard time
+limit"* column, so this is a competition the spin mast loses to a *contingent* purchase, not a certain one
+([../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md)
+§ 1 and § 6.1).
 
 Option A's one real cost — that spinning wrecks the odometry it is being used to fix — is less circular
 than it sounds: the scan re-establishes position, so the damage is repaired by the thing that caused it.
@@ -103,8 +106,10 @@ encoders to fuse."* One correction, and it matters:
 > (pointing down the body z-axis the whole time), so it carries **no** yaw information. Yaw during a flat
 > spin comes from the **gyroscope** — the z-axis rate, integrated.
 
-The hub has both; LEGO calls the pair a *"six-axis motion sensor (3-axis accel + 3-axis gyro)"*
-([45601 techspecs](https://assets.education.lego.com/v3/assets/blt293eea581807678a/bltf512a371e82f6420/5f8801baf4f4cf0fa39d2feb/techspecs_techniclargehub.pdf?locale=en-us)),
+The hub has both; LEGO's 45601 sheet lists a *"Six-axis Gyro Sensor"* with, verbatim, *"Three-axis
+accelerometer"* and *"Three-axis gyroscope"*
+([45601 techspecs](https://assets.education.lego.com/v3/assets/blt293eea581807678a/bltf512a371e82f6420/5f8801baf4f4cf0fa39d2feb/techspecs_techniclargehub.pdf?locale=en-us),
+fetched and text-extracted 2026-08-26 — the phrase "motion sensor" is the API's, not the fact sheet's),
 and `motion_sensor.tilt_angles()[0]` already hands back an integrated yaw in decidegrees
 ([./motion-control-and-odometry.md](./motion-control-and-odometry.md) § The gyro).
 
@@ -116,17 +121,30 @@ and `motion_sensor.tilt_angles()[0]` already hands back an integrated yaw in dec
 | **Wheel encoders, differential** | `φ = (C_w/(π·b))·Δmotor_deg` | A slip-free cross-check; immune to gyro drift | **Spin turns are the worst case for it** — see below |
 | **Accelerometer** | Specific force | (a) confirming the robot is **flat**, so the gyro z-axis really is the yaw axis — `motion_sensor.stable()`; (b) detecting a bump or a tip; (c) a curiosity: centripetal accel `ω²r` cross-checks the *magnitude* of ω if the sensor sits off the spin axis, ~0.03 g at a 124 °/s spin and 60 mm offset — **derived, not a method** | Anything to do with heading |
 
-**Gyro drift inside one scan is not the problem.** At the most pessimistic *sourced* rate in
-[./motion-control-and-odometry.md](./motion-control-and-odometry.md) § The gyro — ~30 °/min, a
-silicon-level bound, LEGO publishes no drift spec at all — a ~3 s revolution accrues **~1.5°**. Against a
-70° beam that is nothing. Drift is a lane-length problem, not a scan problem.
+**Gyro drift inside one scan is not the problem.** [./motion-control-and-odometry.md](./motion-control-and-odometry.md)
+§ The gyro carries two drift *rates*, and LEGO publishes none: **~30 °/min** (a silicon-level bound inferred
+from an LSM6DS3 datasheet figure and a teardown part ID — that document calls it *the more optimistic of
+the two*) and **60 °/min** (*"as much as 1 degree per second"*, search-snippet only, **UNVERIFIED**). Take
+the worse one: a ~2.9 s revolution accrues **~2.9°** (**derived**; ~1.5° at the optimistic rate). Against a
+70° beam that is nothing either way. Drift is a lane-length problem, not a scan problem.
 
 **Wheel slip inside one scan is the problem.** Borenstein's error taxonomy lists *"fast turning
 (skidding)"* explicitly as a non-systematic slip source, and the UMBmark procedure itself instructs
 *"run the vehicle slowly to avoid slippage"*
 ([papers/borenstein1995-umbmark-benchmark.txt](./papers/borenstein1995-umbmark-benchmark.txt), lines
-92–98 and 449). A differential-drive spin turn is *entirely* lateral scrub at both contact patches. It is
-the single motion where encoder-derived yaw is least trustworthy.
+95 and 449).
+
+**Be precise about *why*, because the obvious reason is wrong.** A two-wheel differential drive spinning
+about the midpoint of its axle is, ideally, in **pure rolling**: the radius to each wheel lies *along* the
+axle, so each wheel's velocity is tangential — which is its rolling direction. The scrub is not the
+nominal motion. It comes from the terms Borenstein lists two lines further down the same taxonomy —
+*"internal forces (e.g., castor wheels)"* and *"non-point wheel contact with the floor"* (lines 97–98) —
+plus gross slip under the high torque a spin demands: any third support point (ball caster, skid) is
+dragged sideways through its whole arc, and a finite-width contact patch has its inner and outer edges
+travelling different radii, so part of every tyre must scrub. Both scale with turn rate, both are worse
+than they are in a straight line, and neither is captured by `Δmotor_deg`. The conclusion stands — **a
+spin turn is the motion where encoder-derived yaw is least trustworthy** — but it stands on contact-patch
+and caster scrub, not on the wheels sliding sideways.
 
 ### Why fuse anyway — the disagreement is the payload
 
@@ -159,7 +177,7 @@ stop; do NOT reset_yaw here
 
 Four things that will bite, all of them already documented in this repo:
 
-1. **Yaw wraps.** `tilt_angles()` runs −1795…1800 decidegrees; a full revolution crosses the seam once and
+1. **Yaw wraps.** `tilt_angles()` runs 0 → −1799 → 1800 → 0 decidegrees; a full revolution crosses the seam once and
    the log must be unwrapped. *"Missing the 10× decidegree conversion is the most common Hub OS 3 porting
    bug"* ([./motion-control-and-odometry.md](./motion-control-and-odometry.md) § The gyro).
 2. **Never `reset_yaw()` while rotating** — it zeroes the bias estimate against a rotating frame and
@@ -272,6 +290,15 @@ Even the pessimistic row **oversamples the 70° beam by more than 10×**.
 > Spinning slower, sampling faster, or averaging harder does not change that number. You cannot buy
 > resolution with time here.
 
+**Resolution is not the same thing as bearing precision, and the difference is why § 6.1 is arguable at
+all.** *Resolution* is two-object separability: two features closer than the beamwidth merge into one
+plateau, and no sampling recovers them. The *bearing precision* on a single **isolated** transition — one
+plateau handing over to the next — is finer than 70°, because the handover is a repeatable event in a
+densely sampled series, not a resolution cell. That is the whole basis of the ±3.5° plateau-centre
+estimate in § 6.1. So both statements hold: **the scan cannot resolve features (which is what kills
+SLAM), and it can still locate one wall's normal to a few degrees (which is what § 6.1 then rejects on
+cost).** They are not in tension, and SS-2 is the measurement that decides the second one.
+
 Physics floor, for completeness: sound at ~343 m/s takes ~11.7 ms for a 2 m round trip, so ~86 Hz is the
 ceiling at full range regardless of what the port can carry — consistent with LEGO's 100 Hz. At 124 °/s the
 robot turns 1.45° during one ping. Negligible. **Derived.**
@@ -288,18 +315,26 @@ Scan matching (ICP and relatives) needs many points on distinguishable geometry.
 four featureless walls. **Scan matching is off the table.** But a rectangle is the one map you can solve
 with almost nothing, because the *model* supplies what the sensor cannot:
 
-From one revolution near the centre you get four plateaus `d₁…d₄` at bearings ~90° apart. Then, directly:
+From one revolution near the centre you get four plateaus `d₁…d₄` at bearings ~90° apart.
+
+**Get the offset term right — it is *not* the robot's width and length.** The sensor is a single point at
+some radius `r` from the spin axis, and it traces a circle of radius `r` as the robot turns. When it is
+pointed at a wall it sits `r` closer to that wall than the spin axis does, so **every** range is short by
+the **same** `r`, in every direction. `r` is a build constant (measure it once, off the built robot); the
+chassis's width and length do not enter:
 
 ```
-width   W  =  d_left  + d_right  + robot_width
-length  L  =  d_front + d_back   + robot_length
-x       =  d_left  + robot_width/2
-y       =  d_back  + robot_length/2
-heading θ  =  plateau-centre bearing        (mod 90 deg)
+width    W = d_left  + d_right + 2r
+length   L = d_front + d_back  + 2r
+x          = d_left  + r
+y          = d_back  + r
+heading  θ = plateau-centre bearing        (mod 90 deg)
 ```
 
-**Five unknowns — pose *and* arena size — from four numbers and a model.** No optimizer, no matrix, no
-`numpy`. That is a real result, and it is the reason this document does not simply say "no."
+**Five unknowns — pose *and* arena size — from four plateau *values*, four plateau *bearings*, and a
+model.** (θ comes from the bearings, not from the ranges; W, L, x, y come from the ranges.) No optimizer,
+no matrix, no `numpy`. That is a real result, and it is the reason this document does not simply say
+"no."
 
 ### 4.2 Why this is *not* SLAM, and why that matters more than anything else here
 
@@ -341,11 +376,25 @@ Two candidate algorithms, and the difference between them is the whole compute s
 | Method | Work | Fits the hub? |
 |---|---|---|
 | **Plateau detection + arithmetic** (§ 4.1) | One O(N) pass over ~100–300 int16 samples: run-length the ranges against a tolerance, take medians. A few hundred bytes of state, integer throughout | **Yes, easily.** Comparable to the binary coverage grid that [./hub-compute-limits.md](./hub-compute-limits.md) § 4.4 calls "essentially free" |
-| **Grid search over θ** with a nearest-surface-in-cone forward model, closed-form `x,y` per θ | ~360 hypotheses × N residuals ≈ 10⁴–10⁵ integer ops, **once per scan** | **Yes for a run-start scan.** It is 2–3 orders of magnitude *below* what § 4.1–4.2 of hub-compute-limits priced for an EKF or particle update, and — decisively — it runs **once**, not at 10–50 Hz. Even a pessimistic loop rate makes it a one-off pause, not a real-time constraint |
+| **Grid search over θ** with a nearest-surface-in-cone forward model, closed-form `x,y` per θ | ~360 hypotheses × N residuals ≈ **3.6 × 10⁴ – 1.1 × 10⁵** integer ops (**derived**, N = 100–300), **once per scan** | **Yes, but only because it runs once.** See the correction below |
 
-**Compute is not an objection to any of this**, and saying so plainly is important, because the compute
-argument is the one [./hub-compute-limits.md](./hub-compute-limits.md) already warns carries the widest
-error bar. The objection is § 3, and only § 3.
+**Correction to a comparison it is tempting to make.** The grid search is **not** cheaper than an EKF
+update — per invocation it is *comparable or larger*. [./hub-compute-limits.md](./hub-compute-limits.md)
+§ 4.1 prices one 20-landmark EKF covariance update at **7,400** MACs (sparse form) to **79,500** (naive
+dense form). Against 3.6 × 10⁴ – 1.1 × 10⁵, the grid search is **0.45× to 15× that**, i.e. the same order
+of magnitude. **The entire saving is duty cycle, not arithmetic:** the EKF wants that work at 10–50 Hz for
+the whole run; the grid search wants it **once**.
+
+Sized honestly against § 3.2's band of that document (10⁴–10⁵ ops/s interpreted, ceiling ≈3 × 10⁵ — a
+*float* band, and integer work should beat it by an unmeasured factor), one run-start fit is a **one-off
+pause of roughly 0.1 s to ~10 s**. At the pessimistic corner that is not free and the operator should be
+told the robot will sit still for it; at the optimistic corner it is invisible. **BM-5 is what turns that
+into a number.** The plateau-detection route of § 4.1 — one O(N) integer pass over ≤300 samples — is two
+orders of magnitude cheaper than either and is the one to build first.
+
+**Compute is still not the objection**, and saying so plainly matters, because the compute argument is the
+one [./hub-compute-limits.md](./hub-compute-limits.md) already warns carries the widest error bar. The
+objection is § 3, and only § 3.
 
 ---
 
@@ -367,7 +416,9 @@ and `a = 1000 deg/s²` default:
 | 500 deg/s | 1.44 s | 1.94 s | 2.14 s | ~2.1 s — but +8° of turn error |
 
 Add re-acquiring the lane heading afterwards: call it **~3–4 s of dead time per scan**, and note the scan
-cannot overlap driving — the robot must stop.
+cannot overlap driving — the robot must stop. **The lane-end table below charges only the bare scan
+(2.9 s / 4.0 s), so it under-counts**; re-acquisition would push both columns up by roughly the width of
+one column. The rejection in § 6.1 does not need the extra, so it is left out rather than guessed at.
 
 **Scanning at every lane end**, against the lane counts in
 [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md):
@@ -379,7 +430,9 @@ cannot overlap driving — the robot must stop.
 
 That lands on top of **8–23 min** of driving and **1.3–4.4 min** of turn overhead — a run that
 [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md) already flags as possibly not
-fitting a demo slot. **A 15–25% surcharge on the one budget that is already over.**
+fitting a demo slot. Taking driving + turns as the denominator, the four self-consistent pairings
+(fast scan with fast drive, slow with slow) come out at **16–20%**, and the worst mismatched corner at
+**28%** (**derived**). **Call it a 15–25% surcharge on the one budget that is already over.**
 
 ### How to replace these placeholders with measurements
 
@@ -410,8 +463,8 @@ Put that next to the numbers already on the table in
 | Two-point distance method, 500 mm baseline | 3.2° | a 500 mm detour |
 | **Spin-scan** | **~±3.5°** (estimated) | **~3–4 s of pure dead time** |
 
-**The bump wins on both axes.** Spin-scanning at lane ends is five times worse for more money and more
-time. It does not even survive as a fallback for the no-wall case, because if there is no wall to bump
+**The bump wins on both axes.** Spin-scanning at lane ends is **~5.8× worse than the bump** (3.5 / 0.6)
+and **~12.5× the 0.28° budget** (3.5 / 0.28), for more money and more time. It does not even survive as a fallback for the no-wall case, because if there is no wall to bump
 there is usually nothing to range against either. Reject it, and say in the report that it was evaluated.
 
 ### 6.2 One spin-scan at run start — **take, and it is the interesting one**
@@ -437,11 +490,39 @@ That is a genuinely strong systems-engineering story for the Intro Report — a 
 largest unknown is *parameterization plus run-time measurement*, exactly what
 [CLAUDE.md](../../CLAUDE.md)'s standing rule asks for — and it costs **one 3-second scan, once**.
 
-**Conditions it needs:** walls (KU-P3), all four within 2000 mm, robot near the centre. For a 10 ft square
-that means starting within ~1 m of centre on both axes (**derived**: `d_left + d_right = 3048`, so both
-stay under 2000 only inside a 1048 mm band). Note this **conflicts** with the known-start-pose fix for the
-symmetry ambiguity (§ 4.3), which wants a corner. Resolution: **start in a known corner, drive to
-approximately the centre, scan, then begin the sweep.** The drive is short and the heading is still fresh.
+**Conditions it needs, and the band is tighter than it looks.** Walls (KU-P3), and all four within
+2000 mm — which for a 10 ft square means starting **within ±476 mm of centre on both axes**, not within a
+metre. **Derived:** `d_left + d_right = 3048` (ignoring the sensor's own offset `r`, which shrinks the band
+further by `2r`), so `d_right ≤ 2000` forces `d_left ≥ 1048` and `d_left ≤ 2000` — a **952 mm-wide** window
+centred on 1524 mm, i.e. **±476 mm**. Roughly a half-metre box in the middle of a 3 m arena.
+
+**And there is a bootstrapping problem in it that has to be said out loud.** § 4.3 wants the run to start
+from a *known corner*, so the obvious resolution — start in the corner, drive to the centre, scan — needs
+the robot to know **where the centre is**, which needs the arena size, which is **the thing the scan is
+supposed to measure.** That is circular, and it fails in exactly the case that motivates the idea: if the
+hard-coded default says 1 m and the arena is really 10 ft, the robot drives 500 mm, lands 1024 mm off
+centre — **outside the ±476 mm window** — and the far walls return `−1`. The scan is most likely to fail
+precisely when the default it is meant to override is most wrong.
+
+**What survives, stated at its real strength.** The run-start scan is a **cross-check and a pose fix on an
+arena size already roughly known**, not a way of discovering an unknown arena from cold. Two mitigations,
+both cheap, and they are the reason this stays a TAKE rather than becoming a fourth rejection:
+
+1. **Bootstrap on the drivetrain, not the sensor.** Drive from the start corner until the boundary is
+   reached and read the encoders. It works at **any** arena size, with no 2000 mm ceiling. Boundary
+   detection is either the forward range read of § 6.3 (free, the sensor is already bought by this point)
+   or — with no sensor at all — a **stall/bump**: drive into the wall and watch the encoder stop advancing
+   under command, which needs only the 2 motors and 2 wheels we own. A few percent of error on that leg is
+   far more than enough to place the robot inside a ±476 mm window. *Then* scan, from a centre you actually
+   found. **Caveat: the stall variant assumes there is something solid to stall against, which is KU-P3
+   again** — if the boundary is tape, the colour sensor detects it instead and the same leg works.
+2. **Make failure loud and safe.** A scan that does not return four plateaus must fall back to the
+   professor's answer (or the default), log the fallback, and continue — never guess from two plateaus.
+   That is P1 and P6 of § 8 promoted into flight code.
+
+With (1) in front of it the scan stops being the measurement of first resort and becomes what it is good
+at: a second, independent, exteroceptive confirmation of a number the drive already estimated, plus
+`(x, y, θ)`.
 
 ### 6.3 Fixed-angle spot checks — **take the free version, skip the rest**
 
@@ -464,7 +545,7 @@ flowchart TD
     Q{"Are there walls,<br/>within 2000 mm?<br/>KU-P3"}
     Q -->|no| NONE["Nothing in this document applies.<br/>Fall back to gyro heading hold — rung 2"]
     Q -->|yes| K1["1. Forward range reads during the lane<br/>cost ~0 · bounds ALONG-TRACK error"]
-    K1 --> K2["2. ONE spin-scan at run start<br/>cost ~3 s once · arena becomes MEASURED, not assumed"]
+    K1 --> K2["2. ONE spin-scan at run start<br/>cost ~3 s once · confirms arena + fixes pose<br/>needs to already be within +/-476 mm of centre"]
     K2 --> K3["3. Fixed-angle spot checks<br/>only where geometry is not already free"]
     K3 --> K4["4. Spin-scan every lane end<br/>REJECTED — 5x worse than a wall bump<br/>for 1.9-3.2 min of the run"]
     classDef take stroke-width:3px
@@ -547,7 +628,9 @@ a height clear of the chassis; BM-3 and BM-4 done. **Untethered** — spinning w
 
 **Setup:** a rectangular space with hard flat walls, all four within 2000 mm of the centre — a taped-off
 corner of the room with two boards closing it is enough. Tape-measure the true `W`, `L`, and mark the
-robot's true `(x, y, θ)` on the floor.
+robot's true `(x, y, θ)` on the floor. **Also measure `r`** — the sensor face's offset from the spin axis
+(the midpoint of the drive axle). § 4.1's arithmetic is wrong by `2r` without it, and it is one ruler
+reading off the built robot.
 
 **Procedure**
 1. Flat, still, `motion_sensor.stable()` gate, then `reset_yaw(0)` **once**.
@@ -589,6 +672,7 @@ this document.
 | **SS-4** | If the arena is tape inside a larger room, does anything reflect within 2 m? | If not, § 6.2 and § 6.3 both evaporate and only rung 2 remains | Answered by SS-3 plus one look at the room |
 | **SS-5** | What is the hub's achievable Python loop rate with the distance sensor being polled? | Does not change § 3.5's conclusion, but it sizes the scan buffer | **BM-5** — the same unmeasured number [./hub-compute-limits.md](./hub-compute-limits.md) § 3 flags |
 | **SS-6** | Does the demo floor slip enough to make spin turns unreliable at all? | Larger than this document. Affects every turn in the sweep | **P5**, and it is free |
+| **SS-7** | **How does the robot get inside the ±476 mm centre window without already knowing the arena size?** | The circularity in § 6.2. If the encoder bootstrap in § 6.2 (1) does not land the robot inside the window, the run-start scan returns `−1` in the direction that matters and idea #2 collapses to a pose fix only | Fold into **BM-4**: after the track-width spin, drive one boundary-to-boundary leg on encoders and compare against the tape measure. Needs no distance sensor and can be run before one is bought |
 
 ---
 
@@ -610,27 +694,31 @@ this document.
 not fetched into the corpus; these are cited for their framing, not for numbers.**
 
 - J. J. Leonard & H. F. Durrant-Whyte, *"Simultaneous Map Building and Localization"*, in **Directed Sonar
-  Sensing for Mobile Robot Navigation**, Springer, 1992 — https://doi.org/10.1007/978-1-4615-3652-9_5
+  Sensing for Mobile Robot Navigation**, Springer US, 1992, pp. 129–146 —
+  https://doi.org/10.1007/978-1-4615-3652-9_5
   The canonical treatment of wide-beam sonar as constant-range arcs from specular surfaces rather than
   point returns. **The reason § 3.3 is not our invention.**
 - J. J. Leonard & H. F. Durrant-Whyte, *"Mobile robot localization by tracking geometric beacons"*, **IEEE
-  Transactions on Robotics and Automation**, 7(3), 1991 — https://doi.org/10.1109/70.88147
+  Transactions on Robotics and Automation**, 7(3), 376–382, 1991 — https://doi.org/10.1109/70.88147
   Model-based localization against **known** surfaces. The § 4.2 framing.
-- K.-S. Beom & H.-S. Cho, *"Mobile robot localization using a single rotating sonar and two passive
-  cylindrical beacons"*, **Robotica**, 13(3), 1995 — https://doi.org/10.1017/S026357470001777X
+- H. R. Beom & H. S. Cho, *"Mobile robot localization using a single rotating sonar and two passive
+  cylindrical beacons"*, **Robotica**, 13(3), 243–252, 1995 — https://doi.org/10.1017/S026357470001777X
   Direct precedent for the operator's proposal: **one** sonar, rotated, used for localization. Note what it
   needed that we do not have — **beacons**.
 - E. Mumolo, K. Lenac & M. Nolich, *"Spatial map building using fast texture analysis of rotating sonar
   sensor data for mobile robots"*, **Int. J. Pattern Recognition and AI**, 19(1), 2005 —
   https://doi.org/10.1142/S0218001405003922
   Rotating-sonar mapping is a real technique; it is also a paper's worth of signal processing.
-- X. Zhang et al., *"Mobile Robot Localisation and Navigation Using LEGO NXT and Ultrasonic Sensor"*,
-  arXiv:1810.08816, 2018 — https://arxiv.org/abs/1810.08816
+- Y. Liu, R. Fan, B. Yu, M. J. Bocus, M. Liu, H. Ni, J. Fan & S. Mao, *"Mobile Robot Localisation and
+  Navigation Using LEGO NXT and Ultrasonic Sensor"*, arXiv:1810.08816, 2018 —
+  https://arxiv.org/abs/1810.08816 (abstract page fetched 2026-08-26; author list and quote taken from it)
   Closest analogue on comparable hardware. Abstract, verbatim: *"an effective method is proposed to extract
   useful information from the **distorted readings** collected by the ultrasonic sensor. Then, the particle
-  filter is used to localise the robot."* Two lessons for us: the readings **are** distorted and need
-  processing, and the authors reached for a particle filter — which
-  [./hub-compute-limits.md](./hub-compute-limits.md) § 4.2 prices out of reach on this hub.
+  filter is used to localise the robot."* Three lessons for us: the readings **are** distorted and need
+  processing; the authors reached for a particle filter — which
+  [./hub-compute-limits.md](./hub-compute-limits.md) § 4.2 prices out of reach on this hub; and, decisively,
+  the abstract states the algorithms were *"implemented in MATLAB"* and reports *"simulation results"* — so
+  this is **not** evidence that any of it runs on a LEGO brick.
 
 **Within this repo — cited by path throughout, not recopied here**
 
@@ -658,3 +746,4 @@ document found. SS-1 is therefore resolved by our own bench, not by a citation.
 | Date | Change |
 |---|---|
 | 2026-08-26 | Created. Verdict: the mechanism works and costs nothing; the ±35° ultrasonic beam and the 2000 mm ceiling kill the point quality. SLAM stays rejected, but hub-compute-limits.md § 4.5's wording must change. Practical kernel extracted and ranked. |
+| 2026-08-26 | **Adversarial audit — 15 corrections, verdict unchanged.** Every 45604 and 45602 figure re-fetched from LEGO and confirmed verbatim; all four DOIs and the arXiv record re-checked. Fixed: § 4.4's "2–3 orders of magnitude below an EKF update" was **inverted** — the grid search is 0.45–15× an EKF update per invocation and the whole saving is duty cycle, so a wall-time bracket (~0.1–10 s, one-off) replaces it. § 6.2's centre window was **~2× too generous** — ±476 mm, not ~1 m — and the corner-start-drive-to-centre resolution was **circular** (it needs the arena size it is meant to measure); the circularity is now stated, mitigated by an encoder bootstrap, and tracked as SS-7. § 4.1's offset term was the chassis width/length; it is the sensor's radius `r` from the spin axis, `2r` in **both** axes, now measured in § 8. § 2's "a spin turn is entirely lateral scrub" was wrong physics — an ideal differential spin is pure rolling; the scrub is caster and finite-contact-patch, per Borenstein lines 97–98 — the conclusion survives, the reason did not. arXiv:1810.08816 was attributed to "X. Zhang et al."; the first author is **Y. Liu**, and its results are MATLAB simulation. Beom's initials corrected to **H. R.** Yaw wrap corrected to −1799. Drift now argued from the **worse** of the two reported rates (60 °/min → ~2.9°). Added the resolution-vs-bearing-precision distinction that keeps § 3.5 and § 6.1 from reading as contradictory. |

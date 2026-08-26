@@ -24,6 +24,7 @@ the artifacts that are *submitted*.
 
 | Path | Holds |
 |---|---|
+| [lego-reference/](./lego-reference/) | **LEGO's own spec sheets** — the combined element specifications and a printable LEGO ruler, with `.txt` sidecars for grep and the docs-rag. Confirms the 5×5 matrix, the 16 mm colour standoff, and the 250 mm fixed wires |
 | [source-material/](./source-material/) | **The course's own files, verbatim** — instructions PDF, journal rubric, example entry, CSER report template. Read-only originals; the authority any claim is checked against |
 | [deliverables.md](./deliverables.md) | **The authoritative one.** Full calendar, every deliverable, every rubric broken out, what full credit concretely requires, and how not to lose easy points. |
 | [journal/](./journal/) | 80 points. The per-day template, the six-entry tracker, and the transcribed entries. The **handwritten page in class is the submission**; the files here are the durable record. |

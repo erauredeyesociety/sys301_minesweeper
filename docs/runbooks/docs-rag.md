@@ -403,3 +403,51 @@ Set `OLLAMA_BASE_URL` back to `:11434`, `./rag down && ./rag up`, and make sure 
 Switching to a *different* embedding model requires a **full re-ingest**, not just a config change, and
 the dimension must match what the database was created with (768 for `nomic-embed-text`). If skytracker
 only has a different embedder, keep embeddings local and forward skytracker **only** for the LLM.
+
+---
+
+## Coverage — what is actually indexed, and how to check
+
+**Audited 2026-08-26. Every content item under `docs/` is now reachable: 119 of 119.**
+
+The corpus is **not just `.md`** — `docs-rag/config.yaml` ingests `md`, `txt` and `pdf`. That matters,
+because the course's own material (the instructions, the LEGO spec sheets, the academic papers) arrives
+as PDF and **the docs-rag cannot see a PDF that has no `.txt` sidecar until it is extracted**.
+
+**Rule: when a PDF is added to `docs/`, extract it in the same breath.**
+
+```bash
+pdftotext -layout "docs/course/whatever.pdf" "docs/course/whatever.txt"
+./scripts/check-docs.py --fix-rag
+```
+
+A scanned PDF with no text layer produces a ~1-byte file — **that is a real result, not a failure**.
+Record it (`Example Journal Entry.txt` is one) so nobody re-tries it.
+
+### Auditing coverage
+
+Compare **content items** — a paper counts as covered if *either* its `.pdf` or its `.txt` is indexed —
+against what is on disk:
+
+```bash
+docker exec sys301-docs-postgres-1 psql -U raguser -d ragdb -tAc \
+  "select filepath from documents;"
+```
+
+Two behaviours look like gaps and are not:
+
+- **`Skipped duplicate (content_hash match)`** — a PDF whose extracted text equals its `.txt` twin is
+  indexed once, not twice. Correct.
+- **A renamed file appears missing.** Its content hash matches the *old* path's row, so ingest skips it
+  and the index keeps citing a filename that no longer exists. **This is the one that actually bites**,
+  because a citation then points at a missing file. Fix: `docs-rag/rag prune` (dry-run by default) to
+  hard-delete the ghost rows, then re-ingest.
+
+### The prune
+
+`docs-rag/rag prune` reports; `--apply` deletes. **It acts on Postgres rows only and never touches
+files.** The 2026-08-26 audit found **218 expired ghost rows carrying 3,497 chunks** — accumulated
+supersessions diluting every search. After pruning and re-ingesting: 129 rows, 129 distinct paths, zero
+stale, zero uncovered.
+
+**Run the audit after any bulk rename or move**, not on a schedule.

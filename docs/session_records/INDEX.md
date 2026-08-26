@@ -7,3 +7,4 @@ Immutable and append-only. Stale records move to [../archives/session_records/](
 |---|---|
 | 2026-08-25 | [Project initialization](./2026-08-25_project-initialization.md) |
 | 2026-08-26 | [Retrieval stack, code scaffold, SE planning](./2026-08-26_retrieval-stack-code-scaffold-and-se-planning.md) |
+| 2026-08-26 | [Implementation, Bluetooth, analysis layer](./2026-08-26_code-implementation-bluetooth-and-analysis-planning.md) |

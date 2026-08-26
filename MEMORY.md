@@ -70,6 +70,10 @@ programming and design work is not restricted to class time.
   — which upstream names as the real quality unlock. So `/api/ask` is blocked on the ERAU VPN.
   **Never pull a generation model on initiative** — shared GPU is operator-gated.
   [ADR-0006](docs/decisions/0006-docs-rag-llm-is-operator-gated.md).
+  **Temporary pass (operator, 2026-08-26): use search-only docs-rag anyway** — finding the right file in
+  a 90-file tree is real value, and the VPN outage is not a reason to leave the tool idle.
+  **Revocable; the operator will say when to stop.** The *status* is unchanged: still PARTIAL until
+  `/api/ask` answers. Do not let permission-to-use drift into calling it working.
   [docs/runbooks/docs-rag.md](docs/runbooks/docs-rag.md).
 - **ResearchHub is on pwnstar (10.231.80.91), port 5347** — discovered, not guessed. Reachable over
   ZeroTier with `~/.ssh/id_git`. `./scripts/rh-tunnel.sh up|status|restart|down` manages the tunnel and
@@ -82,6 +86,28 @@ programming and design work is not restricted to class time.
 - Docker was cleaned 2026-08-25: all other projects' containers stopped and removed, all images except
   `sam-scraper-*` deleted (~6.7 GB reclaimed). Volumes untouched.
 - Upstream standards: `~/llm-project-bootstrap/` (PROMPTS.md, guides/, directives/, templates/).
+
+## The three research tools — use them BEFORE reading files or guessing
+
+This project has **97+ markdown files**. Reading them end to end is the wrong move and burns context.
+All three of these work today:
+
+| Tool | Command | Use it for |
+|---|---|---|
+| **docs-rag** | `RAG_ENDPOINT_URL=http://127.0.0.1:10060 python3 docs-rag/client/ragq.py -n 5 "question"` | Finding which of *our own* documents answers something. Returns `[[RAG:<path>#chunk]]` — open only that file, only that part. ⚠ **search only; `/api/ask` is broken** |
+| **ResearchHub** | `./scripts/rh-query.sh "question"` — **never raw curl** | Academic literature. Repairs a stale tunnel itself; exit 3 = tunnel down, 4 = remote down, 5 = query failed, so an empty result is genuinely empty |
+| **Web search / fetch** | the normal tools | Anything outside the repo and outside the literature — LEGO specs, library docs, part numbers |
+
+Plus **12 papers already on disk** in `docs/research/papers/` with grep-able `.txt` sidecars and an
+INDEX — check there before fetching anything new. `scripts/fetch_paper.py <url|doi|arxiv-id>` files a
+new one properly.
+
+**Every workflow brief must carry these instructions**, or agents read whole files and run out of context.
+**Cite by path, never recopy prose** — that is a hard project standard.
+
+**If a search 503s, ollama has died.** `./docs-rag/ollama-serve.sh` restarts it; `./scripts/stack.sh
+status` says which of the four pieces is actually broken. It has died twice in one day — check it before
+concluding a document is missing.
 
 ## Starting the stack — run this first, every session
 

@@ -228,10 +228,10 @@ It is a **diagnostic**, not a test: it never gates a commit
    fail, it hangs — taking the session and the rest of the class period with it.
 2. **A timeout reports UNKNOWN and exits non-zero. It never reports a pass.**
 3. **Assert a known-correct observation before anything moves.** On start it echoes back, and the
-   Programmer reads aloud: the API generation it bound to (`sensors.api_generation()`), the port map it
+   Programmer reads aloud: the API generation it bound to (`hub_api.api_generation()`), the port map it
    will drive, the commanded manoeuvre and its parameters, and the assumed wheel diameter and track. It
    **refuses to run** on `PortMapIncomplete` rather than driving an unassigned port
-   ([../../src/sensors.py](../../src/sensors.py)). Exit code 0 means the tool did not crash; it says
+   ([../../src/hub_*.py](../../src/hub_api.py)). Exit code 0 means the tool did not crash; it says
    nothing about the robot.
 4. **Every commanded move is bounded** — a degree-limited or distance-limited move, never an open-ended
    `run()`. Velocity is an explicit flag with a low default. There is no manoeuvre that cannot be waited
@@ -260,7 +260,7 @@ It is a **diagnostic**, not a test: it never gates a commit
   left_vel, right_vel, yaw, pitch, roll, reflection, r, g, b, i`. Raw, unsmoothed, unaggregated.
 - **An unreadable channel is written empty, never `0`.** `0` reads downstream as "a wall is touching us"
   or "the gyro is level"; empty reads as "no data". This is the rule
-  [../../src/sensors.py](../../src/sensors.py) already enforces by returning `None`, and the CSV must not
+  [../../src/hub_*.py](../../src/hub_api.py) already enforces by returning `None`, and the CSV must not
   quietly undo it.
 - **A stationary pre-roll and post-roll on every run** (a few seconds each, marked in the `phase` column).
   This is where **BM-9** and the idle half of **BM-5** come from at no cost.

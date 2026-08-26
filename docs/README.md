@@ -13,6 +13,7 @@ the graded course deliverables. This repo holds all of it.
 | What to do next | [todo.md](./todo.md) ← single source of truth |
 | The rules of working here | [directives/INDEX.md](./directives/INDEX.md) |
 | What's due, when, and how it's graded | [course/deliverables.md](./course/deliverables.md) |
+| **How to get code onto the hub** (Linux + Windows) | [runbooks/upload-to-hub.md](./runbooks/upload-to-hub.md) |
 
 > ⚠ **The design challenge is still PENDING** — it came from an instructor briefing we don't hold.
 > See [scope.md § Mission](./scope.md#mission--partial-verbal-briefing-captured-2026-08-25). Do not build to the assumption without saying so.

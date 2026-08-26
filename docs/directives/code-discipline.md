@@ -3,32 +3,44 @@
 **Purpose.** Write less code. On a two-sprint project with one programmer, every line is a liability you
 must also debug on a robot.
 
+> **Minimalism here is load-bearing, not an aesthetic.** This project carries **no test suite and uses no
+> debugger** ([ADR-0005](../decisions/0005-no-test-suite-verify-on-hardware.md),
+> [../../test_methodology.md](../../test_methodology.md)). That is only safe because the modules are small
+> and pure enough that a stack trace names the bug outright. Growing, tangled code is precisely what
+> creates the need for the tools we have chosen not to carry — so **when a module stops being readable in
+> one sitting, split it; do not add tooling around it.**
+
 ## Layout — and the one rule that matters
 
 ```mermaid
 flowchart LR
-    subgraph HOST["runs on the Ubuntu host AND the hub"]
-        M["<b>src/</b><br/>pure Python logic<br/>no hardware, fully testable"]
+    subgraph PURE["PURE — runs on the host AND the hub"]
+        M["config · calibration · detector<br/>sweep · result · odometry<br/>classify · telemetry"]
     end
-    subgraph HUB["runs on the hub only"]
-        IO["<b>src/</b><br/>thin adapter<br/>the ONLY LEGO API caller"]
+    subgraph HUBSIDE["hub_*.py — hub only"]
+        IO["hub_api · hub_color · hub_distance<br/>hub_motors · hub_imu · hub_ui<br/>hub_selfcheck"]
     end
-    SENSORS(["sensors · motors<br/>light matrix"]) <--> IO
+    DEV(["colour · distance · motors<br/>IMU · matrix · speaker · buttons"]) <--> IO
     IO -->|"plain numbers in"| M
     M -->|"decisions out"| IO
 ```
 
-**`src/` imports NOTHING hub-only.** Not `hub`, `motor`, `motor_pair`, `color_sensor`,
-`distance_sensor`, `force_sensor`, `motion_sensor`, or `runloop`. Not "just for a type hint", not "just
-in this one file". If it fails to import on a laptop with no robot attached, the boundary is broken.
+**The rule is the filename.** A module named `hub_*.py` may import the LEGO API; **everything else in
+`src/` may not** — not `hub`, `motor`, `motor_pair`, `color_sensor`, `distance_sensor`, `force_sensor`,
+`motion_sensor`, or `runloop`. Not "just for a type hint", not "just in this one file". If a pure module
+fails to import on a laptop with no robot attached, the boundary is broken.
 
-| Layer | Contains | Imports | Runs on |
+| Layer | Files | Contains | Runs on |
 |---|---|---|---|
-| `src/` | Detection, debounce, counting, calibration/threshold math, sweep state machine, port constants | Plain Python only | Host **and** hub |
-| `src/` | Sensor reads, motor drive, light-matrix and speaker output, the run loop | The LEGO API, freely | Hub only |
+| **Pure** | everything not `hub_*` | Detection, debounce, counting, calibration maths, sweep state, odometry, classification, telemetry formatting | Host **and** hub |
+| **Hub-facing** | `hub_*.py`, **one per device** | Device reads, motor writes, matrix/speaker/buttons, the clock | Hub only |
 
-Readings cross the boundary as **plain numbers**: `sensors.py` reads a device and hands the pure modules
-an integer; they return a decision; `sensors.py` acts on it. The pure modules never learn a hub exists.
+Readings cross as **plain numbers**: a `hub_*` module reads a device and hands the pure modules an
+integer; they return a decision; the `hub_*` module acts on it. The pure modules never learn a hub exists.
+
+**One file per device** (split from a 520-line `sensors.py` on 2026-08-26 at the operator's direction):
+each stays small enough to read in one sitting, which is exactly what the no-test-suite, no-debugger
+methodology depends on.
 
 **Why:** the hub lives in the yellow box between classes and work happens in class — hub time is the
 scarcest resource on this project. A bug found on a laptop costs a minute; the same bug found on the robot
@@ -37,17 +49,18 @@ payoff: the report can demonstrate the counting algorithm independently of the h
 stronger verification claim than "it counted right in the demo."
 Full rationale: [ADR-0002](../decisions/0002-split-mission-logic-from-hub-io.md); scope TR-2.
 
-**Enforcement is a test, not a convention** — one floor test asserts the boundary holds. If it goes red,
-fix the code, never the test. See [testing-discipline.md](./testing-discipline.md).
+**Enforcement is a script, not a convention** — `./scripts/check-docs.py` fails if any non-`hub_*` module
+imports a hub name. There is no test suite ([ADR-0005](../decisions/0005-no-test-suite-verify-on-hardware.md)),
+so **this check is the only thing guarding the boundary**. See [../../test_methodology.md](../../test_methodology.md).
 
-## Why no code exists yet
+## Why the hub-facing code is scaffolding
 
 Two real blockers: the **mission is unknown** ([../scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25)), and
 the **hub's API generation is unidentified**. SPIKE 2 (`from spike import PrimeHub`) and SPIKE 3
 (`import motor`, `from hub import port`, `import runloop`) are not variants of one API — different call
-signatures, different units. Don't write against a guess. Note the second blocker gates only `src/`:
-once the mission is known, `src/` can be written and fully tested on the host before the hub is
-ever identified. That is precisely what the split buys.
+signatures, different units. Don't write against a guess. Note the second blocker gates only the `hub_*` modules: the pure modules can
+be written and exercised on the host before the hub is ever identified. That is precisely what the split
+buys, and it is why they were written first.
 
 ## MicroPython is not full Python
 
@@ -56,8 +69,8 @@ ever identified. That is precisely what the split buys.
 - **Memory is limited, no swap.** Large lists, per-sample logging into RAM, and string-building in a hot loop will bite.
 - **Assume a module is absent until proven present on the actual hub.** "It's in the Python docs" is not
   evidence — prove it with a diagnostic in `scripts/` and record the result in [../findings/](../findings/).
-- `src/` gets the strictest reading: write it to the MicroPython subset and it runs on the host for
-  free. The reverse is not true.
+- The **pure** modules get the strictest reading: written to the MicroPython subset they run on the host
+  for free. The reverse is not true.
 
 ## Conventions
 

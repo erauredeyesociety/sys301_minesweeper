@@ -1,7 +1,28 @@
 # Intro Report — INDEX
 
-**Due 18 SEP 2026.** Submitted as a **Microsoft Word file** on the CSER 2022 / Elsevier Procedia template.
-Point value is **not stated** in the instructions — do not assume one.
+**Due 18 SEP 2026.** Point value is **not stated** in the instructions — do not assume one.
+
+**The format is `[ASSUMED]`, and the assumption is a strong one.** The student instructions say only
+*"18 SEP — Intro Report Due"* — **they never name a format, a template, or a file type.** What we have is
+the CSER 2022 / Elsevier Procedia **Word template, handed to the team**, whose own author instructions
+say *"Please title your files in this order 'CSER_authorslastname'. Submit both the source file and the
+PDF."* Handing out a template is a strong signal, but it is an inference, not a stated requirement.
+
+**Submit both the `.docx` and a PDF** unless told otherwise — the template asks for both and the cost of
+including the extra file is zero.
+
+### Why not LaTeX / Overleaf?
+
+Asked by the operator 2026-08-26. Elsevier Procedia does publish a LaTeX version of this template, so it
+is technically available — **but the professor handed out the Word one**, and the template's instructions
+ask for "the source file", which under that template means the styled `.docx`. Submitting a `.tex` source
+against a Word template is a gratuitous risk on a graded deliverable.
+
+It is also unnecessary: the reason LaTeX was attractive was *no Word on Linux*, and that problem is
+already solved — LibreOffice round-trips this template with all 20 `Els-` styles and the trim size intact
+([../../findings/cser-template-libreoffice-roundtrip.md](../../findings/cser-template-libreoffice-roundtrip.md)).
+
+**Revisit only if** the professor says the format is open.
 
 | | Path |
 |---|---|

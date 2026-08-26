@@ -6,9 +6,73 @@ The design challenge was briefed verbally: *"Build a mine sweeper robot that fin
 (I think yellow sticky notes) in a 10×10 area."* That is the entire requirement of record. This page is
 the list of what it leaves open, **ordered by how much the answer changes the build**.
 
-Ask them in this order. If you only get through two, get through the first two.
+Ask them in this order. **If you only get through two, get through Q0 and Q1** — Q0 can remove half the project, Q1 spans two orders of magnitude.
 
 ---
+
+## 0. Does the robot have to be autonomous, or may a human drive it? ⭐⭐ ASK THIS FIRST
+
+**This may be the largest simplification available to us, and we have been assuming the hard answer.**
+
+**"Autonomous" appears nowhere in the course instructions.** Full text extracted and scanned
+2026-08-26 for *autonom · remote · control · drive · pilot · operate · steer · joystick*. The verbal
+briefing says only *"build a mine sweeper robot that finds all the mines."* We inferred autonomy from
+the word "robot" and then built to it — [scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25)
+flagged it as an inference, but FR-1 had quietly hardened it into a requirement.
+
+**And the one relevant sentence leans the other way.** The instructions say of the Builder:
+
+> *"The builder is also your **operator** (the only one who can **operate** the robot)."*
+
+A purely autonomous robot needs a *starter*, not an *operator*, and "operate" is an odd word for pressing
+one button. **This is suggestive, not conclusive** — "operate" may simply mean handling it — but it is
+the only sentence in the course material bearing on the question, and it does not point at autonomy.
+Worth quoting to the professor: it makes the question concrete rather than hypothetical.
+
+**What changes if a human may drive it:**
+
+| Becomes optional | Why |
+|---|---|
+| Sweep path planning, lane pitch, boustrophedon | A human covers the area by eye |
+| Odometry accuracy, heading hold, per-lane re-squaring | Nobody is dead-reckoning |
+| **The whole coverage-time problem** | The 8–23 minute figure assumes a robot driving 46 mm lanes. A person drives straight to what they can see |
+| Cross-track error, UMBmark calibration | Same reason |
+
+| Still required either way | Why |
+|---|---|
+| **Detection and counting** | The sensor still has to tell a note from the floor, and count each one once. **This is the actual engineering problem** |
+| Calibration at run start | Floor and lighting still vary |
+| Honest reporting on the hub | FR-4 is unchanged |
+
+**So the sensing half survives and the navigation half evaporates.** Roughly half the remaining risk in
+[risk-register.md](./risk-register.md) is navigation risk.
+
+**Ask it plainly:** *"Does the minesweeper have to run autonomously, or may a team member drive it while
+it detects and counts?"* And if driving is allowed, follow up: **by what — the SPIKE app, a controller,
+our own Bluetooth link?** That last one decides whether we research a human-pilot control path at all.
+
+### And there is no prohibition anywhere
+
+Every prohibitive sentence in the instructions was extracted and read (*may not · cannot · not allowed ·
+prohibit · forbidden · must not · only the*). **All nine are about roles, money, or schedule:**
+
+- Only the Supplier may handle money or supplies · the Supplier cannot touch supplies after buying
+- The Designer may not touch supplies · the Programmer may not touch supplies except to plug/unplug
+- **Only the Builder may operate the robot**
+- Supplies live in the yellow box between classes · no work outside class · no role changes
+- Nobody may share a peer-evaluation total
+
+**Not one constrains how the robot moves, or forbids a human guiding it.** The course's rules are about
+*who does what*, not *what the machine does*. So the position is: autonomy is neither required nor
+forbidden in anything we hold — it is simply unaddressed, and the only adjacent sentence calls the
+Builder an **operator**.
+
+**⚠ Raise this in class as a PRIORITY, not as an afterthought.** It is the only open question that can
+*remove* work rather than merely direct it, and every class day it stays open is a day of navigation work
+that may turn out to be unnecessary. Ask it in the first minutes, before the standup runs out.
+
+*(If the answer is "autonomous", nothing is lost: everything already built assumes it, and the question
+cost one sentence in a conversation we were having anyway.)*
 
 ## 1. "10×10" — ten *what*? ⭐ ask this first
 
@@ -88,6 +152,9 @@ traverse speed at roughly **160 mm/s** where a note is clipped at a 20 mm chord,
 - Is there a written scoring rubric for Demo Day we should have?
 - Does the robot have a size or parts constraint beyond the budget?
 - Does the Intro Report have required content beyond the CSER template, or is the template the whole spec?
+- **Is the CSER Word template the required format, and do you want the `.docx`, a PDF, or both?** The
+  written instructions name a due date and nothing else — no format, no file type. We are assuming the
+  handed-out template is mandatory and submitting both files. A one-word answer confirms or frees it.
 
 ---
 
@@ -99,6 +166,7 @@ the requirements. Date each answer.
 
 | # | Question | Answer | Date |
 |---|---|---|---|
+| 0 | **Autonomous, or may a human drive?** | _pending_ | |
 | 1 | Units of "10×10" | _pending_ | |
 | 2 | Time limit / scoring objective | _pending_ | |
 | 3 | Boundary type | _pending_ | |

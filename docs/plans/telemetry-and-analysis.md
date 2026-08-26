@@ -60,6 +60,33 @@ framework:
 Both operate on files. Neither touches the robot. Both are re-runnable against an old log, which is the
 whole point.
 
+## Why the analysis is RESEARCHED but not WRITTEN
+
+Deliberate sequencing, operator's reasoning 2026-08-26: **we do not yet know whether any telemetry
+transport works at all.** Bluetooth streaming is unproven on this hub, on-hub logging depends on
+filesystem access and RAM we have not measured, and USB is tethered — which changes the very motion the
+data is meant to describe.
+
+Writing analysis code now would mean writing it against a record format that may not survive contact
+with the transport that actually works. So:
+
+- **Now:** decide *what to compute and why* — [analysis-detection-quality.md](./analysis-detection-quality.md)
+  and [analysis-motion-quality.md](./analysis-motion-quality.md). Cheap, and it makes the transport
+  decision better by naming what the data must carry.
+- **Only after a transport is proven:** implement, in `./data_analysis/` — a `main.py` plus a few small
+  modules. **Aggressive minimalism**: research broadly, implement only the subset that closes a real
+  unknown. Each of those plans ends with a deliberately small "what actually gets implemented" list, and
+  that list is the contract.
+
+**The upside if a transport does work is large**, which is why it is worth planning for now: one logged
+run can be re-analysed against different thresholds, different debounce settings, even a different
+classifier — without re-running the robot. With five class sessions of hardware time, converting one run
+into many experiments is the highest-leverage thing available to us.
+
+**The downside if none works** is bounded: we lose the analysis, not the robot. The mission logic does
+not depend on telemetry, and verification falls back to observed behaviour on the floor
+([ADR-0005](../decisions/0005-no-test-suite-verify-on-hardware.md)).
+
 ## What has to be true first
 
 1. The hub is connected and its API generation identified — [../runbooks/hub-identification.md](../runbooks/hub-identification.md).

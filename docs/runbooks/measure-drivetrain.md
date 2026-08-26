@@ -65,7 +65,7 @@ The Builder does **M1 in parallel with this** — it needs no hub. Do not idle w
 |---|---|---|---|
 | M0.1 | Programmer: `mkdir -p runs` first (it is not in the repo), then start the long idle log and **leave it running on the bench** — `./scripts/measure-drivetrain.py --move idle --seconds 2400 > runs/idle.csv` | Rows appear and keep appearing. **2400 s covers the whole 35-minute attended block plus pack-out** — 900 s would stop the log at T+15 and BM-9 would be measured over a quarter of the session | Start time |
 | M0.2 | Read the script's echo-back **out loud** | API generation named (`spike3` / `spike2`), port map printed, assumed wheel diameter and track printed, manoeuvre and velocity printed | API generation; the port map as printed |
-| M0.3 | If it exits with **port map incomplete** | It refuses to drive an unassigned port. Fill [../hardware/port-map.md](../hardware/port-map.md) and set the ports in [../../src/sensors.py](../../src/sensors.py) first | — |
+| M0.3 | If it exits with **port map incomplete** | It refuses to drive an unassigned port. Fill [../hardware/port-map.md](../hardware/port-map.md) and set the ports in [../../src/hub_api.py](../../src/hub_api.py) first | — |
 | M0.4 | **M2a** — read the motor device type ID while you are here | **48** = Medium 45603 · **49** = Large 45602 · **65** = Small 45607. If the call does not exist on this Hub OS, **that is a result** — write "device ID call unavailable" and fall back to M2b | Both motors' IDs |
 | M0.5 | **The first move.** `--move straight --revs 1 --velocity 100`. Builder presses the hub button mid-move to abort | The robot moves a short distance slowly, and **stops when the button is pressed**. Both wheels turn the same way | "abort verified" ☐ |
 | M0.6 | Repeat M0.5 without aborting | The robot drives **forward**, not backward, and does not veer hard. A backward or spinning result is a sign error in the port map — fix it now, not at T+30 | — |
@@ -225,9 +225,21 @@ under-rotated (theta_actual < commanded)  ->  the real track is LARGER  than ass
 Take the **median of the three CW trials** and the **median of the three CCW trials** separately.
 
 > **⚠ The CW/CCW comparison is a diagnostic, not a formality.** If the two medians disagree by more than
-> the spread *within* each direction, the residual is **not** a track-width error. A wheelbase error
-> reverses sign between directions while a wheel-diameter mismatch keeps the same sign — that is
-> Borenstein's own separation of the two error types
+> the spread *within* each direction, the residual is **not** a track-width error.
+>
+> **CORRECTED 2026-08-26 — this had the two error types exactly backwards**, which would have sent you
+> to adjust the one number that was not wrong. Borenstein's own definitions, from the paper on disk
+> ([`papers/borenstein1995b-systematic-odometry-correction.txt`](../research/papers/) lines 240–265):
+>
+> | | Cause | CW vs CCW |
+> |---|---|---|
+> | **Type A** | **Wheelbase** (track width) wrong | **Same sign both ways** — *"reduces (or increases) the total amount of rotation … in both cw and ccw direction"* |
+> | **Type B** | **Unequal wheel diameters** | **Reverses sign** — *"reduces … in one direction, but increases … in the other"* |
+>
+> So a **sign reversal between directions means unequal wheel diameters — a physical fault to fix on the
+> robot, not a constant to re-derive.** Consistent disagreement in the *same* direction is the track
+> width. Getting this backwards means adjusting `TRACK_WIDTH_MM` to compensate for a wheel problem, which
+> fits one direction and makes the other worse.
 > ([../research/motion-control-and-odometry.md](../research/motion-control-and-odometry.md) § UMBmark).
 > Do not split the difference into a `b` that fits neither. Write down that the two directions disagree,
 > re-check M1.3 for a wheel mismatch and the third contact point for drag, and if it persists, book the
@@ -402,7 +414,7 @@ because the code still holds the guess while the register says we know
 
 | Symptom | Most likely cause | Do this |
 |---|---|---|
-| Script exits **port map incomplete** | Ports never assigned | Fill [../hardware/port-map.md](../hardware/port-map.md), set them in [../../src/sensors.py](../../src/sensors.py). Do **not** patch a port literal into the script |
+| Script exits **port map incomplete** | Ports never assigned | Fill [../hardware/port-map.md](../hardware/port-map.md), set them in [../../src/hub_*.py](../../src/hub_api.py). Do **not** patch a port literal into the script |
 | Robot drives **backward** or spins on M0.6 | A motor's sign or left/right is swapped | Fix the port map and the direction convention, then redo M0.5–M0.6. Every later number is wrong until this is right |
 | M3 spread **> 2 %** | Slip, a loose wheel, a dragging third contact point, or inconsistent start alignment | Find the cause. **Do not average it away** — a wide spread averaged is a number that fails on Demo Day |
 | M4 CW and CCW **disagree** | Not a track-width error — see § 6.5 | Record the disagreement, check M1.3, check the third contact point. Consider full UMBmark |

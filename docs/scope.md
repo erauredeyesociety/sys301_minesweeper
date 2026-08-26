@@ -74,7 +74,12 @@ clarified answer changes a value, not the architecture. Anything still guessed s
 
 ### Functional (FR)
 
-- [ ] **FR-1** The robot shall traverse the designated arena autonomously after a single operator start action.
+- [ ] **FR-1** The robot shall traverse the designated arena after a single operator start action.
+  ⚠ **`[ASSUMED]` — autonomy is our INFERENCE, not a stated requirement.** Checked 2026-08-26: the word
+  "autonomous" appears **nowhere** in the course instructions, and the verbal briefing says only *"a robot
+  that finds all the mines"*. § Mission already flags this as an inference; FR-1 had hardened it into a
+  requirement without the marker. **If teleoperation is allowed the project simplifies enormously** — see
+  [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md) Q0.
 - [ ] **FR-2** The robot shall detect a target on the floor beneath its sensor and distinguish it from the floor.
 - [ ] **FR-2b** The robot shall classify a detected target by **color**, and shall report a reading it cannot confidently classify as UNKNOWN rather than forcing it into a class.
 - [ ] **FR-3** The robot shall count each distinct target exactly once (no double-count, no miss).
@@ -85,7 +90,7 @@ clarified answer changes a value, not the architecture. Anything still guessed s
 ### Technical (TR)
 
 - [ ] **TR-1** All robot code runs on the hub's **stock LEGO MicroPython**. No third-party firmware.
-- [ ] **TR-2** Mission logic (detection, counting, sweep state, odometry) shall be **pure Python, importable and runnable on the Ubuntu host** with no hub attached — LEGO API access confined to `src/sensors.py`. This keeps the logic developable and hand-checkable while the hub is in the yellow box. Flat `src/`, boundary guarded by a grep: [ADR-0004](./decisions/0004-flat-src-supersedes-package-split.md). Verification itself happens on the robot: [ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md).
+- [ ] **TR-2** Mission logic (detection, counting, sweep state, odometry) shall be **pure Python, importable and runnable on the Ubuntu host** with no hub attached — LEGO API access confined to `src/hub_*.py`. This keeps the logic developable and hand-checkable while the hub is in the yellow box. Flat `src/`, boundary guarded by a grep: [ADR-0004](./decisions/0004-flat-src-supersedes-package-split.md). Verification itself happens on the robot: [ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md).
 - [ ] **TR-3** The program shall run standalone from the hub (download mode), not tethered to a laptop, so Demo Day does not depend on a USB cable.
 - [ ] **TR-4** Detection thresholds shall be **calibrated at run start**, not hard-coded, so a floor/lighting change does not require a code edit.
 - [ ] **TR-5** Sensor/motor port assignments shall live in ONE place ([docs/hardware/port-map.md](./hardware/port-map.md)) and be referenced by the code, not scattered as literals.
@@ -167,7 +172,8 @@ cross-track error are unmeasured and stay as config variables until the bench se
 6. **Fabricated results.** No invented sensor readings, no "it should work" reported as "it works", no green test over untested hardware. See [directives/honest-instrumentation.md](./directives/honest-instrumentation.md).
 7. **claude.ai connectors** (Gmail, Google Calendar, Google Drive, Spotify). They surface as unauthorised in this session; they are **not used by this project and should not be**. Operator's ruling 2026-08-25 — ignore the prompts, do not authorise them, do not build anything that depends on them. The project's only external services are the local docs-rag and ResearchHub over the pwnstar tunnel.
 8. **A host-side test suite.** Removed 2026-08-25 — verification happens on the robot ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)). Do not re-introduce one without a new ADR.
-9. **Session-time budgeting and drop-order bookkeeping.** Operator ruling 2026-08-26: do not track or maintain per-task minute estimates. Dependency *order* between measurements is worth documenting; a minute total is not, and keeping it current is a waste of effort and tokens.
+9. **A LibreOffice MCP server, and a `libre_mcp/` child project.** Considered and **deferred entirely** by the operator 2026-08-26, before any work started. **The problem it would solve is already solved:** **confirmed on this host** that LibreOffice round-trips the CSER `.docx` with all 20 styles and the trim size intact ([findings/cser-template-libreoffice-roundtrip.md](./findings/cser-template-libreoffice-roundtrip.md)), so no Word installation and no automation layer is needed to produce the report. Building an MCP server to drive a document editor we can already drive by hand would be a second project competing with a robot due 10 SEP. **Revisit only if report assembly turns out to be genuinely painful**, and not before.
+10. **Session-time budgeting and drop-order bookkeeping.** Operator ruling 2026-08-26: do not track or maintain per-task minute estimates. Dependency *order* between measurements is worth documenting; a minute total is not, and keeping it current is a waste of effort and tokens.
 
 ---
 

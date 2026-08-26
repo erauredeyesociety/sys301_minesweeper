@@ -38,13 +38,13 @@ Continues [2026-08-25_project-initialization.md](./2026-08-25_project-initializa
 ### Code — first modules, deliberately small
 
 Flat `src/`: `config` · `calibration` · `detector` · `sweep` · `result` · `odometry` (all **pure**,
-host-runnable, no hub imports) and `sensors.py` (the **only** LEGO API caller; detects SPIKE 2 vs
+host-runnable, no hub imports) and the `hub_*.py` modules (the **only** LEGO API caller; detects SPIKE 2 vs
 SPIKE 3 at import; returns `None`, never `0`, when it cannot read).
 
 Hand-checked against known-answer cases, since there is no test suite:
 - a synthetic reflectance stream with a deliberate mid-note dropout counts **2, not 3**
 - one wheel revolution → 175.9 mm; a spin turn rotates without translating; 1° over 1.2 m → 20.9 mm
-- the purity grep is clean: only `sensors.py` touches the LEGO API
+- the purity grep is clean: only the `hub_*.py` modules touches the LEGO API
 
 ### Systems-engineering layer
 
@@ -153,7 +153,7 @@ Three workflows were still running when this record was written. Their outputs a
 
 - `docs/plans/sensor-suite-architecture.md` — which sensor mix, and which movement patterns each unlocks
 - `docs/research/spin-scan-localization.md` — **the operator's challenge to the SLAM verdict**: spin the
-  robot to turn one fixed ToF beam into a scanning rangefinder. This is how early cheap 2D lidars work,
+  robot to turn the fixed distance beam into a scanning rangefinder. This is how early cheap 2D lidars work,
   and if it holds, the primary argument against SLAM falls and must be re-argued
 - `docs/research/sensor-mounting-geometry.md` — orientation, standoff, mounting parts and their cost
 

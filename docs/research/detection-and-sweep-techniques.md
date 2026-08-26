@@ -973,7 +973,14 @@ The physics is generic to ultrasound and the failure modes are all relevant to a
 - **Mounting height.** FLL convention is low ([ORTOP](https://ortop.org/wiki/index.php/FIRST_LEGO_League_Challenge_Sensors)),
   but a low sensor on carpet echoes off the pile. At +/-35 deg a sensor `h` above the floor first illuminates
   the floor about `1.43 h` ahead, so keeping the floor out of the beam for 200 mm needs `h >= 140 mm`.
-  **Practical compromise: 60-80 mm, tilted up 5-10 degrees.**
+  **CORRECTED 2026-08-26 — a 5-10 deg tilt is not buildable, so raise the sensor instead.**
+  A rigidly double-pinned LEGO beam only reaches angles whose hole offsets form a Pythagorean triple
+  (36.87, 28.07, 22.62, 16.26 deg); the SPIKE set's angle connectors are 0/90/135/180. **Nothing lands
+  in 5-10 deg.** A single-pin mount can sit at any angle but is friction-held, and a sensor that quietly
+  droops mid-run is worse than one that never tilted. **Mount it level and higher.** Height, not angle,
+  is the parameter to spend on — and the floor's own echo returns at slant range `h/sin35 = 1.74h`, so a
+  boundary threshold must satisfy `h > 0.57 x threshold` or the floor spoofs it.
+  Geometry and the buildable-angle derivation: [./sensor-mounting-geometry.md](./sensor-mounting-geometry.md).
 
 ### Force sensor: yes, it has a real role
 

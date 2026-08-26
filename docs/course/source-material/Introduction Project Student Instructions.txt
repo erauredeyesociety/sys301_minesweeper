@@ -1,0 +1,157 @@
+                                       SYS 301: Introductory Project
+
+
+
+Welcome to Systems 301! We begin our course with an introductory project. I trust this will be a
+memorable experience. Please reach out if you have any questions.
+
+In a moment you will be grouped into teams of four. Each team member is assigned one of four roles:
+
+        1)   Builder (Blue Nametag)
+        2)   Designer (Yellow Nametag)
+        3)   Supplier (Green Nametag)
+        4)   Programmer (Red Nametag)
+
+Your design challenge is per the Instructor’s briefing.
+
+Description of Roles
+VIOLATION OF THESE RULES RESULTS IN -2 SCHRUTE BUCKS PER VIOLATION
+
+Supplier Each team has been allotted 100 Schrute bucks for your budget. Supplies can be purchased from
+the “store” at the front of the classroom at the displayed prices. Only the Supplier may handle your team’s
+money or purchase supplies. Once the supplies are purchased, the supplier must put them in your team’s
+plastic shoebox. The Supplier cannot touch the supplies again, unless selling them back to the store (at
+90% of the listed price – rounding down to the nearest Schrute Buck). Only the supplier can stand within
+5 feet of the store.
+
+Designer: The designer is responsible for sketching and designing your solution. The designer may not
+touch the supplies.
+
+Builder: The builder assembles your solution. The builder can only assemble what has been planned by
+the designer. If the design will not work, the builder must return the design to the designer and ask for
+changes. The builder is also your operator (the only one who can operate the robot).
+
+Programmer: The programmer writes the code necessary for your solution. The programmer may not
+touch the supplies (with the exception of plugging or unplugging the robot into their laptop).
+
+Scrum Master: A copilot agent will be used the scrum master for this project. This agent will be provided
+(see separate instructions).
+
+All supplies must be stored in the provided plastic yellow boxes between classes. You MAY NOT work
+on the project outside of class. If a team member is late or absent, you may not change roles (please see
+Dr. Watson if an exception is needed due to extenuating circumstances – i.e. missing 5 days in a row due
+to illness).
+
+Communication: You may have unlimited communication via the written word digitally. This can occur
+through Discord, email, or a platform of your choice. You will be required to submit a full record of your
+communications at the end of this project. Each sprint will start with a 20-minute planning meeting. Each
+day during the sprint will start promptly with 5-minute sprint stand-up meeting designated for team
+conversation. If you desire to communicate face to face beyond that the following procedure will be
+followed:
+
+
+                                                                                                            1
+       1) Inform Dr. Watson or the TA that you wish to hold an in-person meeting.
+       2) To simulate travel expenses for your team/ the cost of time for each participant, you will be
+          charged 1 Shrute buck per person per minute of the meeting. Note: If you need to bring in
+          someone from another team, their rate is 2 Schrute bucks per minute (1 paid to the “bank”
+          and one to the other team).
+       3) Assemble all meeting personnel at the meeting table.
+       4) Dr. Watson or the TA will say begin and start the stopwatch.
+       5) When completed, the SCRUM Master shall state “Meeting Adjourned”.
+       6) Dr. Watson or the TA will inform you of your bill. (Rounding down to the nearest minute).
+          For example, if three people from your team meet for 3:55, then the bill would be 9 Schrute
+          bucks.
+       7) The supplier shall pay the bill. If you are unable to pay the bill, then you shall return
+          materials to cover the difference.
+Journal (80 points): You will spend the last 5-7 minutes each day independently writing a
+reflection on your performance that day. Each day there will be a posted question of the day
+(QOD) on the board (in class). When you finish answering the question of the day (QOD)
+summarize the daily events including but not limited to the following: What went well? What
+didn’t go well? What unforeseen problems arose? How could you have avoided them? What
+frustrated you? How did your teammates do? This will be submitted at the end of the intro
+project. Grading will be as follows:
+ Journal Entry Each Day? (-5 pts per missing)                  30 points
+
+ Entries clearly answer question asked (not so general as to   20 points
+ be meaningless) (-5 per violation)
+
+ Entries more than trivial effort (>=4 sentences for           20 points
+ Question of the Day (QOD), >= 4 sentences for summary
+ of daily events, 8 sentences total) (-5 per violation)
+
+ Entry Grammar/Clarity                                         10 points
+
+
+Mid Project Check-in Survey (20 Points)
+On the Date indicated in CANVAS you will complete the mid-project check-in survey. This survey will
+also ask you to assess the effort and performance of your peers. Some questions that could be asked
+    • You have to fire someone, who would you fire?
+    • Whose roles would you switch?
+    • Who would you hire from another team? How many Schrute Bucks would you pay for them?
+    • What teamwork dynamics have worked well, what has been a challenge?
+    • There will be questions asking you to reflect on your coordination/process, Communication,
+        Individual Motivation, and how this activity has supported your learning.
+
+
+
+
+                                                                                                          2
+Peer Evaluations (50 Points)
+Following the Project, you will be asked to complete a peer evaluation for your teammate in a CANVAS
+Quiz (or Google Form).
+
+The content will be (approximately) as follows:
+
+Formula:        Participation + Attitude + (Contribution * (8)) = Total Score
+
+Example:        Participation = 7 Attitude = 5 Contribution = 8
+
+7+ 5 + (8*(8)) = 7 + 5 + 64 = 76
+
+NOTE: Average score for an individual below 75 can at the professor’s discretion reduce the student’s
+overall grade. Write specifics in why the individual got below a 75 total score.
+
+  NAME Participation (1-10) Attitude (1-10) Contribution (1-10) Total Score
+
+
+
+
+    •   Evaluate ALL team members, including your own, and provide a grade based on the above
+        criteria.
+    • Nobody can have the same Total Score.
+    • Must be whole numbers
+    • Please TOTAL the scores in the last column, use the following equation Participation +
+        Attitude + (Contribution * (8)) = Total
+The following provides some characteristics you should consider when evaluating your team members.
+Please be OBJECTIVE. Do not let personal feelings (either good or bad) let you sway your evaluation of
+your team members.
+
+Participation: Attendance to meetings (in and outside of class), punctuality to those meetings, active
+participation in discussions and decisions and willingness to take on tasks.
+
+Contribution: Actual completion of “fair share” of tasks in a timely manner.
+
+Attitude:      Ability to work with the other team members in a positive and enjoyable manner.
+
+
+
+
+                                                                                                         3
+You may find this calendar to be helpful:
+
+
+                        Date                                Significant Event
+ 25 AUG                                     Begin Sprint 1, Start Project
+ 27 AUG                                     Sprint 1
+ 1 SEP                                      Begin Sprint 2, Mid Project
+ 3,8 SEP                                    Sprint 2
+ 10 SEP                                     Demo Day
+ 15 SEP                                     Peer Review Due, Journal Due
+ 18 SEP                                     Intro Report Due
+
+
+
+
+                                                                                4
+

@@ -16,6 +16,11 @@ dead end recorded now is report prose you don't have to reconstruct from memory 
 | Graded course artifacts — journal, report, team record | `docs/course/` |
 | Build record, port map, budget ledger | `docs/hardware/` |
 
+- **Hard cap: 1200 lines per document** (operator standard, 2026-08-26). Past that, split it into a
+  folder with an `INDEX.md` front door. A document nobody can hold in their head stops being read, and a
+  docs-rag chunk pulled from a sprawling file is harder to place in context. `./scripts/check-docs.py`
+  enforces this. **Closest to the line today:** `docs/research/detection-and-sweep-techniques.md` at
+  ~1156 — split it before adding to it, not after.
 - **NEVER a `.md` in the repo root** (exception: `tmp*.md`, which are the operator's). The
   "README per subfolder" rule applies to `docs/` subfolders only — do **not** scatter `README.md` into
   `src/`, `tests/`, or `scripts/`. Rules about code live in these directives; code folders hold code.

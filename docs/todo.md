@@ -1,26 +1,38 @@
 # SYS 301 Minesweeper — Todo (SSOT)
 
-> Last updated: 2026-08-25
-> **mode: DEVELOPMENT (host-side)** — briefing captured but partial. Build the narrowest defensible
-> reading, parameterized, so a clarified answer changes a value and not the architecture.
+> Last updated: 2026-08-26 · **mode: BLOCKED on external inputs** — host-side work is done.
 
 ## CURRENT STATE
 
-Planning and research are deep; **nothing physical has happened yet.** The robot is not built, the hub has
-never been connected, and the motor and wheel types are unknown. What exists: a full SE planning layer, a
-working retrieval stack (docs-rag + ResearchHub), a small pure-Python code scaffold, and 12 papers on disk.
-Progress narrative: [session_records/2026-08-26_retrieval-stack-code-scaffold-and-se-planning.md](./session_records/2026-08-26_retrieval-stack-code-scaffold-and-se-planning.md).
+**Everything buildable without the hub or the professor's answers is built.** 15 `src/` modules (8 pure,
+7 hub-facing, one per device), the full SE planning layer, Bluetooth answered, telemetry designed and
+widened to 21 columns, the analysis layer specced. `src/main.py` is deliberately unwritten — it is where
+every open unknown converges.
 
-**Run `./scripts/stack.sh up` at the start of every session** — nothing starts at boot by design.
+**Nothing has ever touched hardware.** The hub has never been connected.
+
+Narrative: [session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md](./session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md)
+
+## NEXT ACTION
+
+**[plans/first-hardware-session.md](./plans/first-hardware-session.md)** is the sequence for the moment
+the hub is plugged in. Before that, four things need neither hub nor answers:
+
+1. **Ask the professor — Q0 FIRST**, then Q1/Q2/Q3/Q5 → [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md)
+   **Q0: must it be autonomous, or may a human drive it?** "Autonomous" appears nowhere in the
+   course instructions — we inferred it. A "human may drive" answer removes sweep planning,
+   odometry accuracy, heading hold, and the whole coverage-time problem.
+2. **Supplier: buy ONE colour sensor** — required under every branch → [plans/sensor-decision-matrix.md](./plans/sensor-decision-matrix.md)
+3. **Colour separability go/no-go** — needs the sensor + the real note pack, **not the robot**
+4. **Builder: read the part numbers off the two motors** — closes KU-T3
+
+**Start every session with `./scripts/stack.sh up`.** Nothing starts at boot by design.
 
 ---
 
 ## 🔴 In Progress
 
-- [ ] Sensor-suite architecture — which sensors, which movement patterns each unlocks *(workflow running)*
-- [ ] Spin-scan localization — the operator's challenge to the SLAM verdict *(workflow running)*
-- [ ] Sensor mounting geometry — orientation, standoff, parts cost *(workflow running)*
-- [ ] **Owed after those land:** the unified matrix — pattern → sensors (count/type/orientation) → ports → SB cost → thoroughness, SLAM and non-SLAM in one table
+_(nothing — all host-side work is complete)_
 
 ## 🟡 Blocked
 
@@ -32,7 +44,7 @@ Progress narrative: [session_records/2026-08-26_retrieval-stack-code-scaffold-an
 
 ## 🟢 Up Next
 
-- [ ] **`tests/persistent/` floor** for the mission logic below (edge counter, calibration, sweep state, import boundary) — the code exists, the floor does not yet
+- [x] ~~test floor~~ — **not happening by decision** ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)). Verification is the robot; the `src/` import boundary is checked by `./scripts/check-docs.py`. See [../test_methodology.md](../test_methodology.md)
 - [x] ~~`src/` pure logic~~ — **written and PARKED 2026-08-25.** `config.py`, `calibration.py`, `detector.py`, `sweep.py`, `result.py`: all pure Python, host-runnable, no hub imports. Hand-checked working (a 2-note stream with a mid-note dropout counts 2, not 3). **Not being extended** until the research and planning above are done and the professor's answers land — the arena values in `config.py` are placeholders, not measurements
 - [ ] **Go/no-go bench experiment, before any sweep code:** pairwise separability of the real sticky-note pack on the real floor. If the colours are not separable, classification is off the table and we fall back to presence detection — [research/color-discrimination.md](./research/color-discrimination.md) §8
 - [ ] **Find out which two motors we own** — Large Angular 45602 or Small Angular 45607. The research recommends the large one for drive; the small one sits at 46–77% of no-load in the classification speed band. Ask the Supplier/Builder
@@ -40,7 +52,7 @@ Progress narrative: [session_records/2026-08-26_retrieval-stack-code-scaffold-an
 - [ ] Decide sensor mounting height/angle from [research/color-discrimination.md](./research/color-discrimination.md) and [research/detection-and-sweep-techniques.md](./research/detection-and-sweep-techniques.md) **before** the Supplier buys mounting blocks
 - [ ] Confirm the operator's team role (assumed: Programmer) and the other three names/roles → [course/team/roles.md](./course/team/roles.md)
 - [ ] Journal entry for 25 AUG (Sprint 1 start) → [course/journal/INDEX.md](./course/journal/INDEX.md)
-- [ ] Test whether the CSER `.docx` survives a LibreOffice round-trip. Cheap now, expensive on 17 SEP
+- [x] ~~Test the CSER `.docx` LibreOffice round-trip~~ — **done, it survives.** All 20 styles and the trim size intact; one sample image + one OLE object lost (replaced anyway). [findings/cser-template-libreoffice-roundtrip.md](./findings/cser-template-libreoffice-roundtrip.md)
 - [ ] Start the communications record → [course/team/communications.md](./course/team/communications.md)
 
 ## 📋 Backlog

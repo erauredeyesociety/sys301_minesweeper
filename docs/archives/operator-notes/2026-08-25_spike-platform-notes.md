@@ -395,7 +395,7 @@ or preferably use VS Code:
 ~/lego-spike/
 ├── robot.py
 ├── motors.py
-├── sensors.py
+├── the hub_* modules
 └── ...
 ```
 

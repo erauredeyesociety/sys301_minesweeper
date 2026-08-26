@@ -595,11 +595,20 @@ Apply `b_new = Eb · b_nominal` to the turn geometry and scale each wheel's coun
 That pair is constructed to leave the *average* diameter unchanged, so the scale calibration survives.
 
 **Two adaptations, ours not Borenstein's:** (a) rather than re-deriving his coordinate frame under time
-pressure, measure **final heading error** directly against the wall. A wheelbase error (Type A) reverses
-sign between the cw and ccw runs while a diameter mismatch (Type B) keeps the same sign — that is
-Borenstein's own definition of the two types (paper59 §3.2) — so the *difference* isolates one and the
-*sum* the other: `α ≈ (θ_cw − θ_ccw)/8` per turn, `β ≈ (θ_cw + θ_ccw)/8` per leg. *Derived, not
-transcribed; confirm the sign convention against a run whose error direction you already know.*
+pressure, measure **final heading error** directly against the wall.
+
+**CORRECTED 2026-08-26 — the two types were stated backwards here.** Borenstein's own definitions, from
+the paper on disk ([`papers/borenstein1995b-systematic-odometry-correction.txt`](./papers/) lines
+240–265): **Type A** (wheelbase / track width) *"reduces (or increases) the total amount of rotation …
+in **both** cw and ccw direction"* — **same sign both ways**. **Type B** (unequal wheel diameters)
+*"reduces … in one direction, but increases … in the other"* — **reverses sign**. So a **sign reversal
+means unequal wheel diameters, a physical fault**; consistent same-direction error means the track width.
+
+Because the two separate that way, the *sum* over both directions isolates the wheelbase term and the
+*difference* isolates the diameter mismatch: `α ≈ (θ_cw + θ_ccw)/8` per turn (Type A, wheelbase),
+`β ≈ (θ_cw − θ_ccw)/8` per leg (Type B, diameters). *Derived, not transcribed — and the α/β assignment
+above swapped with the correction, so confirm the sign convention against a run whose error direction you
+already know before trusting either number.*
 (b) **Turn the gyro turn off for the calibration runs** — UMBmark measures the *encoder* model;
 gyro-closed turns calibrate the gyro instead.
 

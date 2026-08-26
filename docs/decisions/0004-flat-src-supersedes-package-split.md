@@ -35,7 +35,7 @@ and those are the only ones that cannot run on the host.
 | `sweep.py` | yes | Boustrophedon lane state machine, emits commands |
 | `result.py` | yes | Result model and its accounting invariant |
 | `odometry.py` | yes | Encoder/gyro pose arithmetic |
-| `sensors.py` | **no** | The hub-facing adapter — the only LEGO API caller |
+| the `hub_*.py` modules | **no** | The hub-facing adapter — the only LEGO API caller |
 
 ## Consequences
 
@@ -45,7 +45,7 @@ and those are the only ones that cannot run on the host.
 
   ```bash
   grep -nE '^\s*(import|from)\s+(hub|motor|motor_pair|color_sensor|distance_sensor|force_sensor|motion_sensor|runloop|spike)\b' \
-    src/*.py | grep -v '^src/sensors.py'
+    src/*.py | grep -v '^src/hub_*.py'
   ```
 
   Empty output means the boundary holds. Any line of output is a violation. It costs nothing, needs no

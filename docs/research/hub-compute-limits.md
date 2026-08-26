@@ -20,13 +20,25 @@ packed float array — it fits in this hub's heap several times over (§4.1). Me
 
 What kills it, in order of how hard each one is to argue with:
 
-1. **The sensor suite cannot close a loop.** SLAM corrects drift by re-observing the *same* landmark from
-   a different pose. A downward point colour sensor sees a ~12 mm spot of floor beneath the robot (working figure, one
-   source — [./color-discrimination.md](./color-discrimination.md) § 5.2); the
-   Distance Sensor 45604 is one fixed-axis ToF beam, not a scanning rangefinder. Neither yields a
-   re-identifiable landmark. Without loop closure, "SLAM" *is* dead reckoning with extra arithmetic.
-   **This alone is fatal and no amount of compute changes it.**
-2. **The mission does not have the problem SLAM solves.** The arena is a known, bounded, empty square
+> **⚠ CORRECTED 2026-08-26 — the order of these arguments has changed, and one of them was factually
+> wrong.** This section originally led with "the sensor suite cannot scan", and called the 45604 a
+> *time-of-flight* beam. **It is ultrasonic** — LEGO's own product page: *"Sound wave sensor features
+> 1-200cm range"* — and the "cannot scan" argument is **answerable**: spinning the robot turns a fixed
+> beam into a scanner for free, which is how early low-cost 2D lidars work. The argument that actually
+> holds is what was formerly #2. Full assessment:
+> [./spin-scan-localization.md](./spin-scan-localization.md).
+
+1. **The mission does not have the problem SLAM solves.** The arena is a known, bounded, empty rectangle
+   ([../scope.md](../scope.md)) — there is **nothing to map**. Localizing in a known rectangle estimates
+   *five scalars* (two side lengths, x, y, heading), not a map: no covariance matrix, no landmark
+   database, and it fits this hub easily. **This argument cannot be answered by better hardware**, which
+   is exactly why it now leads.
+2. **The scan, if you take one, has almost nothing in it.** The 45604 is **ultrasonic** with a **±35°
+   entrance angle** — a ~70° cone, giving roughly **5 independent bearing cells per revolution**, and a
+   hard **2000 mm** ceiling. Spinning is free and works; it just does not produce a point cloud, and no
+   amount of sampling buys resolution the beam does not have. A blank rectangle offers no re-identifiable
+   landmark to close a loop against anyway.
+3. **The mission does not have the problem SLAM solves.** The arena is a known, bounded, empty square
    ([../scope.md](../scope.md)) — nothing to map. What we need is *bounded pose error over a sweep
    that runs 8–23 minutes if "10×10" turns out to be metres-scale*
    ([../findings/coverage-time-budget.md](../findings/coverage-time-budget.md)): a localization
@@ -167,7 +179,7 @@ result allocates, and allocation eventually triggers GC. Interpreter overhead sw
 **Actionable for our code:** [../../src/config.py](../../src/config.py) uses floats throughout
 (`ARENA_WIDTH_MM = 1000.0`, `TRAVERSE_SPEED_MMS = 150.0`) — correct and harmless for the *pure* host-side
 modules. Anything landing **inside the per-sample loop on the hub** should be integer millimetres /
-millidegrees, converted once at the boundary in [../../src/sensors.py](../../src/sensors.py).
+millidegrees, converted once at the boundary in [../../src/hub_*.py](../../src/hub_api.py).
 
 ### 2.3 What a MemoryError looks like in practice
 
@@ -344,7 +356,10 @@ re-identifiable feature*. We have:
 
 - **Colour Sensor 45605** — one downward point, optimal reading distance 16 mm (LEGO fact sheet), spot
   ~12 mm. It sees floor under the robot; it cannot see a landmark at 1 m.
-- **Distance Sensor 45604** — one fixed-axis ToF beam, not a scanning LiDAR.
+- **Distance Sensor 45604** — **ultrasonic** (LEGO: *"Sound wave sensor… 1-200cm range"*), one fixed
+  axis, ±35° entrance angle, 2000 mm ceiling. **Not a scanning LiDAR — but it can be spun.** Doing so is
+  free (the robot already turns) and yields ~5 bearing cells per revolution, not a point cloud:
+  [./spin-scan-localization.md](./spin-scan-localization.md).
 - **IMU + encoders** — proprioceptive. They measure *motion*, not the world: they are the odometry SLAM is
   meant to correct, not the correction.
 
@@ -354,9 +369,11 @@ sensor, most of the remaining 56 SB and the schedule, to solve a problem the are
 
 ### 4.6 State this in the report as a considered rejection
 
-> SLAM was evaluated and rejected. The decisive reason is the sensor suite: one downward-facing point
-> colour sensor and one fixed-axis time-of-flight beam provide no re-identifiable landmark and therefore no
-> loop closure, without which SLAM reduces to dead reckoning with a covariance matrix attached. The mission
+> SLAM was evaluated and rejected. The decisive reason is that the mission does not pose the problem SLAM
+> solves: the arena is a known, bounded, empty rectangle, so localizing within it estimates five scalars
+> rather than building a map. A secondary reason is sensory: the ultrasonic distance sensor's ±35°
+> entrance angle yields roughly five bearing cells per revolution even when the robot is spun to scan, and
+> a blank rectangle presents no re-identifiable landmark for loop closure. The mission
 > — exhaustive coverage of a known, bounded, empty rectangle — is a localization problem, not a mapping
 > problem, and is addressed by gyro heading hold with per-lane re-squaring against a physical boundary
 > reference. Platform limits reinforce but do not carry the decision: memory is *not* a barrier (a
@@ -418,7 +435,7 @@ for this project**, and the report should say so in those words.
 32 MB external flash, **20 program slots numbered 0–19** (LEGO's own glossary, quoted in
 [./spike-prime-linux-toolchain.md](./spike-prime-linux-toolchain.md) § *Program storage and slots*). Our
 entire `src/` is **945 lines across 7 files** (verified with `wc -l src/*.py`), of which only
-[../../src/sensors.py](../../src/sensors.py) (220 lines) ships to the hub in the current design. Slot storage will never bind this project.
+[../../src/hub_*.py](../../src/hub_api.py) (220 lines) ships to the hub in the current design. Slot storage will never bind this project.
 
 ### 6.2 RAM at compile time is the constraint
 
@@ -569,4 +586,4 @@ instructables.com *MicroPython on SPIKE Prime* (body did not render).
 [../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md) ·
 [../decisions/0001-stock-lego-firmware-only.md](../decisions/0001-stock-lego-firmware-only.md) ·
 [../runbooks/hub-identification.md](../runbooks/hub-identification.md) ·
-[../../src/config.py](../../src/config.py) · [../../src/sensors.py](../../src/sensors.py)
+[../../src/config.py](../../src/config.py) · [../../src/hub_*.py](../../src/hub_api.py)
