@@ -1,6 +1,22 @@
 # SYS 301 Minesweeper — Todo (SSOT)
 
-> Last updated: 2026-08-26 · **mode: BLOCKED on external inputs** — host-side work is done.
+> Last updated: 2026-08-27 · **mode: hub is LIVE; still blocked on the professor's answers for the
+> mission numbers.**
+
+## ▶ NEXT SESSION — START HERE
+
+**[plans/next-session.md](./plans/next-session.md)** — the ordered plan, grouped by **what each item
+needs** (professor only · teammate only · hub over USB · a colour sensor without the robot · the robot
+built · a keyboard), so whatever is present at the start of class can be worked immediately.
+
+**The three real blockers, in order:** ① the **units of "10×10"** — one free question, gates the
+architecture · ② **one colour sensor** — gates the whole detection design and does **not** need the
+robot · ③ **motors mounted** — gates every odometry number.
+
+**Do not re-investigate** the API generation, the deploy route, or whether Bluetooth works. All three
+are closed by measurement — [session_records/2026-08-27](./session_records/2026-08-27_hub-first-contact-usb-and-ble.md).
+
+---
 
 ## CURRENT STATE
 
@@ -9,15 +25,36 @@
 widened to 21 columns, the analysis layer specced. `src/main.py` is deliberately unwritten — it is where
 every open unknown converges.
 
-**Nothing has ever touched hardware.** The hub has never been connected.
+**The hub has been connected — 2026-08-27, over USB, on `/dev/spike`.** It is SPIKE 3 /
+MicroPython 1.24.0, its filesystem is baselined, and **code has been put on it**: `/flash/lib/config.py`
+uploaded and imported, with the firmware **proved unchanged** by a baseline re-capture and diff. The IMU
+is characterised. **All six ports A–F read EMPTY** — nothing is mounted yet.
+
+| What | Where |
+|---|---|
+| Identity, API generation, filesystem, radio | [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md) |
+| The one write, the diff, and why the firmware cannot be touched by it | [findings/firmware-integrity-proof.md](./findings/firmware-integrity-proof.md) |
+| IMU units, ±180° yaw wrap, read cost, drift | [findings/imu-characterisation-2026-08-27.md](./findings/imu-characterisation-2026-08-27.md) |
+| How to put code on the hub | [runbooks/deploy-to-hub.md](./runbooks/deploy-to-hub.md) · [ADR-0007](./decisions/0007-deploy-by-writing-modules-to-flash-lib.md) |
+
+⚠ **That session opened seven new unknowns as well as closing four** (KU-M14 … KU-M20) — the IMU timing
+anomaly, the `motor` status constants, whether `/flash/main.py` autoruns, how long the BLE advertising
+window stays open, whether a hub program may drive the radio (**it must not** — see
+[research/ble-bring-up.md](./research/ble-bring-up.md) § 4.4), the `angular_velocity()` zero-reading, and
+the `rgbi()` range.
+[plans/known-unknowns.md](./plans/known-unknowns.md).
 
 Narrative: [session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md](./session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md)
 
 ## NEXT ACTION
 
-**[plans/first-hardware-session.md](./plans/first-hardware-session.md)** is the sequence for the moment
-the hub is plugged in. Before that, four things need neither hub nor answers:
+**Ask the professor.** The hub is no longer the blocker; the *mission numbers* are. Everything below
+still needs neither hub nor further hardware:
 
+0. **Two cheap hub questions to ride along on the next session** (operator decides when): does
+   `/flash/main.py` autorun at boot (**KU-M16** — this is the difference between a robot that runs and a
+   robot tethered to a laptop on Demo Day), and `print(motor.READY, motor.STALLED, motor.DISCONNECTED)`
+   (**KU-M15**, one read-only line).
 1. **Ask the professor — Q0 FIRST**, then Q1/Q2/Q3/Q5 → [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md)
    **Q0: must it be autonomous, or may a human drive it?** "Autonomous" appears nowhere in the
    course instructions — we inferred it. A "human may drive" answer removes sweep planning,
@@ -39,7 +76,8 @@ _(nothing — all host-side work is complete)_
 - [ ] Sweep **parameters** (lane pitch, arena size, run time) — **Blocked by**: professor Q1/Q2. The *code* is not blocked; the numbers are.
 - [ ] Buy the distance sensor or not — **Blocked by**: professor Q3 (boundary type). 56 SB remaining.
 - [ ] Color classification (FR-2b) — **Blocked by**: professor Q5. If yellow is the only color present, plain reflected-light detection is far more robust and this requirement goes away.
-- [ ] Hub OS / API generation identification — **Blocked by**: hub not physically connected
+- [x] ~~Hub OS / API generation identification~~ — **CLOSED 2026-08-27: SPIKE 3, MicroPython 1.24.0**, measured over USB → [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)
+- [ ] **Standalone boot** — does `/flash/main.py` autorun? **Blocked by**: an operator-approved hub session. It changes boot behaviour on shared equipment (KU-M16)
 - [ ] `src/` — **Blocked by**: the above. `src/` is not blocked.
 
 ## 🟢 Up Next
@@ -47,8 +85,8 @@ _(nothing — all host-side work is complete)_
 - [x] ~~test floor~~ — **not happening by decision** ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)). Verification is the robot; the `src/` import boundary is checked by `./scripts/check-docs.py`. See [../test_methodology.md](../test_methodology.md)
 - [x] ~~`src/` pure logic~~ — **written and PARKED 2026-08-25.** `config.py`, `calibration.py`, `detector.py`, `sweep.py`, `result.py`: all pure Python, host-runnable, no hub imports. Hand-checked working (a 2-note stream with a mid-note dropout counts 2, not 3). **Not being extended** until the research and planning above are done and the professor's answers land — the arena values in `config.py` are placeholders, not measurements
 - [ ] **Go/no-go bench experiment, before any sweep code:** pairwise separability of the real sticky-note pack on the real floor. If the colours are not separable, classification is off the table and we fall back to presence detection — [research/color-discrimination.md](./research/color-discrimination.md) §8
-- [ ] **Find out which two motors we own** — Large Angular 45602 or Small Angular 45607. The research recommends the large one for drive; the small one sits at 46–77% of no-load in the classification speed band. Ask the Supplier/Builder
-- [ ] `scripts/setup-host.sh` — neutralize ModemManager, install a serial terminal, verify `dialout`. Idempotent. See [findings/host-environment.md](./findings/host-environment.md)
+- [x] ~~**Find out which two motors we own**~~ — **answered by the operator 2026-08-27: both Technic Medium Angular 45603** (KU-T3). ±1110 deg/s no-load, 360 counts/rev. Confirm against the casing next time the motors are handled.
+- [x] ~~`scripts/setup-host.sh`~~ — **applied 2026-08-27** with `--apply`, before the hub was ever plugged in. ModemManager `inactive`/disabled, udev rule written, `/dev/spike` symlink live. ⚠ Note the honest footnote: `mmcli -L` returned `No modems were found`, so ModemManager had **not** actually grabbed the device — the mitigation is a kept precaution, not a fixed fault. [findings/host-environment.md](./findings/host-environment.md)
 - [ ] Decide sensor mounting height/angle from [research/color-discrimination.md](./research/color-discrimination.md) and [research/detection-and-sweep-techniques.md](./research/detection-and-sweep-techniques.md) **before** the Supplier buys mounting blocks
 - [ ] Confirm the operator's team role (assumed: Programmer) and the other three names/roles → [course/team/roles.md](./course/team/roles.md)
 - [ ] Journal entry for 25 AUG (Sprint 1 start) → [course/journal/INDEX.md](./course/journal/INDEX.md)

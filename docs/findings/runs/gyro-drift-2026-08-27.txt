@@ -1,0 +1,38 @@
+# ran: examples/gyro_drift.py
+# NOTE: this is program OUTPUT; the source is in examples/gyro_drift.py
+
+# examples/gyro_drift.py — how fast does heading rot when nothing is moving?
+==============================================================
+GYRO DRIFT -- with a disturbance check
+==============================================================
+
+Put the hub on a flat surface and DO NOT TOUCH IT for 30 seconds.
+Starting in 3 seconds...
+  t= 4950 ms  yaw=  1359 ddeg ( 135.90 deg)  drift=     0  accel_dev=  0.0 mg
+  t= 9950 ms  yaw=  1359 ddeg ( 135.90 deg)  drift=     0  accel_dev=  1.4 mg
+  t=14950 ms  yaw=  1359 ddeg ( 135.90 deg)  drift=     0  accel_dev=  1.0 mg
+  t=19950 ms  yaw=  1360 ddeg ( 136.00 deg)  drift=     1  accel_dev=  1.0 mg
+  t=24950 ms  yaw=  1360 ddeg ( 136.00 deg)  drift=     1  accel_dev=  0.0 mg
+  t=29950 ms  yaw=  1360 ddeg ( 136.00 deg)  drift=     1  accel_dev=  0.0 mg
+
+--- RESULT ---
+  samples          600 over 30000 ms
+  yaw start/end    1359 / 1360 ddeg
+  yaw min/max      1359 / 1360 ddeg  (range 1)
+  net change       1 ddeg = 0.10 degrees
+  worst accel dev  2.2 milli-g   (threshold 25)
+
+  Hub stayed still (worst deviation 2.2 mg). The number is good.
+  DRIFT RATE = 0.0033 degrees/second
+
+  What it costs over a run:
+     1 min of driving =>    0.20 degrees of accumulated heading error
+     3 min of driving =>    0.60 degrees of accumulated heading error
+     5 min of driving =>    1.00 degrees of accumulated heading error
+    10 min of driving =>    2.00 degrees of accumulated heading error
+
+  Compare against the cross-track budget before deciding whether
+  heading correction is needed at all. Cheap if it is not.
+
+DONE.
+>>> 

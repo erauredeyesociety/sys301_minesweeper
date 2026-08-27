@@ -11,3 +11,4 @@ supersedes; never edit an old one. Keep wrong ideas WITH the why, because the wh
 | [0004](./0004-flat-src-supersedes-package-split.md) | Flat `src/` supersedes the package split; purity enforced by a grep | Accepted (enforcement amended by 0005) |
 | [0005](./0005-no-test-suite-verify-on-hardware.md) | No test suite — verification happens on the robot | Accepted |
 | [0006](./0006-docs-rag-llm-is-operator-gated.md) | The docs-rag's LLM is operator-gated; no sub-5B; remote 9B on skytracker is the target | Accepted |
+| [0007](./0007-deploy-by-writing-modules-to-flash-lib.md) | Deploy by writing modules into `/flash/lib` over the REPL, verified by an on-hub SHA-256; Chrome + WebSerial is the fallback | Accepted — closes the *module* half of KU-D1; program launch stays open as KU-M16 |

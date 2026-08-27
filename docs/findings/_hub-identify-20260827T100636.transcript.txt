@@ -1,0 +1,60 @@
+# port: /dev/spike @ 115200 8N1
+# after Ctrl-C, hub said:
+
+MicroPython v1.20.0-1742.gf212bbe83 on 2025-03-27; SPIKE Prime with STM32F413
+Type "help()" for more information.
+>>> 
+>>> 
+>>> 
+
+===== sys.implementation =====
+>>> import sys; print(sys.implementation)
+import sys; print(sys.implementation)
+(name='micropython', version=(1, 24, 0, ''), _machine='SPIKE Prime with STM32F413', _mpy=7942)
+>>>
+
+===== os.uname =====
+>>> import os; print(os.uname())
+ import os; print(os.uname())
+(sysname='SPIKE', nodename='SPIKE', release='1.24.0', version='v1.20.0-1742.gf212bbe83 on 2025-03-27', machine='SPIKE Prime with STM32F413')
+>>>
+
+===== modules =====
+>>> help('modules')
+ help('modules')
+__main__          binascii          gc                platform
+_asyncio          bluetooth         hashlib           random
+_system/default   builtins          heapq             re
+_system/menu      cmath             hub               runloop
+_system/scratch   collections       io                select
+_system/test_selector               color             json              struct
+array             color_matrix      machine           sys
+asyncio/__init__  color_sensor      math              time
+asyncio/core      deflate           micropython       uasyncio
+asyncio/event     device            motor             uctypes
+asyncio/funcs     distance_sensor   motor_pair        vfs
+asyncio/lock      errno             orientation       zlib
+asyncio/stream    force_sensor      os
+Plus any modules on the filesystem
+>>>
+
+===== dir(hub) =====
+>>> import hub; print(dir(hub))
+ import hub; print(dir(hub))
+['__class__', '__name__', '__dict__', 'battery_current', 'battery_temperature', 'battery_voltage', 'button', 'config', 'device_uuid', 'hardware_id', 'light', 'light_matrix', 'motion_sensor', 'port', 'power_off', 'sound', 'temperature', 'usb_charge_current']
+>>>
+
+===== sys.path =====
+>>> import sys; print(sys.path)
+ import sys; print(sys.path)
+['', '.frozen', '/flash', '/flash/lib']
+>>>
+
+===== sys.version =====
+>>> import sys; print(sys.version)
+ import sys; print(sys.version)
+3.4.0; MicroPython v1.20.0-1742.gf212bbe83 on 2025-03-27
+>>>
+
+============================================================
+RESULT: REPL prompt observed. Probes above are the hub's own words.

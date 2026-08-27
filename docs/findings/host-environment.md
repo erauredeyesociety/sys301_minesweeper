@@ -1,6 +1,7 @@
 # Finding — Ubuntu host readiness for SPIKE Prime USB serial
 
-**Date:** 2026-08-25 · **Hub connected:** no · **Status:** open — two blockers to clear before first hub contact
+**Date:** 2026-08-25 · **Hub connected:** no *(at the time of measurement)* ·
+**Status: BOTH BLOCKERS CLEARED 2026-08-27**, before the hub was ever plugged in — see the update below
 
 What was actually measured on the development machine, and what has to change before the hub is plugged
 in. Everything below was observed by running the command shown. Nothing here is inferred.
@@ -12,14 +13,41 @@ in. Everything below was observed by running the command shown. Nothing here is 
 | Python | `python3 --version` | `3.10.12` | OK |
 | pyserial | `python3 -c "import serial; print(serial.__version__)"` | `3.5` | OK — already installed |
 | Serial group membership | `id -nG` | includes `dialout` | OK — no udev change needed for permissions |
-| Serial device present | `ls -l /dev/ttyACM*` | none | Expected — hub not connected |
-| **ModemManager** | `systemctl is-active ModemManager` | **`active`**, `enabled` | ⚠ **BLOCKER** |
+| Serial device present | `ls -l /dev/ttyACM*` | none *(2026-08-25)* → `ttyACM0` present, plus the stable symlink **`/dev/spike`** *(2026-08-27)* | ✅ Hub enumerates |
+| **ModemManager** | `systemctl is-active ModemManager` | **`active`**, `enabled` *(2026-08-25)* → **`inactive`, disabled** *(2026-08-27)* | ✅ **CLEARED** |
 | Serial terminal | `which tio picocom screen` | only `/usr/bin/screen` | ⚠ `tio` not installed |
 | Browser | `which google-chrome` | `/usr/bin/google-chrome` | OK — WebSerial route available if needed |
 | RAM / swap at init | `free -g` | 15 GB total, ~3 GB available; swap 9 GB | Constrains parallel agent spawning |
 | earlyoom | `systemctl is-active earlyoom` | `inactive` | Host not hardened; self-throttle |
 
-## The two blockers
+## ✅ UPDATE 2026-08-27 — both cleared, and one of them was a precaution, not a fault
+
+`./scripts/setup-host.sh --apply` was run **before any port was opened**:
+
+| Change | State now |
+|---|---|
+| ModemManager stopped and disabled | **`inactive`** (was `active`/`enabled`) |
+| `/etc/udev/rules.d/99-lego-spike.rules` written | matches `idVendor 0694` + `idProduct 0009`; sets `ID_MM_DEVICE_IGNORE=1`, `GROUP="dialout"`, `SYMLINK+="spike"` |
+| `/dev/spike` stable symlink | live, → `ttyACM0` |
+| `devel` in `dialout` | already true |
+| pyserial 3.5, `screen` | already present |
+| `bleak` | installed 2026-08-27 via `pip install --user` (host change, reversible) |
+
+**And the honest part.** With the hub plugged in, **`mmcli -L` returned `No modems were found`** and
+nothing held the port. **ModemManager had not in fact grabbed this device.** So blocker 1 was real as a
+*risk* and unproven as an *event*: the mitigation stays applied, because it is a race nobody wants to
+re-run every session and losing a class period to a corrupted first session is the failure it prevents
+— but do not repeat the claim that it *did* corrupt anything here. It did not, on this host, on this
+day. Blocker 2 (`tio`) was resolved by deciding to keep `screen`, which was already installed.
+
+Host Bluetooth, measured the same day: BlueZ **5.64** (above the 5.55 floor `bleak` needs), adapter
+`C4:23:60:D3:C0:5B`, powered, not rf-killed.
+
+Result of the first session: [hub-first-contact-2026-08-27.md](./hub-first-contact-2026-08-27.md).
+
+---
+
+## The two blockers *(as written 2026-08-25 — kept for the reasoning, superseded by the update above)*
 
 **1. ModemManager is running and will corrupt the first hub session.** It probes newly-appearing
 `/dev/ttyACM*` devices with AT commands. On a SPIKE Prime hub that injects garbage into the serial

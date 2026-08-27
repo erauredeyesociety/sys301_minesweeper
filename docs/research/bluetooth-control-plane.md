@@ -1,3 +1,37 @@
+> ## ⚠ SUPERSEDED IN PART — 2026-08-27
+>
+> The hub was read over USB on 2026-08-27 and **§ 2.2 of this file is wrong**. It concluded *"a hub
+> program cannot open its own radio"* from an **absence** in a third-party mirror of LEGO's SPIKE 3
+> module list. Our own hub's `dir(bluetooth.BLE)` shows the complete MicroPython GAP + GATT surface.
+> The corrected position — the API is present; the prohibition is **ours**, on engineering grounds, and
+> it still stands — is in
+> [ble-bring-up.md § 4](./ble-bring-up.md#4-can-our-own-code-drive-the-radio--the-earlier-inference-is-dead-the-answer-is-still-no).
+>
+> Also superseded or corrected there, with the reasoning named rather than quietly edited:
+>
+> - **§ 2 (Hub OS generation, KU-M1).** Settled: our hub is **Hub OS 3 / SPIKE 3**, measured. But the
+>   BLE scan that was supposed to be the generation test came back **empty** — see
+>   [ble-bring-up.md § 1](./ble-bring-up.md#1-why-is-the-hub-not-advertising-ranked-with-the-test-that-settles-each)
+>   for why, ranked, with the test that discriminates each explanation.
+> - **The framing description.** There is **no CRC in the transport framing** — COBS + XOR `0x03` +
+>   delimiter only. CRC32 appears solely inside file-transfer message payloads.
+>   [ble-bring-up.md § 3.1](./ble-bring-up.md#31-framing--cobs-with-escapes-xor-0x03-0x02-delimiter).
+> - **Identification.** The `device_uuid` is **not** in the advertisement and cannot be; matching happens
+>   after connecting, via `DeviceUuidRequest` 0x1A. The BLE **address type is UNKNOWN** and the
+>   third-party "stable MAC" evidence was Bluetooth Classic / Hub OS 2 tooling and has been struck.
+>   [ble-bring-up.md § 2](./ble-bring-up.md#2-what-a-spike-prime-advertises-and-how-to-pick-our-hub-out-of-a-room).
+> - **Throughput expectation.** A real `InfoResponse` from another user's hub reports
+>   `max_chunk_size = 4096`, not the 512 assumed here — a 4 KB program is **one** chunk. Still not our
+>   measurement; KU-M1 stays open.
+> - **The USB path.** LEGO confirms the identical COBS protocol runs over the USB serial port, so this
+>   whole message set is reachable over the cable that already works.
+>   [ble-bring-up.md § 3.5](./ble-bring-up.md#35-the-same-protocol-runs-over-the-usb-cable-that-already-works).
+>
+> **Nothing below this line has been rewritten.** It is left as the record of what we believed on
+> 2026-08-26, before any hardware existed.
+
+---
+
 # Bluetooth on the SPIKE Prime — can we upload and manage code over it instead of USB?
 
 **Type:** EXTERNAL research · **Created:** 2026-08-26 · **Status:** open — **no hardware exists; nothing
@@ -226,7 +260,35 @@ auto-updates for the extension."* Its CHANGELOG
 shows Hub OS 3 support arrived **BLE-first**: `2.0.0` (2025-05-12) *"Refactor plugin to work with HubOS3
 BLE connection"*, `2.1.0` (2025-05-25) *"Add USB connection support for HubOS3"*.
 
-### 2.2 A hub program cannot open its own radio
+### 2.2 ❌ CORRECTED 2026-08-27 — "a hub program cannot open its own radio" was WRONG
+
+> **⚠ Correction banner, 2026-08-27. This section's heading used to read "A hub program cannot open its
+> own radio", and the inference below is DISPROVED at its root.**
+>
+> `help('modules')` on **our own hub** lists **`bluetooth`**, and `dir()` shows the complete standard
+> MicroPython `ubluetooth` surface: `BLE`, `UUID`, the `FLAG_*` constants, and on `BLE` itself
+> `active`, `config`, `gap_advertise`, `gap_connect`, `gap_disconnect`, `gap_pair`, `gap_passkey`,
+> `gap_scan`, `gattc_*` (client), `gatts_*` (server) and `irq`. That is a full GAP + GATT stack, both
+> roles. Evidence:
+> [../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md) § 4b and
+> [../archives/hub-baseline/03-api-surface.txt](../archives/hub-baseline/03-api-surface.txt).
+>
+> **How the error was made, because that is the reusable part:** the conclusion below rests on an
+> **absence in a third-party module list** for a *different* firmware version. The section even said so
+> and even named the fix ("`dir()` at the REPL would settle it"). An absence in someone else's list is
+> not evidence about our hardware — see
+> [../lessons_learned/say-which-kind-of-verified.md](../lessons_learned/say-which-kind-of-verified.md).
+>
+> **What is still genuinely unknown, and it is not a small caveat: API presence is not firmware
+> permission.** Whether the firmware *permits* `BLE().active(True)` while LEGO's own stack owns the
+> radio is untested, and it could fail or disrupt the firmware's own connection. **`BLE()` was
+> deliberately never instantiated** — that is a state change on shared course equipment and an operator
+> decision, not a probe's. Tracked as **KU-M18**.
+>
+> **What does NOT change:** telemetry still leaves the hub by `print()`. That choice is correct under
+> either answer, which is why [../../src/telemetry.py](../../src/telemetry.py) needed no redesign — only
+> a corrected docstring.
+
 
 The SPIKE 3 Python API module list — from a **third-party mirror**, self-described as *"Based on LEGO
 Education SPIKE website, Version 3.4.3… Copied from website and reformatted by Ethan Danahy on 30th of
@@ -236,10 +298,13 @@ authority and should be re-checked once the hub's firmware version is known — 
 light_matrix, motion_sensor, port, sound), `motor`, `motor_pair`, `orientation`, `runloop`. **No BLE
 module, no messaging, no broadcast, no VCP, no tunnel.**
 
-So the parked plan's open question — *"whether BT is reachable from a user program"* — resolves to **no,
-not directly**, on the strength of an *absence* in that module list rather than a positive statement by
-LEGO. An undocumented module could exist; `dir()` at the REPL would settle it once the hub is identified.
-Taken at face value, a slot program cannot open a socket. It can `print()`, and the *firmware* turns that into a
+~~So the parked plan's open question — *"whether BT is reachable from a user program"* — resolves to
+**no, not directly**, on the strength of an *absence* in that module list rather than a positive
+statement by LEGO. An undocumented module could exist; `dir()` at the REPL would settle it once the hub
+is identified. Taken at face value, a slot program cannot open a socket.~~ **← struck 2026-08-27; the
+module exists. See the banner above.**
+
+What remains true regardless: It can `print()`, and the *firmware* turns that into a
 `ConsoleNotification` on the TX characteristic. The control plane belongs to the firmware; our program is a
 tenant on it. That is a limitation and an advantage at once: telemetry works even when our program does
 nothing special.
@@ -594,6 +659,26 @@ the only off-the-shelf client, and a Linux story that broke twice in the six wee
 shipped and has never since been confirmed working by anyone (§ 5.2). Hub identification (KU-M1)
 is a USB procedure and stays one, and USB's failure modes are already covered by our runbooks.
 
+> **⚠ Correction, 2026-08-27, and read it before acting on this verdict.** Two of the premises under
+> this section moved:
+>
+> 1. **"A hub program cannot open its own radio" is disproved** — the hub's `bluetooth` module is the
+>    full MicroPython `ubluetooth` GAP + GATT stack (§ 2.2 banner). Whether the *firmware permits* its
+>    use alongside LEGO's own stack is untested and operator-gated (**KU-M18**). This does not change
+>    the recommendation below — telemetry by `print()` is right either way — but it does reopen a design
+>    space this verdict had closed.
+> 2. **Hub identification (KU-M1) is CLOSED**: our hub is **SPIKE 3 / Hub OS 3**, MicroPython 1.24.0,
+>    measured over USB 2026-08-27. So "row 3 — hub turns out to be Hub OS 2" in the fallback table
+>    below **cannot happen to us**. It stays for reference.
+> 3. ✅ **BLE now WORKS, and the § 7 go/no-go has effectively been run.** An early scan saw 581
+>    advertisers and zero LEGO, which looked like a blocker; **later the same day the hub was found,
+>    connected, and queried from Linux with `bleak` and no LEGO software**, and its identity confirmed
+>    by matching `DeviceUuidResponse` against the UUID read over USB. LEGO's COBS framing was
+>    implemented and **validated against real responses in both directions**.
+>    [../findings/ble-protocol-2026-08-27.md](../findings/ble-protocol-2026-08-27.md). ⚠ The advertising
+>    window is **short and self-terminating** — a client must *wait-and-pounce*, not scan-then-connect —
+>    and MTU negotiated at 23 against an advertised 509, which blocks any honest throughput estimate.
+
 **Why not ignore:** `DeviceNotification` is a better instrument than anything USB offers, *because of what
 it removes*. A tethered run is not the run being demonstrated — the cable pulls the chassis and contaminates
 precisely the accelerometer and gyro channels we would be measuring. It also needs no hub-side code, so it
@@ -722,6 +807,27 @@ do not blame the hub.
 
 ## 8. Open questions
 
+0. **When does the hub advertise, and for how long?** `[MEASURED 2026-08-27]`, and the story changed
+   twice in one day, which is why it is written out rather than summarised. An early passive `bleak`
+   scan (BlueZ 5.64) saw **581 advertising devices and ZERO matching LEGO** — not by company ID
+   `0x0397`, not by service UUID `0xFD02`, not by name — while the hub was on USB and the operator
+   pressed its Bluetooth button with no light. **Later the same day the hub was found, connected and
+   queried** ([../findings/ble-protocol-2026-08-27.md](../findings/ble-protocol-2026-08-27.md)). What is
+   now known: **the advertising window is short and self-terminating** — after one successful discovery,
+   a 12 s scan and then a **120 s scan with nothing holding the serial port** both saw nothing. So a
+   client must **wait-and-pounce** (subscribe to scan results, connect on first sight), never
+   scan-then-connect. `[UNVERIFIED]`: how long the window is; nobody has timed it. ⚠ **The earlier claim
+   that USB suppresses advertising is RETRACTED** — the successful discovery changed two variables at
+   once, and the 120 s port-free scan still saw nothing. The button is **`hub.button.CONNECT`**
+   (`dir(hub.button)` → `CONNECT LEFT POWER RIGHT pressed`); its light is **`hub.light.CONNECT`**.
+   Tracked as **KU-M17**.
+0b. **May a hub program call `bluetooth.BLE().active(True)` while the Hub OS owns the radio?** The API is
+   present and complete (§ 2.2 banner), but presence is not permission — and
+   [./ble-bring-up.md](./ble-bring-up.md) § 4.4 now argues from the MicroPython source that
+   **there is no reading of the probe under which `active(True)` is safe**: `BLE()` returns a
+   process-wide singleton, so we would get LEGO's own stack, and a double-init underneath a C-level
+   owner of the CC2564C is the bad case. **Operator-gated; deliberately not run, and the recommendation
+   is now "must not" rather than "unknown".** Tracked as **KU-M18**.
 1. **`max_chunk_size` and `max_packet_size`** — the whole throughput answer. Unknown until an `InfoResponse`
    is read. Phase 1.
 2. **What notification interval the hub actually honours**, and the delivered jitter. Phase 2. This bounds

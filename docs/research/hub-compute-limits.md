@@ -205,7 +205,7 @@ reuse one buffer · `gc.collect()` at a safe point, never inside the control loo
 |---|---|---|---|
 | **Sensor sample rate** | How fast the Colour Sensor 45605 samples internally | **100 Hz** | **Sourced** — LEGO *Technic Colour Sensor* fact sheet, verbatim: `Sensor sample rate  100 Hz` |
 | **Port/wire rate** | LPF2 UART link | `115 kB port speed`; 115200 baud after handshake | Sourced (LEGO; pybricks/technical-info) |
-| **Python loop rate** | Iterations/s a `while` loop achieves *including* the sensor call | **UNKNOWN** | **No source found has measured it on stock firmware** |
+| **Python loop rate** | Iterations/s a `while` loop achieves *including* the sensor call | **UNKNOWN** | **Still UNKNOWN after the 2026-08-27 hub session — deliberately.** One *component* of it was measured (a full IMU tick = 1.350 ms, § 3.2a) but a component cost is **not** a loop rate: it excludes driving, detecting and logging. Do not promote this row on the strength of it, and do not fill § 3.4's speed table from it |
 
 `SAMPLE_RATE_HZ = 100.0` in [../../src/config.py](../../src/config.py) is row 1. Every consumer of it —
 `samples_per_target()`, the event-width gate in [../../src/detector.py](../../src/detector.py), the
@@ -225,6 +225,36 @@ of **4.6 × 10⁴ inner iterations/s**; at roughly 7 float operations per iterat
 the benchmark's I²C display writes and its `valmap()` calls, which are not float arithmetic; and it says
 nothing about the cost of an LPF2 read, which may well dominate. Per the operator's standing
 guidance that is where the modelling stops: **the deliverable is D-2 in §7, not a better estimate.**
+
+### 3.2a ⚠ First real measurement on our hub, 2026-08-27 — and it disagrees with itself
+
+Timed on the hub, MicroPython 1.24.0, bare unmounted hub, no motors attached:
+
+| What was timed | Iterations | Cost |
+|---|---|---|
+| `tilt_angles()` alone | 500 | 0.054 ms/call |
+| `acceleration()` alone | 500 | 0.110 ms/call |
+| `angular_velocity()` alone | 500 | 0.164 ms/call |
+| *(the three summed)* | | *0.328 ms* |
+| **All three in one loop** | 300 | **1.350 ms/iteration** |
+
+**The whole costs 4.1× the sum of its parts.** The per-call figures imply **6,000–45,000 Hz**, which is
+not plausible for real sensor traffic on this hardware — and fixed overhead makes parts cost *more* than
+the whole, never less. `[INFERRED, UNVERIFIED]`: a repeated identical call is served from a **cache**
+while mixing calls forces a genuine update. Three other explanations are not ruled out. **UNRESOLVED —
+tracked as KU-M14.**
+
+**What to plan with:** **1.350 ms per full IMU tick**, which is **14 % of a 10 ms budget**. So 100 Hz is
+plausible *from the IMU side alone*. **Never quote the per-call numbers as read rates.**
+
+⚠ **This is a methodology correction to D-2 in § 7, not just a datapoint.** D-2 prescribes measuring
+(a) a bare loop, (b) loop + sensor read, and taking **(b) − (a) as the sensor's cost**. That subtraction
+assumes adding a call adds its isolated cost. On this hub, **mixing calls changed the cost by 4×**, so
+the subtraction can be wrong in either direction. Run (b) with the **exact call mix the mission loop will
+use**, and treat any single-call timing as suspect until the caching question is settled. The decisive
+experiment is cheap: **count bit-identical consecutive reads in a tight loop.**
+[../lessons_learned/dont-time-one-call-in-a-tight-loop.md](../lessons_learned/dont-time-one-call-in-a-tight-loop.md)
+· [../findings/imu-characterisation-2026-08-27.md](../findings/imu-characterisation-2026-08-27.md)
 
 ### 3.3 What will make it slower than a bare loop
 
@@ -496,7 +526,7 @@ identification succeeds, and it is the Builder's action per
 | ID | Measurement | How | Consumer | Register row |
 |---|---|---|---|---|
 | **D-1** | **Free heap under stock firmware** | `from micropython import mem_info; mem_info()` at the REPL, then again from inside a running downloaded program. **Record both, verbatim.** The second is the real budget | Every RAM number in §4 and §6 | *proposed new row* |
-| **D-2** | **Achievable Python loop rate** | Three separate timings with `utime.ticks_us`/`ticks_diff` over 1000 iterations: (a) bare `while` loop, no I/O; (b) loop + one colour sensor read; (c) loop + sensor read **with both drive motors running** — robot up on a block so the wheels spin free, per [../directives/hardware-safety.md](../directives/hardware-safety.md). (b)−(a) is the sensor cost; (c)−(b) is the motor-control tax | `SAMPLE_RATE_HZ`, the sweep speed ceiling, the whole trade study | **KU-M5** — extend it: it currently asks only for the sensor rate |
+| **D-2** | **Achievable Python loop rate** | Three separate timings with `utime.ticks_us`/`ticks_diff` over 1000 iterations: (a) bare `while` loop, no I/O; (b) loop + one colour sensor read; (c) loop + sensor read **with both drive motors running** — robot up on a block so the wheels spin free, per [../directives/hardware-safety.md](../directives/hardware-safety.md). (b)−(a) is the sensor cost; (c)−(b) is the motor-control tax. ⚠ **METHOD AMENDED 2026-08-27:** the (b)−(a) subtraction is **not safe on this hub** — mixing IMU calls cost 4× the sum of the same calls timed alone (§ 3.2a, KU-M14). Time the **exact call mix the mission loop runs**, not a single call, and add a fourth timing that **counts bit-identical consecutive reads** to find out whether repeats are cached | `SAMPLE_RATE_HZ`, the sweep speed ceiling, the whole trade study | **KU-M5** — extend it: it currently asks only for the sensor rate. **Partial input exists:** a full IMU tick is 1.350 ms, measured |
 | **D-3** | **`help('modules')` on our actual Hub OS** | One line at the REPL. Paste verbatim | Confirms/refutes §2.1 for SPIKE 3 | **KU-M1** (add as sub-item) |
 | **D-4** | **Float vs integer arithmetic cost** | Time 10,000 `a*b+c` in floats, then in ints | Decides whether §2.2's integer discipline is worth the code churn | *proposed new row* |
 | **D-5** | **GC pause length** | Allocate the structures the mission actually holds — one `bytearray(4096)` ring buffer, one `array('f')` of the calibration references, the pose tuple — then `t=ticks_us(); gc.collect(); print(ticks_diff(ticks_us(),t))`, ten times, and record all ten. Compare against the ~1–3 s of a lane turn | Whether a collect can be hidden in a lane turn | *proposed new row* |
@@ -520,7 +550,11 @@ upload path works. *(Rows marked "proposed" are for whoever owns
 - **Q-C.** Is the SPIKE 3 MicroPython module set the same as the SPIKE 2 dump in §2.1? **D-3.**
 - **Q-D.** Does the LPF2 read block, and for how long? If a colour-sensor read blocks for ~10 ms, the loop
   rate is pinned at ~100 Hz *regardless* of interpreter speed, and §3.4's worry evaporates. If it returns a
-  cached value instantly, interpreter speed is the limit. **D-2 (b)−(a) answers this.**
+  cached value instantly, interpreter speed is the limit. ~~**D-2 (b)−(a) answers this.**~~ ⚠ **2026-08-27:
+  it does not, and this row turned out to be prescient.** Our IMU timings behave exactly as described
+  here — repeated identical calls came back 4× cheaper than the same calls mixed, which is what a
+  returned-cached-value looks like. The subtraction cannot separate the two cases; **counting
+  bit-identical consecutive reads can.** KU-M14.
 - **Q-E.** Does the colour sensor expose raw RGB at the full 100 Hz, or is LEGO-colour classification mode
   slower? Bears on [./color-discrimination.md](./color-discrimination.md).
 - **Q-F.** Can a user-placed `.mpy` run from a slot on stock firmware (§6.3)? **Operator decision first.**

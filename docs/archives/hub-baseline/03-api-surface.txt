@@ -1,0 +1,70 @@
+# hub baseline: 03-api-surface.txt
+# READ-ONLY capture. Compare later runs with:
+#   python3 probes/capture_baseline.py --to /tmp/now
+#   diff -ru docs/archives/hub-baseline /tmp/now
+
+# 03-api-surface.txt
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== dir hub =====
+['__class__', '__name__', '__dict__', 'battery_current', 'battery_temperature', 'battery_voltage', 'button', 'config', 'device_uuid', 'hardware_id', 'light', 'light_matrix', 'motion_sensor', 'port', 'power_off', 'sound', 'temperature', 'usb_charge_current']
+
+===== dir motor =====
+['__class__', '__init__', '__name__', 'stop', 'BRAKE', 'CANCELLED', 'CLOCKWISE', 'COAST', 'CONTINUE', 'COUNTERCLOCKWISE', 'DISCONNECTED', 'ERROR', 'HOLD', 'LONGEST_PATH', 'READY', 'RUNNING', 'SHORTEST_PATH', 'SMART_BRAKE', 'SMART_COAST', 'STALLED', '__dict__', 'absolute_position', 'get_duty_cycle', 'info', 'relative_position', 'reset_relative_position', 'run', 'run_for_degrees', 'run_for_time', 'run_to_absolute_position', 'run_to_relative_position', 'set_duty_cycle', 'status', 'velocity']
+
+===== dir motor_pair =====
+['__class__', '__init__', '__name__', 'stop', 'PAIR_1', 'PAIR_2', 'PAIR_3', '__dict__', 'move', 'move_for_degrees', 'move_for_time', 'move_tank', 'move_tank_for_degrees', 'move_tank_for_time', 'pair', 'unpair']
+
+===== dir runloop =====
+['__class__', '__name__', 'CANCELLED', 'SUCCESS', 'TIMEOUT', 'WAITING', '__dict__', 'run', 'sleep_ms', 'until', 'wait']
+
+===== dir color_sensor =====
+['__class__', '__name__', '__dict__', 'color', 'reflection', 'rgbi']
+
+===== dir color =====
+['__class__', '__name__', 'AZURE', 'BLACK', 'BLUE', 'GREEN', 'MAGENTA', 'ORANGE', 'PURPLE', 'RED', 'TURQUOISE', 'UNKNOWN', 'WHITE', 'YELLOW', '__dict__']
+
+===== dir color_matrix =====
+['__class__', '__name__', 'clear', '__dict__', 'get_pixel', 'set_pixel', 'show']
+
+===== dir distance_sensor =====
+['__class__', '__name__', 'clear', '__dict__', 'distance', 'get_pixel', 'set_pixel', 'show']
+
+===== dir force_sensor =====
+['__class__', '__name__', '__dict__', 'force', 'pressed', 'raw']
+
+===== dir device =====
+['__class__', '__name__', 'id', '__dict__', 'data', 'get_duty_cycle', 'ready', 'reset_mode', 'set_duty_cycle', 'set_mode', 'write_mode']
+
+===== dir orientation =====
+['__class__', '__name__', 'DOWN', 'LEFT', 'RIGHT', 'UP', '__dict__']
+
+===== dir motion_sensor =====
+['__class__', '__name__', 'BACK', 'BOTTOM', 'DOUBLE_TAPPED', 'FALLING', 'FRONT', 'LEFT', 'RIGHT', 'SHAKEN', 'TAPPED', 'TOP', 'UNKNOWN', '__dict__', 'acceleration', 'angular_velocity', 'gesture', 'get_yaw_face', 'quaternion', 'reset_tap_count', 'reset_yaw', 'set_yaw_face', 'stable', 'tap_count', 'tilt_angles', 'up_face']
+
+===== dir light_matrix =====
+['__class__', '__name__', 'clear', 'write', 'CANCELLED', 'IMAGE_ANGRY', 'IMAGE_ARROW_E', 'IMAGE_ARROW_N', 'IMAGE_ARROW_NE', 'IMAGE_ARROW_NW', 'IMAGE_ARROW_S', 'IMAGE_ARROW_SE', 'IMAGE_ARROW_SW', 'IMAGE_ARROW_W', 'IMAGE_ASLEEP', 'IMAGE_BUTTERFLY', 'IMAGE_CHESSBOARD', 'IMAGE_CLOCK1', 'IMAGE_CLOCK10', 'IMAGE_CLOCK11', 'IMAGE_CLOCK12', 'IMAGE_CLOCK2', 'IMAGE_CLOCK3', 'IMAGE_CLOCK4', 'IMAGE_CLOCK5', 'IMAGE_CLOCK6', 'IMAGE_CLOCK7', 'IMAGE_CLOCK8', 'IMAGE_CLOCK9', 'IMAGE_CONFUSED', 'IMAGE_COW', 'IMAGE_DIAMOND', 'IMAGE_DIAMOND_SMALL', 'IMAGE_DUCK', 'IMAGE_FABULOUS', 'IMAGE_GHOST', 'IMAGE_GIRAFFE', 'IMAGE_GO_DOWN', 'IMAGE_GO_LEFT', 'IMAGE_GO_RIGHT', 'IMAGE_GO_UP', 'IMAGE_HAPPY', 'IMAGE_HEART', 'IMAGE_HEART_SMALL', 'IMAGE_HOUSE', 'IMAGE_MEH', 'IMAGE_MUSIC_CROTCHET', 'IMAGE_MUSIC_QUAVER', 'IMAGE_MUSIC_QUAVERS', 'IMAGE_NO', 'IMAGE_PACMAN', 'IMAGE_PITCHFORK', 'IMAGE_RABBIT', 'IMAGE_ROLLERSKATE', 'IMAGE_SAD', 'IMAGE_SILLY', 'IMAGE_SKULL', 'IMAGE_SMILE', 'IMAGE_SNAKE', 'IMAGE_SQUARE', 'IMAGE_SQUARE_SMALL', 'IMAGE_STICKFIGURE', 'IMAGE_SURPRISED', 'IMAGE_SWORD', 'IMAGE_TARGET', 'IMAGE_TORTOISE', 'IMAGE_TRIANGLE', 'IMAGE_TRIANGLE_LEFT', 'IMAGE_TSHIRT', 'IMAGE_UMBRELLA', 'IMAGE_XMAS', 'IMAGE_YES', 'SHOWING', 'SUCCESS', '__dict__', 'get_orientation', 'get_pixel', 'set_orientation', 'set_pixel', 'show', 'show_image']
+
+===== dir light =====
+['__class__', '__name__', 'CONNECT', 'POWER', '__dict__', 'color']
+
+===== dir button =====
+['__class__', '__name__', 'CONNECT', 'LEFT', 'POWER', 'RIGHT', '__dict__', 'pressed']
+
+===== dir sound =====
+['__class__', '__name__', 'stop', 'ANY', 'DEFAULT', 'WAVEFORM_SAWTOOTH', 'WAVEFORM_SINE', 'WAVEFORM_SQUARE', 'WAVEFORM_TRIANGLE', '__dict__', 'beep', 'play', 'volume']
+
+===== dir port =====
+['__class__', 'A', 'B', 'C', 'D', 'E', 'F']
+
+===== dir bluetooth =====
+['__class__', '__name__', 'BLE', 'FLAG_INDICATE', 'FLAG_NOTIFY', 'FLAG_READ', 'FLAG_WRITE', 'FLAG_WRITE_NO_RESPONSE', 'UUID', '__dict__']
+
+===== dir bluetooth.BLE =====
+['__class__', '__name__', '__bases__', '__dict__', 'active', 'config', 'gap_advertise', 'gap_connect', 'gap_disconnect', 'gap_pair', 'gap_passkey', 'gap_scan', 'gattc_discover_characteristics', 'gattc_discover_descriptors', 'gattc_discover_services', 'gattc_exchange_mtu', 'gattc_read', 'gattc_write', 'gatts_indicate', 'gatts_notify', 'gatts_read', 'gatts_register_services', 'gatts_set_buffer', 'gatts_write', 'irq']
+
+===== dir machine =====
+['__class__', '__name__', '__dict__', 'bootloader', 'idle', 'reset', 'reset_cause', 'soft_reset', 'unique_id']
+
+===== dir vfs =====
+['__class__', '__name__', 'VfsLfs2', '__dict__', 'mount', 'umount']

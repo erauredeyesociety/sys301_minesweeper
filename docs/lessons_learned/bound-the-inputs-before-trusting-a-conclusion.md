@@ -44,6 +44,44 @@ given.
 - **An assumption that reaches a purchase decision gets promoted** to a measurement task in
   [known-unknowns.md](../plans/known-unknowns.md) with a bench procedure, not left as an `[ASSUMED]` cell.
 
+## A second instance, 2026-08-27 — and this time the instrument caught it
+
+The first case was an unbounded input. This one is a **contaminated** input, and the failure looks
+identical from inside the arithmetic.
+
+A 30 s stationary gyro run reported **98.7° of yaw drift, 3.29 °/s**. Arithmetically fine. But the
+drift went **+7.6°, then −22.2°, then +96.6°** — and steady drift does not reverse direction. The
+operator had been plugging in motors and handling the robot during the window. **The conclusion was
+sound and the input was garbage**, which is precisely the shape of the coverage-study failure above.
+
+What made the difference the second time: `examples/gyro_drift.py` was written to **watch the
+disturbance, not only the quantity.** The unit derivation had already established that a still hub reads
+|a| ≈ 989 milli-g, so gravity is a *constant the hub can check itself against* — for free, in the same
+loop. The script flagged `CONTAMINATED` at t=14106 ms with the gravity vector off by up to **2534 mg**
+and **refused to print a drift figure at all**. The clean re-run gave 0.0033 °/s.
+
+**A tool that declines to answer is working**, not broken —
+[a-tool-works-when-it-does-its-job.md](./a-tool-works-when-it-does-its-job.md). The discarded transcript
+is labelled as discarded in [../findings/runs/INDEX.md](../findings/runs/INDEX.md), because an
+unlabelled bad number in a folder is how it reaches the report.
+
+**Generalised:** *instrument the disturbance alongside the quantity, and give the instrument permission
+to refuse.* It usually costs nothing, because the disturbance channel is already being read for some
+other reason. Concretely, for the rest of this project:
+
+- log **ambient light** while calibrating colour thresholds — a hand or a shadow over the sensor is this
+  same failure wearing different clothes;
+- log **battery voltage** during any drivetrain or speed run — motor speed sags with charge, so a run
+  that spans a voltage drop is not one experiment;
+- log **`is_flat()` / tilt** during odometry runs — a wheel on a cable invalidates a degrees-to-mm
+  constant silently.
+
+Each of these is a precondition the run must satisfy, and each is cheaper to record than to argue about
+afterwards. This strengthens
+[../directives/honest-instrumentation.md](../directives/honest-instrumentation.md): not reporting a
+value you did not measure is the floor; **detecting that the value you did measure was not of the thing
+you meant** is the next storey up.
+
 **Related:** [../directives/honest-instrumentation.md](../directives/honest-instrumentation.md)
 (never report a value you did not measure) · [../directives/map-before-act.md](../directives/map-before-act.md)
 (enumerate the surface before acting).

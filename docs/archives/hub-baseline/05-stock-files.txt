@@ -1,0 +1,28 @@
+# hub baseline: 05-stock-files.txt
+# READ-ONLY capture. Compare later runs with:
+#   python3 probes/capture_baseline.py --to /tmp/now
+#   diff -ru docs/archives/hub-baseline /tmp/now
+
+# 05-stock-files.txt
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== README.txt =====
+This is a MicroPython board
+You can get started right away by writing your Python code in 'main.py'.
+For a serial prompt:
+ - Windows: you need to go to 'Device manager', right click on the unknown device,
+   then update the driver software, using the 'pybcdc.inf' file found on this drive.
+   Then use a terminal program like Hyperterminal or putty.
+ - Mac OS X: use the command: screen /dev/tty.usbmodem*
+ - Linux: use the command: screen /dev/ttyACM0
+Please visit http://micropython.org/help/ for further help.
+
+===== boot.py =====
+# boot.py -- run on boot to configure USB and filesystem
+# Put app code in main.py
+import micropython, hub
+micropython.alloc_emergency_exception_buf(128)
+hub.config["hub_os_enable"] = True
+
+===== main.py =====
+# main.py -- put your code here!

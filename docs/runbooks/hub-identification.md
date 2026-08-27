@@ -2,9 +2,17 @@
 
 > **Purpose.** Determine which **LEGO Hub OS / Python API generation** is on the SPIKE Prime hub
 > **without changing anything on the hub** and **without triggering a "Hub update required" prompt**.
-> **Status:** written 2026-08-25 with **no hub attached**. Every claim about what the hub will do is
-> **UNVERIFIED** and is marked so. Host-side facts were measured on this machine today and are marked
-> *(verified 2026-08-25)*.
+> **Status: EXECUTED 2026-08-27.** Written 2026-08-25 with no hub attached; run for real on our own hub
+> over USB on 2026-08-27, and revised the same day against what it actually printed. The result is filed
+> as [../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md).
+> Host-side facts measured 2026-08-25 are marked *(verified 2026-08-25)*; hub-side claims now say either
+> **CONFIRMED 2026-08-27** or **`UNVERIFIED`**, and **three predictions this runbook made turned out to
+> be WRONG** — they are marked ❌ **PREDICTION WRONG** in place rather than quietly corrected, because a
+> wrong prediction on the record is worth more than a tidy table (§ 5.5, § 5.7, § 6).
+>
+> **Everything below refers to the port as `/dev/spike`**, the stable symlink created by
+> `scripts/setup-host.sh`. On this host it points at `ttyACM0`; use the symlink, because the number
+> moves.
 >
 > Governing rules: [../directives/hardware-safety.md](../directives/hardware-safety.md) ·
 > [../directives/honest-instrumentation.md](../directives/honest-instrumentation.md) ·
@@ -14,8 +22,10 @@
 
 **Why this matters.** The whole codebase forks on the answer. SPIKE 3 (current) is
 `import motor` / `from hub import port` / `import runloop`; SPIKE 2 (legacy) is
-`from spike import PrimeHub`. [../scope.md](../scope.md) lists the generation as `[UNKNOWN]` and
-forbids writing mission code against a guess. This runbook closes that unknown, and nothing else.
+`from spike import PrimeHub`. [../scope.md](../scope.md) used to list the generation as `[UNKNOWN]` and
+forbids writing mission code against a guess. **This runbook closed that unknown on 2026-08-27: our hub
+is SPIKE 3** (KU-M1 in [../plans/known-unknowns.md](../plans/known-unknowns.md)). It closes that, and
+nothing else — the API being *known* is not the same as its call sites being *run*.
 
 ---
 
@@ -35,6 +45,13 @@ ask the operator**; do not improvise.
 | Uploading, deleting, or overwriting a program slot | Not identification. That is the deploy runbook's job, later. |
 | Running a motor | Not identification. The Builder is the only authorized operator of a moving robot. |
 | An **agent** opening a blocking serial read from a tool call (`screen`, `cat /dev/ttyACM0`, a `read()` with no deadline) | Hangs the session. Hard rule — [../directives/automation-first.md](../directives/automation-first.md). See § 6. |
+
+**One addition, 2026-08-27.** Writing to the hub is no longer a hypothetical escalation of this
+procedure — it is a **different, existing procedure** with its own runbook,
+[deploy-to-hub.md](./deploy-to-hub.md), and its own proof that the firmware is untouched
+([../findings/firmware-integrity-proof.md](../findings/firmware-integrity-proof.md)). Nothing in the
+table above is relaxed: *this* procedure still writes nothing. If you want to write, leave this runbook
+and open that one.
 
 **Allowed:** reading USB/kernel/port state on the host; sending short expressions to the hub's
 MicroPython REPL that only *read* (`sys`, `os.uname()`, `help('modules')`, `dir()`, version and
@@ -64,10 +81,19 @@ Plug the hub into the host with the USB cable and switch the hub on. Per the cou
 
 | # | Command | Expected observation |
 |---|---|---|
-| 2.1 | `lsusb` | A new line for the hub. Vendor **LEGO Group / `0694`** is expected — `UNVERIFIED`, and the product ID is **unknown to us**. Record the line verbatim; that VID:PID is a finding in itself. |
-| 2.2 | `ls -l /dev/ttyACM*` | `crw-rw---- 1 root dialout 166, 0 … /dev/ttyACM0`. Major **166** is the `cdc_acm` char major *(verified from `modinfo cdc_acm`: `alias char-major-166-*`, 2026-08-25)*. Group **must** be `dialout`. |
+| 2.1 | `lsusb` | A new line for the hub. Vendor **LEGO Group / `0694`**, product `0009` — **confirmed indirectly 2026-08-27**, see the note below. Record the line verbatim anyway; a transcribed `lsusb` line is stronger evidence than an inference. |
+| 2.2 | `ls -l /dev/spike /dev/ttyACM*` | `crw-rw---- 1 root dialout 166, 0 … /dev/ttyACM0`. Major **166** is the `cdc_acm` char major *(verified from `modinfo cdc_acm`: `alias char-major-166-*`, 2026-08-25)*. Group **must** be `dialout`. |
 | 2.3 | `sudo dmesg \| tail -n 40` | Lines of the shape `usb 1-…: new full-speed USB device number N using xhci_hcd`, `cdc_acm 1-…:1.0: ttyACM0: USB ACM device`. The `cdc_acm … ttyACM0: USB ACM device` line is the signature. |
-| 2.4 | `udevadm info -q property -n /dev/ttyACM0` | `ID_VENDOR_ID`, `ID_MODEL_ID`, `ID_SERIAL`, `ID_USB_DRIVER=cdc_acm`. **Record all of these** — they are what a future udev rule keys on. |
+| 2.4 | `udevadm info -q property -n /dev/spike` | `ID_VENDOR_ID`, `ID_MODEL_ID`, `ID_SERIAL`, `ID_USB_DRIVER=cdc_acm`. **Record all of these** — they are what a future udev rule keys on. |
+
+**On the VID:PID, 2026-08-27 — confirmed by inference, not by a transcribed `lsusb` line.** The udev
+rule `scripts/setup-host.sh` installs at `/etc/udev/rules.d/99-lego-spike.rules` matches
+**`ATTRS{idVendor}=="0694", ATTRS{idProduct}=="0009"`** and nothing else, and its `SYMLINK+="spike"`
+fired: `/dev/spike -> ttyACM0` exists on this host. A rule that matches only `0694:0009` cannot create
+that symlink for a device that is not `0694:0009`. So the ID is **confirmed against our unit** — but
+via the rule, not by reading it off `lsusb`. Anyone with the hub plugged in should still paste the real
+`lsusb` line into the finding and upgrade this from *confirmed against `99-lego-spike.rules`* to
+*measured*. Vocabulary: [../lessons_learned/say-which-kind-of-verified.md](../lessons_learned/say-which-kind-of-verified.md).
 
 Notes, measured on this host **2026-08-25**:
 
@@ -100,19 +126,25 @@ mmcli --version                    → mmcli 1.20.0
 /usr/lib/udev/rules.d/80-mm-candidate.rules  present
 ```
 
-These rows were measured on this host for this runbook on 2026-08-25; the ModemManager blocker itself is
-filed as [../findings/host-environment.md](../findings/host-environment.md). Re-measure rather than trust
-them if the host changes.
+**⚠ Those rows are STALE for this host as of 2026-08-27.** `./scripts/setup-host.sh --apply` was run
+before the first hub session: ModemManager is now **`inactive` and disabled**, and the udev rule sets
+`ID_MM_DEVICE_IGNORE=1` on the device. Re-measure rather than trust either set of rows if the host
+changes. The blocker itself is filed as
+[../findings/host-environment.md](../findings/host-environment.md).
 
-So **ModemManager is running on this machine and will see the hub.** Whether it actually probes *this*
-device is **UNVERIFIED** — LEGO's VID may or may not be filtered out by `80-mm-candidate.rules`.
+**And the probe question is answered, 2026-08-27:** with the hub plugged in, `mmcli -L` returned
+**`No modems were found`** and nothing held the port. **ModemManager had not in fact grabbed this
+device.** The mitigation is still correct and stays applied — it is a race we do not want to re-run
+every session, and losing a class period to a corrupted first session is the failure it prevents. What
+changes is the honest claim: this is a *precaution whose necessity is unproven on this host*, not a
+fault we observed.
 
 | # | Check | Expected / meaning |
 |---|---|---|
-| 3.1 | `systemctl is-active ModemManager` | `active` on this host |
+| 3.1 | `systemctl is-active ModemManager` | **`inactive` on this host since 2026-08-27** (was `active`/`enabled`). `active` on a fresh host |
 | 3.2 | Right after plugging in: `mmcli -L` | `No modems were found` = ModemManager ignored the hub, **nothing further needed**. Any listed modem on `ttyACM0` = it grabbed the port. |
-| 3.3 | `sudo journalctl -u ModemManager -n 30 --no-pager` | Any line naming `ttyACM0` or the hub's VID:PID = it probed the device |
-| 3.4 | `sudo fuser -v /dev/ttyACM0` (or `sudo lsof /dev/ttyACM0`) | **No output** = nobody holds the port. A `ModemManager` line = it holds it. |
+| 3.3 | `sudo journalctl -u ModemManager -n 30 --no-pager` | Any line naming `ttyACM0` or `0694:0009` = it probed the device |
+| 3.4 | `sudo fuser -v /dev/spike` (or `sudo lsof /dev/spike`) | **No output** = nobody holds the port. A `ModemManager` line = it holds it. |
 
 **Non-destructive mitigation, in order of preference — only if 3.2/3.4 show interference:**
 
@@ -129,8 +161,12 @@ device is **UNVERIFIED** — LEGO's VID may or may not be filtered out by `80-mm
    mmcli -L
    ```
    This touches **only the host**, never the hub, and affects only LEGO devices.
-   **`UNVERIFIED`:** the vendor ID `0694` is expected, not confirmed — substitute the value actually
-   observed in 2.4. **`UNVERIFIED`:** that this rule suppresses probing for this specific device.
+   **Confirmed 2026-08-27:** the vendor ID `0694` (product `0009`) matches our unit — see the note in
+   § 2. `scripts/setup-host.sh` now installs a superset of this rule at
+   `/etc/udev/rules.d/99-lego-spike.rules`, which also sets `GROUP="dialout"` and `SYMLINK+="spike"`;
+   prefer running the script over hand-writing this file. **Still `UNVERIFIED`:** that the rule
+   *suppresses probing* for this device — untestable here, because `mmcli -L` found no modem either
+   way.
 
 2. **Session-scoped fallback:** `sudo systemctl stop ModemManager`, run the identification, then
    `sudo systemctl start ModemManager`. Reversible, but it disables any real modem on the machine for
@@ -147,10 +183,11 @@ session-scoped stop applies.
 
 ## 4. Reach the hub's MicroPython REPL — read-only
 
-**`UNVERIFIED — the central assumption of this runbook`:** that the stock firmware on *this* hub
-exposes an interactive MicroPython REPL on `/dev/ttyACM0`. Community Linux tooling reports it does on
-SPIKE Prime; we have not observed it. It is also **`UNVERIFIED`** whether a SPIKE 3-generation Hub OS
-still presents a plain REPL or only a framed binary protocol.
+**CONFIRMED 2026-08-27 — this was the central assumption of the runbook and it held.** The stock
+firmware on *our* hub exposes an ordinary interactive MicroPython REPL on `/dev/spike`. A `>>>` prompt
+was reached, plain-text, and every probe in § 5 ran through it. A SPIKE 3-generation Hub OS does
+**not** hide the REPL behind a framed binary protocol — that worry is retired. The
+`UNVERIFIED` markers that used to stand here are struck.
 
 **What you may see on the port and what it means:**
 
@@ -161,13 +198,13 @@ still presents a plain REPL or only a framed binary protocol.
 | Nothing at all | Port opened but hub silent. Try `Ctrl-C` then `Enter`. If still nothing, record UNKNOWN — **do not** escalate to anything that writes. |
 | `Device or resource busy` | Something holds the port — go back to § 1 and § 3.4. |
 
-Serial settings: **115200 8N1** is the conventional figure and is what the operator's notes use. CDC
-ACM devices generally ignore the baud rate, so 115200 is a safe default either way — **`UNVERIFIED`**
-for this hub.
+Serial settings: **115200 8N1 — CONFIRMED working 2026-08-27** on this hub (the baseline captures carry
+the header `# port /dev/spike @ 115200 8N1`). CDC ACM devices generally ignore the baud rate anyway, so
+it is a safe default either way.
 
 ### 4a. The human route (physical terminal only)
 
-A person sitting at the machine may use `screen /dev/ttyACM0 115200` (no `sudo`). **An agent may not**
+A person sitting at the machine may use `screen /dev/spike 115200` (no `sudo`). **An agent may not**
 — see § 6. Exit procedure is in § 7.
 
 ### 4b. The required route for anything scripted — § 6
@@ -185,45 +222,65 @@ result, not a failure — `ImportError: no module named 'spike'` is *evidence*.
 | 5.2 | `import os; print(os.uname())` | `sysname` / `release` / `version` / `machine`. `machine` should name the board; `version` usually carries a build string/date. **This is the firmware fingerprint to file.** |
 | 5.3 | **`help('modules')`** | **The discriminator.** See the decision table below. |
 | 5.4 | `import hub; print(hub.__name__); print(dir(hub))` | `dir()` is read-only. The *shape* of the `hub` module differs between generations. |
-| 5.5 | `print(hub.info())` — only if `info` appeared in 5.4 | Legacy `hub.info()` returns a dict including a `firmware_version` tuple. **`UNVERIFIED`** for both generations. If it is not in `dir(hub)`, skip it; do not hunt for alternatives. |
+| 5.5 | `print(hub.info())` — only if `info` appeared in 5.4 | ❌ **PREDICTION WRONG (2026-08-27): `info` is NOT in `dir(hub)` on this hub.** There is no `hub.info()`. The version fingerprint comes from `os.uname()` and `sys.implementation` (5.1/5.2) instead. Left in the table on purpose: skipping this row is the *correct* behaviour the row itself prescribed, and a recorded wrong prediction is worth more than a deleted one. |
 | 5.6 | `import sys; print(sys.path)` | Where the hub looks for modules. Read-only, and useful later for deploy. |
-| 5.7 | Battery, whichever `dir()` supports: `print(hub.battery.voltage())` **or** `from hub import battery; print(battery.voltage())` | A laptop-free battery reading. Which form works is itself a generation clue, and [demo-day.md](./demo-day.md) needs the answer. **`UNVERIFIED`.** |
+| 5.7 | Battery — **use the measured form:** `print(hub.battery_voltage(), hub.battery_current(), hub.battery_temperature(), hub.usb_charge_current)` | ❌ **PREDICTION WRONG (2026-08-27): BOTH forms this row originally offered are wrong.** There is no `hub.battery` object and no importable `battery` module. The real calls are **top-level attributes of `hub`**: `battery_voltage()`, `battery_current()`, `battery_temperature()`, and the *attribute* (not call) `usb_charge_current`. Measured: **7882 mV charging at 364 mA**; a later session read **7942 → 8001 mV** while charging over USB. [demo-day.md](./demo-day.md) still needs the *threshold*, which is a different question and remains open. |
 
 ### Decision table — SPIKE 2 vs SPIKE 3
 
 | Evidence from `help('modules')` (5.3) / `dir(hub)` (5.4) | Conclusion | Consequence for the code |
 |---|---|---|
 | `spike`, `mindstorms`, `hub` present; **no** `runloop` | **SPIKE 2 / legacy API** | Mission code targets `from spike import PrimeHub`. Most of LEGO's *current* teaching material does not apply. |
-| `motor`, `motor_pair`, `runloop`, `color_sensor`, `distance_sensor`, `force_sensor` present | **SPIKE 3 / current API** | Mission code targets `import motor` / `from hub import port` / `import runloop`. |
+| `motor`, `motor_pair`, `runloop`, `color_sensor`, `distance_sensor`, `force_sensor` present | **SPIKE 3 / current API** ← ✅ **THIS IS OUR HUB, matched exactly 2026-08-27** | Mission code targets `import motor` / `from hub import port` / `import runloop`. |
 | **Both** families present | Ambiguous — a compatibility shim. **Do not guess.** Record verbatim, ask the operator, and prefer the current API. | ADR needed |
 | No REPL reached at all | **UNKNOWN — the honest answer.** File it as UNKNOWN. | Blocked; the toolchain research file becomes the next move |
 
-**`UNVERIFIED`:** every module name in this table. They are the expected sets for the two generations
-per the sources in [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md);
-we have observed none of them. Record what the hub actually prints, not what this table predicts.
+**CONFIRMED 2026-08-27 for the SPIKE 3 row — struck, not softened.** Our hub's `help('modules')` listed
+`motor`, `motor_pair`, `runloop`, `color_sensor`, `distance_sensor`, `force_sensor`, and **no `spike`
+module and no `mindstorms` module**. The row matched exactly. The complete verbatim list is in
+[../archives/hub-baseline/02-modules.txt](../archives/hub-baseline/02-modules.txt) and the reading is in
+[../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md).
+
+The **SPIKE 2 row remains `UNVERIFIED`** — we have never seen a SPIKE 2 hub, and its module names are
+still only what [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md)
+predicts. On a *different* hub, record what it actually prints rather than what this table says.
 
 ---
 
 ## 6. This must run from a script with a timeout — not an interactive read
 
-**Hard rule.** An agent tool call that opens `/dev/ttyACM0` and waits for bytes hangs the session with
+**Hard rule.** An agent tool call that opens `/dev/spike` and waits for bytes hangs the session with
 no way out. Every hub-touching command goes in a script that has an explicit deadline and exits.
 
-The script belongs at **`scripts/identify_hub.py`**, wrapped by **`scripts/identify-hub.sh`**.
-Neither exists yet, and creating them is **outside this runbook's write zone** — this section is the
-specification for whoever writes them.
+❌ **PREDICTION WRONG (2026-08-27) — the text that used to stand here said `scripts/identify_hub.py`
+and `scripts/identify-hub.sh` did not exist and that creating them was "outside this runbook's write
+zone". They exist, and they ran.** This section is now a **pointer**, not a specification.
 
-Required shape:
+| What runs | Wrapped by | What it does |
+|---|---|---|
+| `scripts/identify_hub.py` | `scripts/identify-hub.sh` | The read-only identification sequence in § 5. Produced the `_hub-identify-*.transcript.txt` filed in [../findings/](../findings/INDEX.md) |
+| `probes/whoami.py` | — | Identity: `device_uuid`, `hardware_id`, `machine.unique_id()`, battery |
+| `probes/identify_hub.py` | — | `os.uname()`, `sys.implementation`, `help('modules')`, `dir(hub)` |
+| `probes/filesystem.py` | — | `/flash` listing, sizes, `os.statvfs`, stock file contents |
+| `probes/capture_baseline.py` | — | All of the above into [../archives/hub-baseline/](../archives/hub-baseline/INDEX.md) as a re-runnable, diffable snapshot |
+
+**Prefer `probes/capture_baseline.py --to /tmp/now` over re-typing the probes.** It produces six files
+that diff against the pristine 2026-08-27 baseline, which is how *"did anything on this hub change?"*
+gets **answered** instead of argued about — see
+[../findings/firmware-integrity-proof.md](../findings/firmware-integrity-proof.md).
+
+The shape they were written to, kept because it is still the specification any future hub-touching
+script must satisfy:
 
 ```python
 #!/usr/bin/env python3
-# scripts/identify_hub.py — READ-ONLY hub identification. Writes nothing to the hub.
+# READ-ONLY hub identification. Writes nothing to the hub.
 # Host has pyserial 3.5 (verified 2026-08-25).
-import sys, time, serial          # serial.Serial(..., timeout=…) never blocks forever
+import sys, time, serial          # serial.Serial(..., timeout=...) never blocks forever
 
-PORT, BAUD, DEADLINE = "/dev/ttyACM0", 115200, 25.0   # seconds, whole run
+PORT, BAUD, DEADLINE = "/dev/spike", 115200, 25.0     # seconds, whole run
 
-PROBES = [                        # read-only expressions ONLY — see § 0 FORBIDDEN
+PROBES = [                        # read-only expressions ONLY -- see section 0 FORBIDDEN
     "import sys; print(sys.implementation)",
     "import os; print(os.uname())",
     "help('modules')",
@@ -242,9 +299,9 @@ PROBES = [                        # read-only expressions ONLY — see § 0 FORB
 
 ```bash
 #!/usr/bin/env bash
-# scripts/identify-hub.sh — the only entry point an agent invokes
+# scripts/identify-hub.sh -- the only entry point an agent invokes
 set -euo pipefail
-[ -e /dev/ttyACM0 ] || { echo "UNKNOWN: /dev/ttyACM0 absent — hub not enumerated"; exit 3; }
+[ -e /dev/spike ] || { echo "UNKNOWN: /dev/spike absent -- hub not enumerated"; exit 3; }
 timeout --signal=INT 45 python3 "$(dirname "$0")/identify_hub.py" \
   | tee "docs/findings/_hub-identify-$(date +%Y%m%dT%H%M%S).transcript.txt"
 ```
@@ -272,8 +329,8 @@ Rules the script must honour:
 | # | Final checks | Expected |
 |---|---|---|
 | 7.1 | `screen -ls` | `No Sockets found` |
-| 7.2 | `ls /var/lock/LCK..ttyACM0 2>/dev/null` | No such file |
-| 7.3 | `sudo fuser -v /dev/ttyACM0` | No output — nobody holds the port |
+| 7.2 | `ls /var/lock/LCK..ttyACM0 2>/dev/null` | No such file (the lock file is named for the real node, not for the `/dev/spike` symlink) |
+| 7.3 | `sudo fuser -v /dev/spike` | No output — nobody holds the port |
 | 7.4 | Unplug the hub, power it off, return it to the yellow box | Course rule: supplies live in the yellow box between classes |
 
 Leaving a lock file or a detached `screen` behind is the most common way the *next* session concludes
@@ -283,8 +340,15 @@ Leaving a lock file or a detached `screen` behind is the most common way the *ne
 
 ## 8. RESULT — fill this in, then file it as a finding
 
-Copy this block, fill every row (`UNKNOWN` is a valid, honest answer), and file it as
-**`docs/findings/hub-os-identification.md`** with a row added to
+> ✅ **Filled in and filed for our hub on 2026-08-27 as
+> [../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md).**
+> ❌ **PREDICTION WRONG:** this section used to name the file `docs/findings/hub-os-identification.md`.
+> That file does not exist and **must not be created** — a second identification finding is how a repo
+> ends up with two answers. The block below stays for a *different* hub, or for a re-run after any
+> hardware change.
+
+Copy this block, fill every row (`UNKNOWN` is a valid, honest answer), and file it under
+[../findings/](../findings/INDEX.md) with a row added to
 [../findings/INDEX.md](../findings/INDEX.md). Then update [../scope.md](../scope.md) § Assumptions —
 strike the `[UNKNOWN]` API-generation line — and the roadmap's M1 checkbox.
 
@@ -304,7 +368,7 @@ cdc_acm dmesg line:       ____________________________________________
 INTERFERENCE
 ModemManager active?      [ ] yes  [ ] no      mmcli -L result: ______________
 Mitigation applied:       [ ] none needed  [ ] udev ignore rule  [ ] stopped for session
-fuser /dev/ttyACM0:       ____________________
+fuser /dev/spike:         ____________________
 
 REPL
 Prompt reached?           [ ] yes  [ ] no  →  if no, STOP; the result below is UNKNOWN
@@ -318,7 +382,8 @@ CONCLUSION
 API generation:           [ ] SPIKE 3 (current)  [ ] SPIKE 2 (legacy)  [ ] AMBIGUOUS  [ ] UNKNOWN
 Evidence it rests on:     ____________________________________________
 Update prompt encountered? [ ] no   [ ] YES → STOPPED, nothing accepted, operator informed
-Anything written to hub?  [ ] NO (required answer)
+Anything written to hub?  [ ] NO (required answer for THIS procedure -- writing
+                          is docs/runbooks/deploy-to-hub.md, a different one)
 Transcript file:          ____________________________________________
 ```
 
@@ -333,4 +398,6 @@ write down the exact wording, and give it to the operator. A Hub OS change is an
 **Sources:** [../directives/hardware-safety.md](../directives/hardware-safety.md) ·
 [../decisions/0001-stock-lego-firmware-only.md](../decisions/0001-stock-lego-firmware-only.md) ·
 [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md) ·
-operator platform notes [../archives/operator-notes/2026-08-25_spike-platform-notes.md](../archives/operator-notes/2026-08-25_spike-platform-notes.md) · host measurements taken on this machine 2026-08-25.
+operator platform notes [../archives/operator-notes/2026-08-25_spike-platform-notes.md](../archives/operator-notes/2026-08-25_spike-platform-notes.md) · host measurements taken on this machine 2026-08-25 ·
+**the result of actually running this runbook: [../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md)** ·
+writing to the hub is a different procedure: [deploy-to-hub.md](./deploy-to-hub.md).

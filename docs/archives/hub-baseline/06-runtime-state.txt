@@ -1,0 +1,21 @@
+# hub baseline: 06-runtime-state.txt
+# READ-ONLY capture. Compare later runs with:
+#   python3 probes/capture_baseline.py --to /tmp/now
+#   diff -ru docs/archives/hub-baseline /tmp/now
+# NOTE: these values change every run by design (battery, temperature, free memory).
+# A diff here is expected and means nothing on its own.
+
+# 06-runtime-state.txt
+# port /dev/spike @ 115200 8N1   deadline 40s
+
+===== battery_voltage =====
+7942
+
+===== battery_current =====
+66
+
+===== temperature =====
+247
+
+===== mem =====
+free 211776 alloc 2048

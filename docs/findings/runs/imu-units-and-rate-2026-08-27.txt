@@ -1,0 +1,186 @@
+# examples/imu_units_and_rate.py — close the units question and find the real loop rate.
+=== #
+=== # RUNS ON THE HUB.  ./hub_programmer/run.py examples/imu_units_and_rate.py --seconds 70
+=== #
+=== # imu_verbose.py raised three questions it could not answer. This answers them
+=== # with arithmetic instead of a datasheet:
+=== #
+=== #   1. What are tilt_angles() units -- degrees or decidegrees?
+=== #      DERIVED, not assumed: the accelerometer gives us the true tilt from the
+=== #      gravity vector. Compare that against what tilt_angles() reports and the
+=== #      ratio IS the answer. Gravity is a calibration source we carry for free.
+=== #
+=== #   2. What is the fastest control loop this hub can actually run?
+=== #      config.py currently assumes 100 Hz. That was a guess. Measure it.
+=== #
+=== #   3. Does yaw really not drift, or was 5 seconds just too short?
+=== #      Drift is what makes a sweep miss lanes. Measure it over a real window.
+=== #
+=== # MicroPython: no f-strings, no statistics, no numpy.
+=== 
+=== import math
+=== import time
+=== import hub
+=== 
+=== m = hub.motion_sensor
+=== 
+=== print("=" * 62)
+=== print("IMU UNITS AND RATE")
+=== print("=" * 62)
+=== 
+=== # ---------------------------------------------------------------- 1. UNITS
+=== print("\n--- 1. tilt_angles() UNITS, derived from gravity ---")
+=== print("  Keep the hub STILL and roughly flat for this.")
+=== 
+=== n = 50
+=== sx = sy = sz = 0
+=== syaw = spitch = sroll = 0
+=== for i in range(n):
+===     a = m.acceleration()
+===     t = m.tilt_angles()
+===     sx += a[0]
+===     sy += a[1]
+===     sz += a[2]
+===     syaw += t[0]
+===     spitch += t[1]
+===     sroll += t[2]
+===     time.sleep_ms(20)
+=== 
+=== ax = float(sx) / n
+=== ay = float(sy) / n
+=== az = float(sz) / n
+=== pitch_r = float(spitch) / n
+=== roll_r = float(sroll) / n
+=== 
+=== mag = math.sqrt(ax * ax + ay * ay + az * az)
+=== print("  mean acceleration  ax=%.1f ay=%.1f az=%.1f  |a|=%.1f" % (ax, ay, az, mag))
+=== print("  => 1 g reads as about %.0f units, so acceleration is in MILLI-G" % mag)
+=== 
+=== # Tilt from gravity: the angle between the measured vector and straight down.
+=== tilt_true_deg = math.degrees(math.atan2(math.sqrt(ax * ax + ay * ay), abs(az)))
+=== reported = math.sqrt(pitch_r * pitch_r + roll_r * roll_r)
+=== print("  true tilt from gravity      = %.3f degrees" % tilt_true_deg)
+=== print("  tilt_angles() pitch/roll    = %.1f, %.1f  (magnitude %.1f)"
+===       % (pitch_r, roll_r, reported))
+=== if tilt_true_deg > 0.05:
+===     ratio = reported / tilt_true_deg
+===     print("  ratio reported/true         = %.2f" % ratio)
+===     if ratio > 5.0:
+===         print("  => tilt_angles() is in DECIDEGREES (tenths of a degree).")
+===         print("     Divide by 10 for degrees. src/telemetry.py already uses ddeg.")
+===     elif ratio > 0.5:
+===         print("  => tilt_angles() is in DEGREES.")
+===     else:
+===         print("  => INCONCLUSIVE. Ratio %.2f fits neither cleanly." % ratio)
+=== else:
+===     print("  => hub is too perfectly flat to derive the ratio. Prop up one edge")
+===     print("     by roughly 10-20 degrees and re-run for a clean answer.")
+=== 
+=== # ------------------------------------------------------- 2. MAX LOOP RATE
+=== print("\n--- 2. MAX LOOP RATE, no sleep at all ---")
+=== 
+=== def timed(label, fn, count):
+===     t0 = time.ticks_ms()
+===     for _ in range(count):
+===         fn()
+===     dt = time.ticks_diff(time.ticks_ms(), t0)
+===     per = float(dt) / count
+===     print("  %-26s %6d calls in %5d ms = %6.3f ms each  (%7.1f Hz)"
+===           % (label, count, dt, per, 1000.0 / per if per > 0 else 0))
+===     return per
+=== 
+=== c_tilt = timed("tilt_angles()", m.tilt_angles, 500)
+=== c_acc = timed("acceleration()", m.acceleration, 500)
+=== c_gyr = timed("angular_velocity()", m.angular_velocity, 500)
+=== c_quat = timed("quaternion()", m.quaternion, 500)
+=== 
+=== def full_tick():
+===     m.tilt_angles()
+===     m.acceleration()
+===     m.angular_velocity()
+=== 
+=== c_all = timed("all three together", full_tick, 300)
+=== 
+=== print("")
+=== print("  A control tick that reads yaw + accel + gyro costs %.3f ms." % c_all)
+=== print("  That alone allows %.0f Hz before any driving, detecting or logging."
+===       % (1000.0 / c_all if c_all > 0 else 0))
+=== print("  config.py assumes 100 Hz (10 ms/tick). Sensor reads use %.0f%% of that."
+===       % (100.0 * c_all / 10.0))
+=== 
+=== # ----------------------------------------------------------- 3. YAW DRIFT
+=== print("\n--- 3. YAW DRIFT over 30 seconds ---")
+=== print("  Do not touch the hub.")
+=== 
+=== start_yaw = m.tilt_angles()[0]
+=== t0 = time.ticks_ms()
+=== worst = 0
+=== samples = 0
+=== while time.ticks_diff(time.ticks_ms(), t0) < 30000:
+===     y = m.tilt_angles()[0]
+===     d = y - start_yaw
+===     if abs(d) > abs(worst):
+===         worst = d
+===     samples += 1
+===     if samples % 200 == 0:
+===         print("    t=%5d ms  yaw=%6d  drift=%4d"
+===               % (time.ticks_diff(time.ticks_ms(), t0), y, d))
+===     time.sleep_ms(50)
+=== 
+=== end_yaw = m.tilt_angles()[0]
+=== elapsed = time.ticks_diff(time.ticks_ms(), t0)
+=== print("")
+=== print("  start %d  end %d  net drift %d  worst excursion %d"
+===       % (start_yaw, end_yaw, end_yaw - start_yaw, worst))
+=== print("  over %d ms => %.4f units/second" % (elapsed, 1000.0 * (end_yaw - start_yaw) / elapsed))
+=== print("")
+=== print("  WHY THIS NUMBER MATTERS: a sweep lane is driven on heading. Drift")
+=== print("  accumulates the whole run, so multiply this rate by the estimated")
+=== print("  run time and compare against the cross-track error budget. If the")
+=== print("  product is small, heading hold is a solved problem and we can spend")
+=== print("  the effort elsewhere.")
+=== 
+=== print("\nDONE.")
+=== 
+==============================================================
+IMU UNITS AND RATE
+==============================================================
+
+--- 1. tilt_angles() UNITS, derived from gravity ---
+  Keep the hub STILL and roughly flat for this.
+  mean acceleration  ax=-2.0 ay=12.0 az=989.2  |a|=989.3
+  => 1 g reads as about 989 units, so acceleration is in MILLI-G
+  true tilt from gravity      = 0.705 degrees
+  tilt_angles() pitch/roll    = 0.7, 6.7  (magnitude 6.7)
+  ratio reported/true         = 9.53
+  => tilt_angles() is in DECIDEGREES (tenths of a degree).
+     Divide by 10 for degrees. src/telemetry.py already uses ddeg.
+
+--- 2. MAX LOOP RATE, no sleep at all ---
+  tilt_angles()                 500 calls in    27 ms =  0.054 ms each  (18518.5 Hz)
+  acceleration()                500 calls in    55 ms =  0.110 ms each  ( 9090.9 Hz)
+  angular_velocity()            500 calls in    82 ms =  0.164 ms each  ( 6097.6 Hz)
+  quaternion()                  500 calls in    11 ms =  0.022 ms each  (45454.5 Hz)
+  all three together            300 calls in   405 ms =  1.350 ms each  (  740.7 Hz)
+
+  A control tick that reads yaw + accel + gyro costs 1.350 ms.
+  That alone allows 741 Hz before any driving, detecting or logging.
+  config.py assumes 100 Hz (10 ms/tick). Sensor reads use 14% of that.
+
+--- 3. YAW DRIFT over 30 seconds ---
+  Do not touch the hub.
+    t= 9950 ms  yaw=    68  drift=  76
+    t=19951 ms  yaw=  -230  drift=-222
+    t=29953 ms  yaw=   958  drift= 966
+
+  start -8  end 979  net drift 987  worst excursion 1035
+  over 30003 ms => 32.8967 units/second
+
+  WHY THIS NUMBER MATTERS: a sweep lane is driven on heading. Drift
+  accumulates the whole run, so multiply this rate by the estimated
+  run time and compare against the cross-track error budget. If the
+  product is small, heading hold is a solved problem and we can spend
+  the effort elsewhere.
+
+DONE.
+>>> 

@@ -3,7 +3,28 @@
 Durable project context across sessions. Pointers and hard-won facts, not a duplicate of the docs.
 Operational rules live in [CLAUDE.md](CLAUDE.md); current state lives in [docs/todo.md](docs/todo.md).
 
-> Last updated: 2026-08-26 (retrieval stack working; code scaffold; SE planning layer)
+> Last updated: 2026-08-27 (hub connected, characterised and programmed; Bluetooth working)
+
+---
+
+## Hard-won hardware facts — measured 2026-08-27, do not re-derive
+
+- **It is SPIKE 3.** MicroPython 1.24.0, STM32F413. `motor` / `motor_pair` / `runloop` /
+  `color_sensor` present, **no `spike` module** — so **every SPIKE 2 tutorial online is useless to
+  us**, and most SPIKE material online is SPIKE 2. Check a source's generation before believing it.
+- **Our hub:** `device_uuid` `03970000-3600-1B00-1450-30514B323320`, BLE `64:8C:BB:0A:1C:8C`, named
+  `Team 21`. **In a room of hubs, identify by connecting and comparing the device UUID** — never by
+  name (user-settable) or MAC (type unverified, may rotate).
+- **Getting code on is SOLVED:** `./hub_programmer/upload.py <file> --apply` writes into `/flash/lib`
+  over the REPL, verified by a SHA-256 the hub computes on itself. **No LEGO app, no compiler, no
+  GCC, no Windows VM.** `./hub_programmer/run.py <file>` runs a program in RAM, leaving nothing.
+- **Capture a baseline before writing to the hub.** `probes/capture_baseline.py --to /tmp/now` then
+  `diff` against `docs/archives/hub-baseline/`. That habit is what makes "the firmware is untouched"
+  provable instead of merely asserted.
+- **Units:** `acceleration()` milli-g (1 g ≈ 989) · `tilt_angles()` **decidegrees**, yaw wraps ±180°.
+- **Three folders, three verbs:** `probes/` reads (read-only by contract) · `hub_programmer/` writes ·
+  `examples/` discovers · `src/` runs on the robot. Never do discovery in `src/`.
+- ⚠ **Never press-and-hold the CONNECT button while plugging in USB** — that is the DFU gesture.
 
 ---
 

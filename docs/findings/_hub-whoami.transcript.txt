@@ -1,0 +1,26 @@
+# whoami — permanent identity of the hub on the USB cable
+# port /dev/spike @ 115200 8N1   deadline 45s
+
+===== uname =====
+(sysname='SPIKE', nodename='SPIKE', release='1.24.0', version='v1.20.0-1742.gf212bbe83 on 2025-03-27', machine='SPIKE Prime with STM32F413')
+
+===== device_uuid =====
+03970000-3600-1B00-1450-30514B323320
+
+===== hardware_id =====
+E
+
+===== config =====
+<config>
+
+===== config dir =====
+['__class__']
+
+===== battery =====
+mV 7882 degC 243
+
+===== charging =====
+usb_charge_mA 364
+
+===== implementation =====
+(name='micropython', version=(1, 24, 0, ''), _machine='SPIKE Prime with STM32F413', _mpy=7942)

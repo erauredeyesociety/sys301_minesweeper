@@ -1,6 +1,8 @@
 # Hub Port Map — SINGLE SOURCE OF TRUTH
 
-> Status: **ALL PORTS UNASSIGNED** — nothing has been mounted or physically confirmed as of 2026-08-25.
+> Status: **ALL PORTS UNASSIGNED** — nothing has been mounted or physically confirmed.
+> **Confirmed empty on the hub itself, 2026-08-27:** `device.id()` raised `OSError` on all six ports and
+> `motor.status()` returned `5` on all six. That is *confirmation of the blanks*, not an assignment.
 > Hub: LEGO Education SPIKE Prime Technic Large Hub 45601 `[ASSUMED — see ../scope.md § Assumptions]`,
 > 6 LPF2 ports labelled **A–F**.
 
@@ -39,7 +41,7 @@ Per `./inventory.py --verbose` (run it; do not trust a copy of it):
 
 | Part | Qty owned | Takes a port? | Notes |
 |---|---|---|---|
-| Motor | 2 | **Yes — 2 ports** | Exact motor variant NOT YET RECORDED. The store offers only the Technic **Large Angular 45602** and **Small Angular 45607** ([../scope.md RR-4](../scope.md#resource-rr)); they differ in speed, torque, and physical size, and both are just "a motor" on the receipt. Record which one in [build-record.md](./build-record.md). |
+| Motor | 2 | **Yes — 2 ports** | **Both are Technic Medium Angular 45603** — answered by the operator 2026-08-27, closing KU-T3. ⚠ This row previously said the store offers *only* the **Large Angular 45602** and **Small Angular 45607** ([../scope.md RR-4](../scope.md#resource-rr)); that was already contradicted by `scope.md`, and the answer settles it — the Medium is available and is what we own. Confirm the part number against the motor casing when it is next handled, and record it in [build-record.md](./build-record.md). |
 | Wheel | 2 | **No** | Wheels are mechanical, not electrical — they consume no port. Their **diameter** is nevertheless load-bearing for odometry; see [build-record.md](./build-record.md). |
 
 That is 2 of 6 ports spoken for once the drive is assembled, leaving **4 free**.
@@ -106,6 +108,7 @@ another, or unplugged. Append; never rewrite history.
 | Date | Change | Confirmed by | Code updated? |
 |---|---|---|---|
 | 2026-08-25 | File created. All six ports UNASSIGNED; nothing mounted. | — | n/a — no code exists |
+| 2026-08-27 | **MEASURED on the hub over USB: all six ports A–F read EMPTY.** `device.id(port)` raised `OSError` on every port; `motor.status(port)` returned `5` on every port. Nothing was plugged in at the time. **No row changes** — the table already said UNASSIGNED and this confirms it rather than filling it. Two facts worth carrying forward: **`5` is what an unoccupied port returns** (which named `motor` constant equals 5 is unread — KU-M15), and **an `OSError` from `device.id()` means "empty plug", not "broken hub"** — do not let it read as a hardware failure on the day. [../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md) | Probe over USB, operator present | n/a — nothing assigned to update |
 
 `Code updated?` is not decoration. It is the checkbox that stops a port move from silently breaking a
 program that still works perfectly on the old wiring.

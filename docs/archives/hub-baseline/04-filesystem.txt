@@ -1,0 +1,28 @@
+# hub baseline: 04-filesystem.txt
+# READ-ONLY capture. Compare later runs with:
+#   python3 probes/capture_baseline.py --to /tmp/now
+#   diff -ru docs/archives/hub-baseline /tmp/now
+
+# 04-filesystem.txt
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== root =====
+['flash']
+
+===== flash =====
+['README.txt', 'boot.py', 'config', 'main.py', 'program', 'pybcdc.inf']
+
+===== sizes =====
+[('README.txt', 528), ('boot.py', 196), ('config', 196), ('main.py', 34), ('program', 34), ('pybcdc.inf', 2597)]
+
+===== modes =====
+[('README.txt', 32768), ('boot.py', 32768), ('config', 16384), ('main.py', 32768), ('program', 16384), ('pybcdc.inf', 32768)]
+
+===== program dir =====
+[]
+
+===== config dir =====
+['hubname']
+
+===== statvfs =====
+(4096, 4096, 7936, 7923, 7923, 0, 0, 0, 0, 255)

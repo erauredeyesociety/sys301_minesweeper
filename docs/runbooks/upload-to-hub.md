@@ -1,24 +1,62 @@
 # Runbook — Getting code onto the SPIKE Prime
 
-> **Status: NOT YET PERFORMED.** The hub has never been connected. Every step below is derived from
-> [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md) and is
-> **UNVERIFIED on our hardware**. Expect to correct this file the first time it is run — that is what
-> it is for.
+> # ⚠ SUPERSEDED IN PRACTICE — use [deploy-to-hub.md](./deploy-to-hub.md)
+>
+> **The old header here said "Status: NOT YET PERFORMED. The hub has never been connected." That is
+> false as of 2026-08-27.** The hub was connected over USB, and code was put on it — by a route this
+> file does not describe.
+>
+> **What actually works, proven 2026-08-27:** base64 chunks over the MicroPython REPL on `/dev/spike`
+> into **`/flash/lib`**, verified by a **SHA-256 the hub computes on itself**, then an import check.
+> `src/config.py` went up in 3.6 s — 13262 bytes, 70 chunks, hash `05a3efef…828a` matched, then
+> `OK config`. **No LEGO app, no `mpy-cross`, no GCC, no Windows.** Procedure:
+> [deploy-to-hub.md](./deploy-to-hub.md). Decision:
+> [ADR-0007](../decisions/0007-deploy-by-writing-modules-to-flash-lib.md).
+>
+> **This file is kept for its Windows half and its background reasoning**, both of which
+> `deploy-to-hub.md` deliberately does not carry. Everything in it about **slots** is unverified — see
+> the correction under "The one-line answer" immediately below.
 >
 > Covers **Linux and Windows**, because the Programmer is on Ubuntu and teammates may not be.
 > Governing rules: [../directives/hardware-safety.md](../directives/hardware-safety.md).
 
 ## The one-line answer
 
-**You cannot `pip install` anything onto the hub.** It runs LEGO's own MicroPython, and a "program" is a
-single file placed into one of **20 slots (0–19)**. You edit on your computer, push the file into a slot
-over USB, and the hub runs it standalone — no laptop attached.
+**You cannot `pip install` anything onto the hub.** It runs LEGO's own MicroPython. That part is
+confirmed: `sys.path` on our hub is `['', '.frozen', '/flash', '/flash/lib']`, and the hub runs
+MicroPython **source** — no compiler in the loop (`mpy-cross` exists and is optional;
+`sys.implementation._mpy = 7942`).
+
+### ⚠ The 20-slot model below is NOT what we measured
+
+> **`[UNVERIFIED]` as of 2026-08-27 — and the one piece of evidence we have points the other way.**
+> `/flash/program` on our hub is **empty**. Nothing resembling 20 numbered slots was observed. The slot
+> model comes from [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md)
+> and from how the LEGO app presents things; it may well describe an abstraction the app maintains
+> rather than a filesystem layout. **Do not plan around it.**
+>
+> **What is measured:** `/flash/lib` is on `sys.path`, a module written there imports (`OK config`), and
+> `/flash/main.py` exists as an empty 34-byte stock file. **Whether `/flash/main.py` autoruns at boot —
+> which is what "runs it standalone, no laptop attached" actually requires — is UNTESTED** (KU-M16).
+> The claim in the diagram below is therefore the *goal*, not an observed behaviour.
+
+The model this file was written around, kept for reference and clearly marked:
 
 ```mermaid
 flowchart LR
-    E["edit src/*.py<br/>on your computer"] --> U["push into a hub slot<br/>over USB"]
-    U --> R["hub runs it standalone<br/>— unplug the cable"]
-    R --> O["print() comes back<br/>over USB when tethered"]
+    E["edit src/*.py<br/>on your computer"] --> U["push into a hub slot<br/>over USB<br/>[UNVERIFIED: slots]"]
+    U --> R["hub runs it standalone<br/>— unplug the cable<br/>[UNTESTED: KU-M16]"]
+    R --> O["print() comes back<br/>over USB when tethered<br/>[CONFIRMED]"]
+```
+
+The route that **is** proven, for comparison:
+
+```mermaid
+flowchart LR
+    S["src/config.py<br/>on the host"] --> C["hub_programmer/upload.py --apply<br/>70 base64 chunks over the REPL"]
+    C --> F["/flash/lib/config.py<br/>13262 B, 3.6 s"]
+    F --> V["SHA-256 computed ON THE HUB<br/>matches the local file"]
+    V --> I["probes/import_check.py<br/>→ OK config"]
 ```
 
 **No system packages, no pip, no virtualenv on the hub.** `src/` is written to the MicroPython subset for

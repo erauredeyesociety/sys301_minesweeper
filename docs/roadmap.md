@@ -3,10 +3,23 @@
 > Lean index only: milestone bullets + path refs. Detail lives in `docs/plans/`, never here.
 > Boundaries: [scope.md](./scope.md) · Rules: [directives/INDEX.md](./directives/INDEX.md) · Tasks: [todo.md](./todo.md)
 
-**Mode: DEVELOPMENT** (host-side). The briefing is captured but PARTIAL — build to the narrowest reading
+**Mode: HARDWARE.** The hub has been connected, characterised and programmed —
+[session_records/2026-08-27_hub-first-contact-usb-and-ble.md](./session_records/2026-08-27_hub-first-contact-usb-and-ble.md).
+**Next session starts at [plans/next-session.md](./plans/next-session.md).**
+
+**Mode was: DEVELOPMENT** (host-side). The briefing is captured but PARTIAL — build to the narrowest reading
 and parameterize, so an answer changes a value, not the architecture.
 ⚠ **Open risk:** if "10×10" means feet, exhaustive single-sensor coverage doesn't fit a demo slot —
 [findings/coverage-time-budget.md](./findings/coverage-time-budget.md).
+
+## M1 — Hub bring-up ✓ (2026-08-27)
+- [x] Host prepared before first contact (ModemManager, udev, `/dev/spike`) — `./scripts/setup-host.sh --apply`
+- [x] **API generation MEASURED: SPIKE 3** — no `spike` module, so SPIKE 2 material is inapplicable — [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)
+- [x] **Deploy route PROVEN**, no LEGO app / compiler / Windows — [ADR-0007](./decisions/0007-deploy-by-writing-modules-to-flash-lib.md) · [runbooks/deploy-to-hub.md](./runbooks/deploy-to-hub.md)
+- [x] **Firmware proved untouched** by baseline capture → diff — [findings/firmware-integrity-proof.md](./findings/firmware-integrity-proof.md)
+- [x] **Bluetooth connected, hub identified by UUID across USB *and* BLE** — [findings/ble-protocol-2026-08-27.md](./findings/ble-protocol-2026-08-27.md)
+- [x] IMU characterised: milli-g, decidegrees, ±180° wrap, 1.35 ms tick — [findings/imu-characterisation-2026-08-27.md](./findings/imu-characterisation-2026-08-27.md)
+- [ ] **Does `/flash/main.py` autorun?** — the one open item here that gates Demo Day (KU-M16)
 
 ## M0 — Project setup ✓
 - [x] Docs tree, directives, scope, roadmap, ADRs, budget ledger — [session_records/2026-08-25_project-initialization.md](./session_records/2026-08-25_project-initialization.md)
@@ -18,10 +31,10 @@ and parameterize, so an answer changes a value, not the architecture.
 
 ## M1 — Ask, and prove the toolchain (Sprint 1, by 27 AUG) 🎯 next
 - [ ] **Put the open questions to the professor** → [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md) — Q1 (units) gates the sweep design
-- [ ] Host prep: neutralize ModemManager, serial terminal → `scripts/setup-host.sh`, [findings/host-environment.md](./findings/host-environment.md)
-- [ ] Read-only hub identification: Hub OS + API generation. **Must not trigger an update.** → [runbooks/hub-identification.md](./runbooks/hub-identification.md)
-- [ ] Walking skeleton: edit on Ubuntu → onto hub → runs standalone → output read back → [plans/2026-08-25-sprint-1-walking-skeleton.md](./plans/2026-08-25-sprint-1-walking-skeleton.md)
-- [ ] Port map recorded as single source of truth → [hardware/port-map.md](./hardware/port-map.md)
+- [x] Host prep: neutralize ModemManager, serial terminal → `scripts/setup-host.sh --apply` run 2026-08-27; ModemManager `inactive`/disabled, `/dev/spike` symlink live → [findings/host-environment.md](./findings/host-environment.md)
+- [x] Read-only hub identification: Hub OS + API generation — **done 2026-08-27, SPIKE 3 / MicroPython 1.24.0, no update prompt seen** → [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)
+- [ ] **Walking skeleton — HALF DONE, do not tick it whole.** ✅ edit on Ubuntu → onto the hub (`/flash/lib/config.py`, on-hub SHA-256 verified) → **imports on the hub** (`OK config`) → output read back over USB. ❌ **"runs standalone" is unproven**: whether `/flash/main.py` autoruns at boot is untested (**KU-M16**), and that is the half Demo Day needs → [runbooks/deploy-to-hub.md](./runbooks/deploy-to-hub.md) · [ADR-0007](./decisions/0007-deploy-by-writing-modules-to-flash-lib.md) · [plans/2026-08-25-sprint-1-walking-skeleton.md](./plans/2026-08-25-sprint-1-walking-skeleton.md)
+- [ ] Port map recorded as single source of truth — all six ports **confirmed EMPTY** 2026-08-27 (`device.id()` → `OSError`, `motor.status()` → `5`); nothing to assign until parts are mounted → [hardware/port-map.md](./hardware/port-map.md)
 
 ## M1b — Planning depth (done 2026-08-26)
 - [x] Code scaffold: flat `src/` — pure logic + the `hub_*.py` modules adapter ([ADR-0004](./decisions/0004-flat-src-supersedes-package-split.md)); no test suite ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md))

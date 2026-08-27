@@ -1,86 +1,36 @@
 # Questions for the Professor
 
-**Type:** ACTIVE-SPEC (living list) · **Created:** 2026-08-25 · **Ask at:** the next class meeting
+**Type:** ACTIVE-SPEC (living list) · **Created:** 2026-08-25 · **Last revised:** 2026-08-27
+· **Ask at:** the next class meeting, in writing, in one batch
 
 The design challenge was briefed verbally: *"Build a mine sweeper robot that finds all the mines
 (I think yellow sticky notes) in a 10×10 area."* That is the entire requirement of record. This page is
 the list of what it leaves open, **ordered by how much the answer changes the build**.
 
-Ask them in this order. **If you only get through two, get through Q0 and Q1** — Q0 can remove half the project, Q1 spans two orders of magnitude.
+**Three partial answers came back on 2026-08-27**, relayed by a teammate. They are recorded in the
+Answers table at the bottom and, with their provenance and hedging preserved, in
+[../findings/mission-answers-2026-08-27.md](../findings/mission-answers-2026-08-27.md).
+**One of them contradicts itself**, so it generated more questions than it closed.
+
+**Ask them in this order. If you only get through two, get through Q1 and Q2** — Q1 spans two orders of
+magnitude, Q2 decides what we are optimising for, and they interact.
+
+**Written, not spoken.** Face-to-face beyond the daily standup is billed at 1 SB per person per minute,
+and written team communication is a graded deliverable that gets submitted in full — so asking in
+writing scores twice.
 
 ---
 
-## 0. Does the robot have to be autonomous, or may a human drive it? ⭐⭐ ASK THIS FIRST
+## 1. "10×10" — ten *what*? ⭐ STILL FIRST, STILL UNANSWERED
 
-**This may be the largest simplification available to us, and we have been assuming the hard answer.**
+**Nothing in the 2026-08-27 answers touched this.** It remains the single highest-leverage unknown in
+the project.
 
-**"Autonomous" appears nowhere in the course instructions.** Full text extracted and scanned
-2026-08-26 for *autonom · remote · control · drive · pilot · operate · steer · joystick*. The verbal
-briefing says only *"build a mine sweeper robot that finds all the mines."* We inferred autonomy from
-the word "robot" and then built to it — [scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25)
-flagged it as an inference, but FR-1 had quietly hardened it into a requirement.
-
-**And the one relevant sentence leans the other way.** The instructions say of the Builder:
-
-> *"The builder is also your **operator** (the only one who can **operate** the robot)."*
-
-A purely autonomous robot needs a *starter*, not an *operator*, and "operate" is an odd word for pressing
-one button. **This is suggestive, not conclusive** — "operate" may simply mean handling it — but it is
-the only sentence in the course material bearing on the question, and it does not point at autonomy.
-Worth quoting to the professor: it makes the question concrete rather than hypothetical.
-
-**What changes if a human may drive it:**
-
-| Becomes optional | Why |
-|---|---|
-| Sweep path planning, lane pitch, boustrophedon | A human covers the area by eye |
-| Odometry accuracy, heading hold, per-lane re-squaring | Nobody is dead-reckoning |
-| **The whole coverage-time problem** | The 8–23 minute figure assumes a robot driving 46 mm lanes. A person drives straight to what they can see |
-| Cross-track error, UMBmark calibration | Same reason |
-
-| Still required either way | Why |
-|---|---|
-| **Detection and counting** | The sensor still has to tell a note from the floor, and count each one once. **This is the actual engineering problem** |
-| Calibration at run start | Floor and lighting still vary |
-| Honest reporting on the hub | FR-4 is unchanged |
-
-**So the sensing half survives and the navigation half evaporates.** Roughly half the remaining risk in
-[risk-register.md](./risk-register.md) is navigation risk.
-
-**Ask it plainly:** *"Does the minesweeper have to run autonomously, or may a team member drive it while
-it detects and counts?"* And if driving is allowed, follow up: **by what — the SPIKE app, a controller,
-our own Bluetooth link?** That last one decides whether we research a human-pilot control path at all.
-
-### And there is no prohibition anywhere
-
-Every prohibitive sentence in the instructions was extracted and read (*may not · cannot · not allowed ·
-prohibit · forbidden · must not · only the*). **All nine are about roles, money, or schedule:**
-
-- Only the Supplier may handle money or supplies · the Supplier cannot touch supplies after buying
-- The Designer may not touch supplies · the Programmer may not touch supplies except to plug/unplug
-- **Only the Builder may operate the robot**
-- Supplies live in the yellow box between classes · no work outside class · no role changes
-- Nobody may share a peer-evaluation total
-
-**Not one constrains how the robot moves, or forbids a human guiding it.** The course's rules are about
-*who does what*, not *what the machine does*. So the position is: autonomy is neither required nor
-forbidden in anything we hold — it is simply unaddressed, and the only adjacent sentence calls the
-Builder an **operator**.
-
-**⚠ Raise this in class as a PRIORITY, not as an afterthought.** It is the only open question that can
-*remove* work rather than merely direct it, and every class day it stays open is a day of navigation work
-that may turn out to be unnecessary. Ask it in the first minutes, before the standup runs out.
-
-*(If the answer is "autonomous", nothing is lost: everything already built assumes it, and the question
-cost one sentence in a conversation we were having anyway.)*
-
-## 1. "10×10" — ten *what*? ⭐ ask this first
-
-**Why it matters more than anything else:** a single downward color sensor traces a line, not a swath.
+**Why it matters more than anything else:** a single downward colour sensor traces a line, not a swath.
 To not miss a 76 mm sticky note, sweep lanes must be under ~76 mm apart — under ~46 mm once realistic
 heading drift is accounted for. So the arena side length sets the path length directly:
 
-| If it's… | Sweep path | Time at a realistic speed |
+| If it's… | Sweep path | Time at a `[ASSUMED]` 150 mm/s |
 |---|---|---|
 | 10 inches | ~1 m | seconds |
 | 10 × 76 mm cells | ~8 m | under a minute |
@@ -89,27 +39,74 @@ heading drift is accounted for. So the arena side length sets the path length di
 Two orders of magnitude. Full arithmetic: [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md).
 
 **If the answer is 10 feet, the design has to change** — more sensors, a wider mechanical swath, or
-abandoning exhaustive coverage — and that is a Sprint 2 decision we would need to make immediately,
-not a tuning problem.
+abandoning exhaustive coverage — and that is a decision we would need to make immediately, not a tuning
+problem. *(And note a blind human driver does not cover the area any faster than the robot does, so the
+autonomy answer gives no relief here either.)*
 
 ## 2. How long does the demo run get, and is finding *all* of them required? ⭐
 
 Paired with Q1, this decides the entire strategy.
 
 - Is there a time limit? What is it?
-- Is the score "found all of them" (optimize for not missing any → slow, tight lanes) or "found the most
-  in the time" (optimize for speed → wide lanes, accept misses)? **These pull in opposite directions.**
+- Is the score "found all of them" (optimise for not missing any → slow, tight lanes) or "found the most
+  in the time" (optimise for speed → wide lanes, accept misses)? **These pull in opposite directions.**
 - How many attempts do we get?
 - May the Builder intervene mid-run, or is it one hands-off run?
 
-## 3. What bounds the area?
+## 0b. To confirm: is a human operator allowed **at all**? ⭐ NEW — created by the answer
 
-Walls? Tape on the floor? A colored border? Nothing at all?
+**The answer we heard says both things.** As relayed, 2026-08-27:
 
-This is the **biggest purchase decision** — we have 56 Schrute Bucks left:
-- Walls → we need the **distance sensor** (45604) for boundary detection
-- Tape or colored border → a second **color** channel, or the same sensor doing double duty
-- Nothing → pure odometry, and drift becomes the dominant failure mode
+> *"you can't have a human operator... if you do have a human operator, they cannot be looking at the
+> arena."*
+
+The first clause says **no**. The second describes a condition for **yes**. The ellipsis is in the
+transcription, so we do not know what was said in the gap. **We are not guessing at a grade** — until
+this is confirmed we assume autonomy is required, which is what we were building anyway.
+
+**Ask it plainly:** *"Just to make sure we build the right thing — is a human operator allowed at all,
+or is the robot required to run on its own?"*
+
+**Two follow-ups, only if the answer is that an operator is allowed:**
+
+- **0c — Does using a human operator cost points** against a robot that runs autonomously? This decides
+  whether a teleoperated fallback is worth building even as insurance.
+- **0d — What may the operator use?** Sound from the hub, a laptop showing telemetry, a spotter who
+  relays information? *"May not look at the arena"* does not say whether instrument-mediated feedback is
+  allowed — and it collides with a requirement of ours: **an operator turned away from the arena cannot
+  read the hub's light matrix**, which is where the robot reports its count.
+
+*(Why this is not simply good news: an operator who may not look at the arena cannot cover it by eye,
+cannot see the boundary tape, and dead-reckons off the same sensors the robot uses — later. The
+navigation work does not go away. Full argument: [blind-teleoperation.md](./blind-teleoperation.md).)*
+
+## 3b. Blue painters tape or silver/grey duct tape? ⭐ NEW — created by the answer
+
+**Both were mentioned on 2026-08-27 and neither was chosen.** They are not the same problem for a
+colour sensor: our hub's built-in colour list has **no grey and no silver**, so silver tape has no class
+to land in and would have to be handled from raw channel values instead.
+
+**But we cannot size the difficulty from here.** The separation that matters is **tape against the
+floor**, not tape against white — and we have never seen the floor either (Q7). So this is a question
+plus a bench measurement, not an argument.
+
+- Is it blue painters tape or silver/grey duct tape — and does it vary between arenas or between teams?
+
+## 3c. How wide is the tape, and does crossing it count as a failure? NEW
+
+- **How wide?** 24 mm and 48 mm are both standard. A 24 mm line is only about twice a colour sensor's
+  measurement spot, which means the boundary detector cannot be tuned the same way as the mine detector.
+- **Is crossing the tape a scored failure, or is the tape only a marker?** With no walls there is
+  nothing physical to stop the robot, so this sets how much stopping margin the design has to buy.
+- Do the wheels have to stay inside, or must no part of the robot overhang?
+
+## 3d. May we have an offcut of the actual tape? NEW
+
+Detection is calibrated against the real material or it is calibrated against nothing. A 150 mm piece of
+the actual tape, and ideally the actual sticky notes, would let us run the separability measurement
+before Demo Day rather than discovering the answer on the day.
+
+*(Same shape as the existing request to practise on the real floor, Q7.)*
 
 ## 4. What does "finds" mean as a deliverable?
 
@@ -118,31 +115,35 @@ Report a **count**? Report **locations**? **Stop** on each mine? **Pick them up*
 A count is a two-day build. A location map needs reliable dead reckoning and is a substantially bigger
 project. We are currently building toward a count.
 
-## 5. Yellow only, or are there decoy colors? ⭐ (promoted — this is a run-time question too)
+## 5. Are there decoy notes of other colours? ⭐ (the mine colour half is answered)
 
-- Are **all** the mines yellow, and is anything else on the floor?
-- If there are other-colored notes, are they decoys to *ignore*, or targets to *classify separately*?
+**Answered 2026-08-27:** the mines are yellow — *"we expect yellow"*. **Still open, and this is the
+half that changes the build:**
 
-If yellow is the only thing on the floor, we can use plain reflected-light detection, which is much more
-robust. If we must tell colors apart, that is a materially harder problem — sticky notes are matte and
-pastel, the worst case for the sensor's built-in color ID.
+- Is anything else on the floor — notes of other colours, or anything that is not a mine?
+- If there are other-coloured notes, are they decoys to *ignore*, or targets to *classify separately*?
 
 **And it costs run time.** Classifying a note needs several samples taken wholly inside it, which caps
-traverse speed at roughly **160 mm/s** where a note is clipped at a 20 mm chord, versus ~360 mm/s at
-30 mm. Presence detection tolerates far more speed. So this question compounds Q1 and Q2 —
-[../findings/coverage-time-budget.md](../findings/coverage-time-budget.md).
+traverse speed materially below what presence-only detection tolerates. So this question compounds Q1
+and Q2 — [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md).
+
+*(Note: the boundary tape already puts a second non-floor colour on the floor with certainty, so a
+"yellow only" answer would no longer make colour discrimination go away entirely.)*
 
 ## 6. How many mines, and how are they placed?
 
 - Is the count fixed and known, or does it vary per run?
 - Can two notes be adjacent or touching? *(Adjacent notes are the classic double-count / merge-into-one
   failure — worth designing for if it can happen.)*
-- Can they be on the boundary, partially outside, or overlapping it?
+- Can they be on the boundary, partially outside, or overlapping it? **This one got sharper**: with a
+  taped boundary, a note lying on the tape is a real case and we have to decide whether the boundary
+  wins (robot stops, note not counted) or the note does.
 
 ## 7. The arena itself
 
 - **What is the floor surface?** Carpet or hard floor changes both odometry accuracy and the
-  reflected-light values we calibrate against.
+  reflected-light values we calibrate against — **and it is now what decides whether the boundary tape
+  is easy or hard to see.**
 - Is it the same arena for every team?
 - **Can we practise on it before Demo Day?** Calibration is floor- and lighting-specific; tuning on a
   different surface is wasted effort.
@@ -158,20 +159,75 @@ traverse speed at roughly **160 mm/s** where a note is clipped at a 20 mm chord,
 
 ---
 
+## Answered — and what came off this list
+
+### 0. Autonomy — ⚠ ANSWERED CONTRADICTORILY, re-asked as Q0b
+
+**RETRACTED 2026-08-27.** This question used to carry a table claiming that if a human may drive,
+*"sweep path planning, odometry accuracy, heading hold, per-lane re-squaring and the whole
+coverage-time problem"* become optional. **That table is withdrawn.** Its stated justifications were
+*"a human covers the area by eye"* and *"a person drives straight to what they can see"* — and the
+answer we got, in the reading where an operator is permitted at all, says the operator **may not look at
+the arena**. A blind operator has the same information the hub has, delayed, and gets none of it by
+eye.
+
+**So the simplification this question was chasing does not exist under either reading**, and the
+question that remains is only whether an operator is permitted at all (Q0b). Reasoning:
+[blind-teleoperation.md](./blind-teleoperation.md). Provenance:
+[../findings/mission-answers-2026-08-27.md](../findings/mission-answers-2026-08-27.md).
+
+*(What was correct and is kept: the word "autonomous" appears nowhere in the course instructions — full
+text extracted and scanned 2026-08-26 — and no prohibitive sentence anywhere in the course material
+constrains how the robot moves. All nine are about roles, money or schedule. The one adjacent sentence
+calls the Builder "your operator (the only one who can operate the robot)", which is worth quoting when
+asking Q0b, and which means that if we ever do drive the robot from a keyboard, **the keyboard is the
+Builder's** — driving is operating, at −2 SB per violation.)*
+
+### 3. What bounds the area — ANSWERED 2026-08-27
+
+**No walls. The boundary is tape on the floor**, blue painters or silver/grey duct.
+
+What that changed: the **Distance Sensor 45604 has no boundary role left** — floor tape has ~0.1–0.3 mm
+of vertical extent against a sensor with ±20 mm accuracy and a 50 mm blind zone — and the **Force
+Sensor 45606 has nothing to bump**, which removes the best squaring accuracy any purchasable part
+offered. **Neither is permanently excluded**: an obstacle-stop role would revive the first, and a
+team-supplied reference beam would revive the second, and neither has been asked about. Keep reading
+both prices off the store board; the price log is free and graded.
+
+What it did **not** answer became Q3b, Q3c and Q3d above.
+
+---
+
 ## Answers
 
 Record answers here as they come in, then update
 [../scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25) and re-derive
-the requirements. Date each answer.
+the requirements. **Date each answer and name its source** — a relayed answer is not the same evidence
+as one heard first-hand.
 
-| # | Question | Answer | Date |
-|---|---|---|---|
-| 0 | **Autonomous, or may a human drive?** | _pending_ | |
-| 1 | Units of "10×10" | _pending_ | |
-| 2 | Time limit / scoring objective | _pending_ | |
-| 3 | Boundary type | _pending_ | |
-| 4 | Meaning of "finds" | _pending_ | |
-| 5 | Yellow only / decoys | _pending_ | |
-| 6 | Mine count and placement | _pending_ | |
-| 7 | Floor surface, practice access | _pending_ | |
-| 8 | Scoring rubric, constraints | _pending_ | |
+| # | Question | Answer | Source | Date |
+|---|---|---|---|---|
+| 0 | **Autonomous, or may a human drive?** | ⚠ **CONTRADICTORY.** *"you can't have a human operator... if you do have a human operator, they cannot be looking at the arena."* First clause forbids, second permits. **Not treated as answered** — re-asked as Q0b. Meanwhile we assume autonomy | Professor, verbal, **relayed by a teammate** | 2026-08-27 |
+| 0b | Is an operator allowed **at all**? | _pending_ | | |
+| 0c | Does teleoperation cost points? | _pending_ | | |
+| 0d | What may a blind operator use? | _pending_ | | |
+| 1 | **Units of "10×10"** | _pending_ — **still first** | | |
+| 2 | Time limit / scoring objective | _pending_ | | |
+| 3 | Boundary type | **No walls. Boundary is tape on the floor** — blue painters **or** silver/grey duct; which one was not pinned down | Professor, verbal, **relayed by a teammate** | 2026-08-27 |
+| 3b | Which tape — blue or silver? | _pending_ | | |
+| 3c | Tape width; is crossing scored? | _pending_ | | |
+| 3d | May we have a tape offcut? | _pending_ | | |
+| 4 | Meaning of "finds" | _pending_ | | |
+| 5 | Yellow only / decoys | **PARTIAL** — mines are yellow: *"we expect yellow"* (**hedged in the source**). Whether decoys of other colours exist is **still unanswered** | Professor, verbal, **relayed by a teammate** | 2026-08-27 |
+| 6 | Mine count and placement | _pending_ | | |
+| 7 | Floor surface, practice access | _pending_ | | |
+| 8 | Scoring rubric, constraints | _pending_ | | |
+
+---
+
+## Revision History
+
+| Date | Change | By |
+|---|---|---|
+| 2026-08-25 | Created from the verbal briefing. | Claude |
+| 2026-08-27 | Recorded the three relayed answers. **Q3 closed** (no walls, floor tape) and replaced by Q3b/Q3c/Q3d. **Q5 halved** — mine colour answered (hedged), decoys still open. **Q0 retracted, not closed**: the answer contradicts itself, and its "becomes optional" table is withdrawn because a blind operator refunds no navigation work. Added Q0b/Q0c/Q0d. Q1 (units) promoted to first with Q2. Answers table gained a Source column. | Claude |

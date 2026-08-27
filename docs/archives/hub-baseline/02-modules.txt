@@ -1,0 +1,23 @@
+# hub baseline: 02-modules.txt
+# READ-ONLY capture. Compare later runs with:
+#   python3 probes/capture_baseline.py --to /tmp/now
+#   diff -ru docs/archives/hub-baseline /tmp/now
+
+# 02-modules.txt
+# port /dev/spike @ 115200 8N1   deadline 30s
+
+===== help modules =====
+__main__          binascii          gc                platform
+_asyncio          bluetooth         hashlib           random
+_system/default   builtins          heapq             re
+_system/menu      cmath             hub               runloop
+_system/scratch   collections       io                select
+_system/test_selector               color             json              struct
+array             color_matrix      machine           sys
+asyncio/__init__  color_sensor      math              time
+asyncio/core      deflate           micropython       uasyncio
+asyncio/event     device            motor             uctypes
+asyncio/funcs     distance_sensor   motor_pair        vfs
+asyncio/lock      errno             orientation       zlib
+asyncio/stream    force_sensor      os
+Plus any modules on the filesystem

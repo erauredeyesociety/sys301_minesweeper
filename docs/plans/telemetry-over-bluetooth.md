@@ -342,9 +342,16 @@ nothing is lost.
 header, the CSV records, and the integrity trailer defined in §5, and it is exercised on the host.
 
 **This did not violate "don't build ahead of an unproven dependency"**, and the reason is worth stating:
-the hub side is **identical under every transport**. A program on the hub almost certainly cannot open
-its own Bluetooth socket (§4.1), so telemetry leaves as ordinary `print()` and the firmware wraps it —
-over USB serial or over BLE, unchanged:
+the hub side is **identical under every transport**, so telemetry leaves as ordinary `print()` and the
+firmware wraps it — over USB serial or over BLE, unchanged:
+
+> **⚠ Correction 2026-08-27.** The sentence above used to justify this with *"a program on the hub
+> almost certainly cannot open its own Bluetooth socket (§4.1)"*. **That premise is disproved** — our
+> hub's `bluetooth` module is the full MicroPython `ubluetooth` GAP + GATT stack
+> ([../research/bluetooth-control-plane.md](../research/bluetooth-control-plane.md) § 2.2 banner). The
+> **conclusion is unaffected**, which is exactly why it was safe to build: `print()` is correct under
+> both answers. What remains unknown is whether the firmware *permits* `BLE()` alongside the Hub OS —
+> it was deliberately never instantiated (**KU-M18**). The design does not depend on the answer.
 
 ```
 hub -> telemetry.record_line(...) -> print() -> [ USB serial | BLE ] -> laptop capture
@@ -371,7 +378,7 @@ The record now carries **21 columns**. What the extra ones buy:
 | Added | Diagnoses what nothing else can |
 |---|---|
 | `pitch_ddeg`, `roll_ddeg` | The robot tilting — a wheel riding a cable, a wobbling chassis. **Also the only confirmation the robot was FLAT**, which every odometry assumption silently depends on |
-| `accx/y/z` | **Impacts and stalls.** Hitting the arena wall is a spike here and *nothing at all* in the encoders, which keep turning against a stopped robot |
+| `accx_mg`, `accy_mg`, `accz_mg` | **Impacts and stalls.** Hitting the arena wall is a spike here and *nothing at all* in the encoders, which keep turning against a stopped robot. **RENAMED 2026-08-27** from `accx/y/z` once the unit was measured — **milli-g, ~989 per g at rest**. Renaming a column is a wire-format change, so `src/telemetry.py`'s `VERSION` went to **`spike-telemetry v2`**; a receiver written against v1 must be told. Second use, free: gravity is a constant, so \|a\| wandering from ~989 during a supposedly-still window means the window is contaminated |
 | `cmdL_pct`, `cmdR_pct` | Commanded versus achieved. The pair with the encoders is what reveals a stall or a slipping wheel |
 | `r`, `g`, `b` | Re-run classification offline against different thresholds without re-running the robot |
 | `lane`, `det_state` | Ties a count change to the lane and detector state that produced it |
@@ -487,7 +494,7 @@ seq,t_ms,rx_ms,enc_l_deg,enc_r_deg,yaw_ddeg,refl,r,g,b,dist_mm,state,count
 | `t_ms` | ms since program start | hub clock | The authoritative time base; loop rate comes from this |
 | `rx_ms` | ms since capture start | laptop clock | Arrival time. `rx_ms` minus `t_ms` is link latency and jitter, measured for free |
 | `enc_l_deg`, `enc_r_deg` | degrees, cumulative | motor encoders | Odometry, and wheel slip when they disagree with the gyro |
-| `yaw_ddeg` | decidegrees | hub IMU | Heading truth. **Unit and sign are `[ASSUMED]` and recorded in the header** because the protocol document does not state the unit of its `int16` yaw — G6 establishes it |
+| `yaw_ddeg` | decidegrees | hub IMU | Heading truth. **UNIT CONFIRMED 2026-08-27 — G6 is satisfied**, and the `[ASSUMED]` tag that used to sit here is struck: `tilt_angles()` reports **decidegrees**, derived from gravity on our own hub (true tilt 0.705° against a reported magnitude of 6.7, ratio 9.53). ⚠ **The SIGN is still `[ASSUMED]`** — CCW-positive is `[MIRROR]`, not measured. ⚠ And yaw **wraps at ±180°** (observed −1795 … +1771 ddeg), so an analysis script differencing this column across the seam gets a ~3600-ddeg jump unless it normalises. [../findings/imu-characterisation-2026-08-27.md](../findings/imu-characterisation-2026-08-27.md) |
 | `refl` | 0–100 | colour sensor | The detection signal |
 | `r`, `g`, `b` | 0–1023 raw | colour sensor | **Makes offline re-classification possible.** FR-2b wants classification, not presence |
 | `dist_mm` | mm, `-1` = nothing | distance sensor | Boundary events. range **50–2000 mm** with `-1` for no object — a wall closer than the minimum reads as *nothing*, not as *near*. ⚠ LEGO's `messages.rst` says 40 mm and its techspec sheet says 50 mm; **use 50**, the safe reading ([../course/lego-reference/INDEX.md](../course/lego-reference/INDEX.md)) |

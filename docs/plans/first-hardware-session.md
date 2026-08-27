@@ -1,5 +1,11 @@
 # First hardware session — the order things must happen in
 
+> **✅ EXECUTED 2026-08-27 — superseded by [next-session.md](./next-session.md).**
+> This was the plan for the moment the hub was first plugged in. It happened. Result:
+> [../session_records/2026-08-27_hub-first-contact-usb-and-ble.md](../session_records/2026-08-27_hub-first-contact-usb-and-ble.md).
+> Kept for its reasoning and its dependency ordering, which held up.
+
+
 **Type:** ACTIVE-SPEC · **Created:** 2026-08-26 · **Status:** nothing here has been run
 
 The hub has never been connected. This is the sequence for the moment it is, ordered by **what blocks
