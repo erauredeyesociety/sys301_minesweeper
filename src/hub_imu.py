@@ -16,8 +16,15 @@ from hub_api import API, API_SPIKE2, API_SPIKE3
 def read_yaw_deg():
     """Hub yaw in degrees. The heading source -- see odometry.py for why not the encoders.
 
-    UNVERIFIED: SPIKE 3 reports yaw in DECIDEGREES via motion_sensor.tilt_angles(); confirm the scale
-    on the real hub before trusting any number that comes out of here.
+    UNITS CONFIRMED, MEASURED on our hub 2026-08-27: tilt_angles() reports DECIDEGREES, so the /10.0
+    below is right. Derived from gravity rather than a datasheet -- the accelerometer put the true
+    tilt at 0.705 deg while tilt_angles() reported a magnitude of 6.7, a ratio of 9.53, i.e. 10.
+    docs/findings/imu-characterisation-2026-08-27.md
+
+    YAW WRAPS AT +/-180 DEGREES. Observed -1795 and +1771 ddeg across one hand rotation, so this
+    function returns -179.5 .. +177.1 and jumps the full range at the seam. It does NOT accumulate.
+    Every heading DIFFERENCE computed from this must go through odometry.normalize_angle(); a plain
+    subtraction across the seam gives a ~360 deg error and a robot that spins to correct it.
     """
     if API == API_SPIKE3:
         from hub import motion_sensor
@@ -29,18 +36,15 @@ def read_yaw_deg():
 def reset_yaw():
     """Zero the heading. Once, STATIONARY, before SWEEP -- resetting while moving bakes in the error."""
     if API == API_SPIKE3:
-        from hub import motion_sensor                 # UNVERIFIED call site -- never run
+        from hub import motion_sensor                 # UNVERIFIED call site -- never run.
+                                                      # reset_yaw IS in the measured API surface
+                                                      # (2026-08-27) but has never been CALLED.
         motion_sensor.reset_yaw(0)                    # SPIKE 3 takes the new angle explicitly
         return None
     if API == API_SPIKE2:
         hub_api._hub_obj().motion_sensor.reset_yaw_angle()    # UNVERIFIED call site -- never run
         return None
     return None
-
-
-# Which probes must pass for the run to proceed. The distance sensor is NOT here: we do not own one,
-# and whether we ever will depends on the professor's answer about the arena boundary. Including it
-# unconditionally made selfcheck() return NOT_OK on every run forever -- a check that always fails is
 
 
 # --- The other four axes -----------------------------------------------------
@@ -53,9 +57,13 @@ def reset_yaw():
 #   accel x/y/z  impacts and stalls. A collision with the arena wall is a spike here and nothing at
 #                all in the encoders, which keep turning against a stopped robot.
 #
-# UNVERIFIED on both API generations: the method names and the units below. SPIKE 3's
-# motion_sensor.tilt_angles() returns DECIDEGREES; whether acceleration() is in mG, m/s^2 or raw
-# counts is not documented anywhere we have found. Confirm at the REPL before trusting a number.
+# UNITS MEASURED on our own hub 2026-08-27, derived from gravity, not read off a datasheet:
+#   tilt_angles()   DECIDEGREES  (true tilt 0.705 deg vs a reported magnitude of 6.7 -> ratio 9.53)
+#   acceleration()  MILLI-G      (a flat, still hub reads ax=-2.0 ay=12.0 az=989.2, |a|=989.3,
+#                                 so 1 g reads as about 989 units -- not 1000, and not m/s^2)
+# The method names above are confirmed present in the API surface. What is still UNVERIFIED is the
+# SPIKE 2 arm of every branch below: this hub is SPIKE 3 and those lines have never run.
+# docs/findings/imu-characterisation-2026-08-27.md
 
 def read_tilt_ddeg():
     """(yaw, pitch, roll) in DECIDEGREES, or None. Raw units on purpose -- see telemetry.py.
@@ -73,10 +81,16 @@ def read_tilt_ddeg():
 
 
 def read_accel():
-    """(x, y, z) acceleration, or None. UNITS UNVERIFIED -- record them once measured.
+    """(x, y, z) acceleration in MILLI-G, or None. ~989 units per g at rest, measured 2026-08-27.
 
     Its job in this project is not absolute magnitude but CHANGE: a spike means the robot hit
-    something. That works whatever the scale, which is why an unknown unit does not block logging it.
+    something. That worked whatever the scale, which is why logging it was never blocked on the
+    unit -- but the unit is known now, and telemetry names its columns accx_mg / accy_mg / accz_mg.
+
+    A second, free use fell out of knowing the scale: gravity is a CONSTANT the hub can watch. If
+    |a| wanders from ~989 while the robot is supposed to be still, something disturbed it, and any
+    measurement taken over that window is contaminated. examples/gyro_drift.py uses exactly this to
+    refuse to report a drift figure -- docs/lessons_learned/bound-the-inputs-before-trusting-a-conclusion.md.
     """
     if API == API_SPIKE3:
         from hub import motion_sensor
@@ -91,7 +105,11 @@ def is_flat(max_tilt_ddeg=100):
 
     Odometry assumes a flat robot. If pitch or roll drifts past the limit mid-run, the pose is
     wrong in a way no gyro-vs-encoder check would reveal, because both agree about a robot that is
-    tilting. Default 100 ddeg = 10 deg, [ASSUMED] -- measure what a normal run actually shows.
+    tilting.
+
+    The UNIT is no longer assumed: decidegrees, measured 2026-08-27, so 100 ddeg really is 10 deg.
+    The THRESHOLD is still [ASSUMED] -- nobody has measured what a normal run on a real floor shows.
+    Do not read the confirmed unit as a confirmed limit.
     """
     t = read_tilt_ddeg()
     if t is None:

@@ -13,7 +13,12 @@ value. A caller that gets None knows it has no data; a caller that gets 0 does n
 import hub_api
 from hub_api import API, API_SPIKE2, API_SPIKE3
 
+# Which probes must pass for the run to proceed. The distance sensor is NOT here: we do not own one,
+# and whether we ever will depends on the professor's answer about the arena boundary. Including it
+# unconditionally made selfcheck() return NOT_OK on every run forever -- a check that always fails is
 # as useless as one that always passes.
+# (This comment was split in half by the 2026-08-26 sensors.py split; its first three lines were
+# stranded in hub_imu.py until 2026-08-27. Rejoined, not rewritten.)
 REQUIRED_PROBES = ("left_motor", "right_motor", "yaw", "color_reflection")
 
 
@@ -52,6 +57,11 @@ def selfcheck(required=None):
         except hub_api.PortMapIncomplete as exc:
             report["checks"][name] = {"state": "UNASSIGNED", "detail": str(exc)}
         except Exception as exc:                      # a device that is absent raises; that is data
+                                                      # CONFIRMED on the hub 2026-08-27: with nothing
+                                                      # plugged in, device.id() raises OSError on all
+                                                      # six ports A-F and motor.status() returns 5.
+                                                      # An OSError here is an EMPTY PORT, not a fault
+                                                      # -- report it as such to the Builder.
             report["checks"][name] = {"state": "FAIL", "detail": repr(exc)}
         else:
             state = "UNKNOWN" if value is None else "OK"

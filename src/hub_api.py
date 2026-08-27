@@ -29,6 +29,10 @@ try:                                    # SPIKE 3
     from hub import port as _port       # noqa: F401
     API = API_SPIKE3
 except ImportError:
+    # KNOWN-DEAD ON OUR HUB, kept deliberately (2026-08-27): our hub is SPIKE 3, measured, so this
+    # arm -- and every API_SPIKE2 branch in hub_imu / hub_motors / hub_selfcheck -- can never run
+    # here. Deleting it is an ADR-shaped call about whether this code must survive meeting a
+    # different hub, not a drive-by cleanup. Raised, not done.
     try:                                # SPIKE 2
         from spike import PrimeHub as _PrimeHub, ColorSensor as _ColorSensor, \
             DistanceSensor as _DistanceSensor, Motor as _Motor
@@ -54,6 +58,12 @@ def available():
 # THE VALUE IS GENERATION-DEPENDENT and only one generation is ever live at a time: on SPIKE 3 write
 # the port OBJECT, COLOR_PORT = _port.E; on SPIKE 2 write the STRING, COLOR_PORT = "E". Fill these in
 # only after api_generation() has been read off the actual hub.
+#
+# MEASURED 2026-08-27, first contact: our hub is SPIKE 3, and ALL SIX PORTS A-F WERE EMPTY --
+# device.id(port) raised OSError on every one and motor.status(port) returned 5 on every one. The
+# motors were not connected yet. So these four stay None because that is still the truth, not
+# because nobody has looked. 5 is what an UNOCCUPIED port returns; which named motor constant
+# equals 5 has not been read (KU-M15).
 LEFT_MOTOR_PORT = None
 RIGHT_MOTOR_PORT = None
 COLOR_PORT = None

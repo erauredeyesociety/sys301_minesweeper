@@ -21,8 +21,8 @@ from hub_api import API, API_SPIKE2, API_SPIKE3
 def read_motor_degrees():
     """(left, right) absolute motor positions in degrees, feeding odometry.Odometry.update()."""
     if API == API_SPIKE3:
-        return (_motor.relative_position(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT")),
-                _motor.relative_position(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT")))
+        return (hub_api._motor.relative_position(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT")),
+                hub_api._motor.relative_position(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT")))
     if API == API_SPIKE2:
         return (hub_api._motor_obj("left").get_degrees_counted(),
                 hub_api._motor_obj("right").get_degrees_counted())
@@ -60,9 +60,9 @@ def drive(left_pct, right_pct):
     left_pct = _clamp_pct(left_pct)
     right_pct = _clamp_pct(right_pct)
     if API == API_SPIKE3:                             # UNVERIFIED call site -- never run
-        _motor.run(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"),
+        hub_api._motor.run(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"),
                    int(left_pct * DRIVE_MAX_DPS / 100.0))
-        _motor.run(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT"),
+        hub_api._motor.run(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT"),
                    int(right_pct * DRIVE_MAX_DPS / 100.0))
         return None
     if API == API_SPIKE2:                             # UNVERIFIED call site -- never run
@@ -75,8 +75,8 @@ def drive(left_pct, right_pct):
 def stop_motors():
     """Stop both motors. Called from the try/finally that guards the whole run (degraded mode AB2)."""
     if API == API_SPIKE3:                             # UNVERIFIED call site -- never run
-        _motor.stop(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"))    # SPIKE 3 stops BRAKE by default
-        _motor.stop(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT"))
+        hub_api._motor.stop(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"))    # SPIKE 3 stops BRAKE by default
+        hub_api._motor.stop(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT"))
         return None
     if API == API_SPIKE2:                             # UNVERIFIED call site -- never run
         hub_api._motor_obj("left").stop()

@@ -107,7 +107,15 @@ ENCODER_COUNTS_PER_REV = 360.0 # LEGO fact sheets, all three motor types. The on
 # (~160 mm/s at a 20 mm chord vs ~360 mm/s at 30 mm) -- docs/research/color-discrimination.md.
 # Presence-only detection tolerates more. Start slow; speed is an optimisation, not a default.
 TRAVERSE_SPEED_MMS = 150.0     # [ASSUMED] starting point
-SAMPLE_RATE_HZ = 100.0         # UNVERIFIED: LEGO spec figure for the colour sensor
+SAMPLE_RATE_HZ = 100.0         # UNVERIFIED as a LOOP rate -- it is the LEGO spec figure for the
+                               # colour sensor DEVICE. Value unchanged 2026-08-27.
+                               # What the 2026-08-27 hub session added: a full IMU tick (tilt +
+                               # accel + gyro read together) costs 1.350 ms MEASURED over 300
+                               # iterations, i.e. 14% of a 10 ms budget. So 100 Hz is plausible
+                               # FROM THE IMU SIDE ALONE. It says nothing about the cost of
+                               # driving, detecting or logging, and it is NOT a measured loop
+                               # rate -- KU-M5 stays OPEN.
+                               # docs/findings/imu-characterisation-2026-08-27.md
 TURN_RATE_DPS = 90.0           # [ASSUMED] degrees per second in a spin turn. Only used to say how
                                # long a turn should take; BM-4 / BM-7 measure it.
 
@@ -123,6 +131,12 @@ STUCK_YAW_TICKS = 50           # [ASSUMED] ticks of unchanged yaw while the enco
                                # before falling back to encoder heading. Expressed at
                                # SAMPLE_RATE_HZ, so it is 0.5 s -- rescale it by the rate measured
                                # at run start rather than trusting the tick count.
+                               # CAVEAT added 2026-08-27, MEASURED: angular_velocity() reads
+                               # exactly 0,0,0 on a stationary hub, which suggests a deadband or
+                               # filtering (unverified as an explanation). If tilt_angles() yaw is
+                               # filtered the same way, a SLOW turn could hold yaw constant for
+                               # many ticks and make a HEALTHY gyro look stuck. Do not lower this
+                               # number until a slow turn has been watched on the bench.
 
 # --- Reporting ---------------------------------------------------------------
 REPORT_PAGE_DWELL_MS = 1200    # [ASSUMED] how long one matrix frame is held. Settled by eye on a

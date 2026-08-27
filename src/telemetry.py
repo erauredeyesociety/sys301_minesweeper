@@ -1,9 +1,21 @@
 """Format one run's telemetry as CSV lines. PURE -- no hub imports, no I/O, no transport.
 
-WHY THIS IS NOT A "BLE HANDLER". A program running on the hub almost certainly cannot open its own
-Bluetooth socket -- `bluetooth`/`ble` do not appear in the hub's module list
-(docs/research/bluetooth-control-plane.md). Telemetry leaves the hub as ordinary `print()` output,
-which LEGO's firmware wraps in a ConsoleNotification and sends over whichever link is attached.
+WHY THIS IS NOT A "BLE HANDLER" -- the conclusion stands, the ORIGINAL REASON WAS WRONG.
+
+    STRUCK 2026-08-27: this docstring used to say "`bluetooth`/`ble` do not appear in the hub's
+    module list". They do. `help('modules')` on our own hub lists `bluetooth`, and it is the full
+    standard MicroPython ubluetooth stack -- BLE, UUID, gap_advertise, gap_scan, gatts_*, gattc_*,
+    irq. The old claim was drawn from an absence in a THIRD-PARTY module list and it is disproved.
+
+The surviving reason is narrower and honest: API presence is not firmware permission. BLE() returns a
+process-wide singleton, so a hub program calling it gets LEGO'S OWN stack, and .active(True) on top of
+that risks a double-init under the C-level owner of the radio. It was deliberately never instantiated,
+and docs/research/ble-bring-up.md now argues it MUST NOT be (KU-M18). It is also unnecessary: BLE from
+the HOST side works and is proven -- docs/findings/ble-protocol-2026-08-27.md.
+
+So telemetry still leaves the hub as ordinary `print()` output, which LEGO's firmware wraps in a
+ConsoleNotification and sends over whichever link is attached. That choice is correct under BOTH
+answers, which is why nothing here changes.
 
 That is a gift, not a limitation:
 
@@ -17,7 +29,9 @@ Format and header fields: docs/plans/telemetry-over-bluetooth.md § 5.
 Written to the MicroPython subset: no f-strings, no dataclasses, no typing.
 """
 
-VERSION = "spike-telemetry v1"
+# v2 (2026-08-27): accx/accy/accz -> accx_mg/accy_mg/accz_mg, once the unit was measured.
+# A receiver written against v1 must be told; that is the entire reason this string exists.
+VERSION = "spike-telemetry v2"
 
 # The unit is part of the column name so nobody has to guess millimetres from degrees.
 #
@@ -34,7 +48,13 @@ COLUMNS = (
     # drive
     "encL_deg", "encR_deg", "cmdL_pct", "cmdR_pct",
     # IMU -- all six axes. yaw steers; the rest diagnose.
-    "yaw_ddeg", "pitch_ddeg", "roll_ddeg", "accx", "accy", "accz",
+    # ddeg CONFIRMED and mg MEASURED on our hub 2026-08-27, derived from gravity rather than from a
+    # datasheet: |a| = 989.3 at rest, so acceleration() is milli-g at ~989 per g; true tilt 0.705 deg
+    # against a reported 6.7 gives ratio 9.53, so tilt_angles() is decidegrees.
+    # docs/findings/imu-characterisation-2026-08-27.md
+    # accx/accy/accz were RENAMED to *_mg on 2026-08-27 -- they broke this module's own rule above
+    # while the unit was unknown. Renaming a column is a WIRE FORMAT change, so VERSION went to v2.
+    "yaw_ddeg", "pitch_ddeg", "roll_ddeg", "accx_mg", "accy_mg", "accz_mg",
     # sensing
     "reflection_pct", "r", "g", "b", "distance_mm",
     # what the logic believed at that instant
