@@ -42,7 +42,7 @@ embedding:
   backend: ollama            # == EMBEDDING_BACKEND
 
 llm:
-  model: llama3.2:3b         # == LLM_MODEL — NOT PULLED; /api/ask is unavailable
+  model: qwen3:14b           # == LLM_MODEL — remote on skytracker (ADR-0006: no sub-5B)
   temperature: 0.3
   timeout: 300
-  base_url: http://host.docker.internal:11434
+  base_url: http://172.17.0.1:11435

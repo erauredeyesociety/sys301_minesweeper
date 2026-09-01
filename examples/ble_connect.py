@@ -36,6 +36,12 @@ LEGO_SERVICE_16 = "fd02"
 # connected, anything matching it is proof of identity.
 OUR_DEVICE_UUID = "03970000-3600-1B00-1450-30514B323320"
 
+# Our hub's BLE address, observed 2026-08-27. Used ONLY as a fast filter so we do
+# not connect to a classmate's hub; it is NOT proof of identity, because the
+# address type is unverified and may rotate. Proof is the device UUID, read over
+# the connection. Set to None to connect to any LEGO hub (scanning/discovery).
+OUR_BLE_ADDRESS = "64:8C:BB:0A:1C:8C"
+
 
 def is_lego(name, adv):
     if adv.manufacturer_data and LEGO_COMPANY_ID in adv.manufacturer_data:
@@ -58,16 +64,27 @@ async def find_hub(seconds):
 
     found = asyncio.Event()
     box = {}
+    _skipped = set()
 
     def on_detect(dev, adv):
         if box:
             return
         name = adv.local_name or dev.name or ""
-        if is_lego(name, adv):
-            box["dev"] = dev
-            box["name"] = name
-            box["adv"] = adv
-            found.set()
+        if not is_lego(name, adv):
+            return
+        # 2026-08-27: this script connected to ANOTHER TEAM'S HUB because it took
+        # the first LEGO device that advertised. In a classroom that is the normal
+        # case, not the edge case. So: if we know our own address, hold out for it.
+        if OUR_BLE_ADDRESS and dev.address.upper() != OUR_BLE_ADDRESS.upper():
+            if dev.address not in _skipped:
+                _skipped.add(dev.address)
+                print("  ignoring %s %r -- not our hub (%s)"
+                      % (dev.address, name, OUR_BLE_ADDRESS))
+            return
+        box["dev"] = dev
+        box["name"] = name
+        box["adv"] = adv
+        found.set()
 
     print("waiting up to %.0f s for a LEGO hub to advertise." % seconds)
     print("PRESS THE CONNECT BUTTON ON THE HUB NOW (the Bluetooth one).")

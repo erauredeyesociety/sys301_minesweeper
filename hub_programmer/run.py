@@ -120,6 +120,7 @@ def main(argv):
         ser.write(PASTE_EXEC)
 
         started = time.monotonic()
+        hit_deadline = False
         while time.monotonic() - started < seconds:
             chunk = ser.read(4096)
             if chunk:
@@ -138,6 +139,7 @@ def main(argv):
             sys.stdout.write(tail)
             print("\n" + "-" * 62)
             print("deadline reached — sent Ctrl-C to stop the program on the hub")
+            hit_deadline = True
     finally:
         try:
             ser.write(INTERRUPT)                         # leave the hub at a prompt
@@ -159,9 +161,16 @@ def main(argv):
             fh.write(clean + "\n")
         print("\nsaved: %s (%d bytes of output)" % (save_to, len(clean)))
 
-    if "Traceback" in out:
+    # A KeyboardInterrupt traceback is EXPECTED when WE stopped the program at
+    # the deadline -- it is our own Ctrl-C, not a program fault. Only a
+    # traceback that is NOT that counts as a real crash.
+    real_error = "Traceback" in out and not (
+        hit_deadline and "KeyboardInterrupt" in out and "Error" not in out.replace("KeyboardInterrupt", ""))
+    if real_error:
         print("\nThe program RAISED on the hub — see the traceback above.")
         return 1
+    if "Traceback" in out and hit_deadline:
+        print("\n(the trailing KeyboardInterrupt is our deadline stop, not a program error)")
     return 0
 
 

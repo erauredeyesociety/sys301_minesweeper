@@ -28,9 +28,14 @@ vpn_up()    { ip -br addr 2>/dev/null | grep -qE '^(tun|vpn)[0-9]'; }
 # A 200 from /api/health is NOT proof: it reports embedding_service:true while ollama is dead.
 # The only honest check is a real search returning a real hit.
 # Assert a real ANSWER, not a 200. A 500 here is the normal failure when no LLM is pulled.
+# TIMEOUT: 300s, not 90s. MEASURED 2026-08-27: a WARM qwen3:14b on skytracker answers
+# in ~79 s over the VPN, but the FIRST call after the model is evicted must load 9.3 GB
+# into GPU memory and takes longer. A 90 s ceiling therefore passed when warm and failed
+# exactly when someone was checking after an idle period -- reporting the LLM as broken
+# when it was merely cold. Slow is not the same as broken; say which one it is.
 rag_ask_works() {
   local body
-  body="$(timeout 90 curl -sS --max-time 90 -X POST "$RAG_URL/api/ask" \
+  body="$(timeout 300 curl -sS --max-time 300 -X POST "$RAG_URL/api/ask" \
             -H 'Content-Type: application/json' \
             -d '{"question":"what is the lane pitch formula"}' 2>/dev/null)" || return 1
   case "$body" in *'answer'*) return 0 ;; *) return 1 ;; esac
@@ -76,8 +81,18 @@ cmd_status() {
   local rc=0
   log "stack status"
 
-  if ollama_up; then ok "ollama              http://127.0.0.1:11434"
-  else bad "ollama              NOT RESPONDING -> docs-rag search will 503"; rc=1; fi
+  # Whether a dead LOCAL ollama matters depends on where docs-rag is pointed. Since
+  # 2026-08-27 it points at skytracker (OLLAMA_BASE_URL in docs-rag/.env), so a local
+  # ollama is not required at all and calling it a failure is simply wrong.
+  local rag_ollama
+  rag_ollama="$(grep -E '^OLLAMA_BASE_URL=' "$ROOT/docs-rag/.env" 2>/dev/null | head -1 | cut -d= -f2- | awk '{print $1}')"
+  if ollama_up; then
+    ok "ollama              http://127.0.0.1:11434 (local)"
+  elif [ -n "$rag_ollama" ] && ! printf '%s' "$rag_ollama" | grep -q '11434'; then
+    ok "ollama              local is down, and NOT NEEDED -- docs-rag uses $rag_ollama"
+  else
+    bad "ollama              NOT RESPONDING -> docs-rag search will 503"; rc=1
+  fi
 
   if timeout 8 curl -sSf -o /dev/null "$RAG_URL/api/health" 2>/dev/null; then
     if rag_search_works; then
