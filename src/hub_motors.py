@@ -19,13 +19,19 @@ from hub_api import API, API_SPIKE2, API_SPIKE3
 # could be written before the hardware question closed.
 
 def read_motor_degrees():
-    """(left, right) absolute motor positions in degrees, feeding odometry.Odometry.update()."""
+    """(left, right) motor positions in degrees, FORWARD-POSITIVE, feeding odometry.Odometry.update().
+
+    The mirror sign (hub_api.LEFT/RIGHT_MOTOR_FORWARD_SIGN) is applied here, so both values are
+    positive when the robot drives forward. This is the fix for the latent odometry bug: the raw
+    encoders are equal-and-opposite on this mirrored chassis, so summing them integrated a forward
+    move to ~0 mm. odometry.py stays pure and mirror-agnostic; the convention lives in this layer.
+    """
     if API == API_SPIKE3:
-        return (hub_api._motor.relative_position(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT")),
-                hub_api._motor.relative_position(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT")))
+        return (hub_api.LEFT_MOTOR_FORWARD_SIGN * hub_api._motor.relative_position(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT")),
+                hub_api.RIGHT_MOTOR_FORWARD_SIGN * hub_api._motor.relative_position(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT")))
     if API == API_SPIKE2:
-        return (hub_api._motor_obj("left").get_degrees_counted(),
-                hub_api._motor_obj("right").get_degrees_counted())
+        return (hub_api.LEFT_MOTOR_FORWARD_SIGN * hub_api._motor_obj("left").get_degrees_counted(),
+                hub_api.RIGHT_MOTOR_FORWARD_SIGN * hub_api._motor_obj("right").get_degrees_counted())
     return None
 
 # --- Motor writes -----------------------------------------------------------
@@ -37,14 +43,23 @@ def read_motor_degrees():
 #   SPIKE 2   Motor.start(speed)       speed is PERCENT      -> passed straight through
 #   SPIKE 3   motor.run(port, vel)     vel is DEGREES/SECOND -> percent * DRIVE_MAX_DPS / 100
 #
-# DRIVE_MAX_DPS is the SLOWEST candidate motor's ceiling: Small 45607 +-660 deg/s, Large 45602 +-1050,
-# Medium 45603 +-1110. We own two motors of UNKNOWN type, so 660 is the only figure that cannot ask a
-# motor for more than it has. Raise it only once the Builder identifies what is actually bolted on.
-DRIVE_MAX_DPS = 660.0
+# DRIVE_MAX_DPS -- MEASURED 2026-08-27, no longer a guess.
+# The hub reports its own ceiling: motor.info(port.A) -> (device_id=48, max_speed=930).
+# Both motors on ports A and B report device_id 48.
+#
+# This REPLACES the old 660.0, which was the deliberately conservative "slowest motor we
+# might own" figure chosen while the motor type was unknown. It under-drove us by 29%.
+#
+# Do NOT substitute LEGO's datasheet figure (often quoted as 1110 deg/s for a Medium
+# Angular 45603). The hub is the authority on what this motor will actually accept, and
+# the hub says 930. Where they disagree, believe the hardware.
+DRIVE_MAX_DPS = 930.0
 
-# UNVERIFIED: on a differential drive one motor is mounted mirrored, so one side needs a sign flip for
-# a positive percent to mean "forward". Which side is a Stage 2 finding; the flip belongs here, beside
-# the port map, and NOT in main.py, or the heading-hold arithmetic stops being readable.
+# CONFIRMED 2026-09-01 (examples/drive_moves.py, watched on the robot): the motors ARE mounted
+# mirrored. LEFT wheel is port A, forward = NEGATIVE; RIGHT wheel is port B, forward = POSITIVE.
+# So robot-forward is (A: -v, B: +v). Encoder deltas were symmetric to +/-1 deg. The flip lives here
+# beside the port map, NOT in main.py, or the heading-hold arithmetic stops being readable.
+#   LEFT_MOTOR_FORWARD_SIGN = -1 ; RIGHT_MOTOR_FORWARD_SIGN = +1  (see docs/hardware/port-map.md)
 
 
 def _clamp_pct(value):
@@ -56,9 +71,14 @@ def _clamp_pct(value):
 
 
 def drive(left_pct, right_pct):
-    """Continuous velocity pair, percent. Returns None; on the host a no-op, never a fake move."""
-    left_pct = _clamp_pct(left_pct)
-    right_pct = _clamp_pct(right_pct)
+    """Continuous velocity pair, percent, where POSITIVE means the robot drives FORWARD.
+
+    The mirror sign is applied here too, so a caller writes forward-positive percents and does not
+    need to know the motors are mounted mirrored. Without it, drive(50, 50) would SPIN the robot
+    (left backward, right forward) instead of going forward. Returns None; on the host a no-op.
+    """
+    left_pct = _clamp_pct(left_pct) * hub_api.LEFT_MOTOR_FORWARD_SIGN
+    right_pct = _clamp_pct(right_pct) * hub_api.RIGHT_MOTOR_FORWARD_SIGN
     if API == API_SPIKE3:                             # UNVERIFIED call site -- never run
         hub_api._motor.run(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"),
                    int(left_pct * DRIVE_MAX_DPS / 100.0))

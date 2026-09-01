@@ -69,6 +69,17 @@ RIGHT_MOTOR_PORT = None
 COLOR_PORT = None
 DISTANCE_PORT = None
 
+# The mirrored-motor sign convention, MEASURED 2026-09-01 by watching the robot drive
+# (examples/drive_moves.py, confirmed by the operator; docs/hardware/port-map.md).
+# The two motors are mounted mirrored, so a positive robot-FORWARD command is a NEGATIVE
+# velocity on the left motor and a POSITIVE velocity on the right. hub_motors applies these
+# to BOTH the drive command AND the encoder reads, so everything downstream (odometry,
+# telemetry) sees FORWARD-POSITIVE values on both wheels. Without them, forward motion
+# integrated to ~0 distance because the raw encoders are equal-and-opposite (latent bug
+# caught by the drive checkpoint data). These are plain ints so they are host-safe.
+LEFT_MOTOR_FORWARD_SIGN = -1
+RIGHT_MOTOR_FORWARD_SIGN = +1
+
 
 class PortMapIncomplete(Exception):
     """A port was needed before the port map was filled in. Fail loud, on the bench, not in the demo."""
