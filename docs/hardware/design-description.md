@@ -18,22 +18,36 @@ interesting sentence in the whole build.
 | | |
 |---|---|
 | **PROPOSED** | Two motors, two wheels, differential drive — one motor per wheel, steering by driving them at different speeds. Decided by the team 2026-08-25. |
-| **RESULTING** | `<<< describe what was built >>>` |
+| **RESULTING (2026-09-01)** | **Differential drive, confirmed built.** One wheel driven on the **left**, one on the **right**, each by its own motor. A **single unidirectional roller-ball caster at the back** carries the third point of contact — so the robot is a two-wheel differential drive with a passive rear caster, steered entirely by the speed difference between left and right. Motors read on ports **A and B** (`device.id` 48). |
 
-**Still open:** which motors we own (Large 45602 / Medium 45603 / Small 45607 — [KU-T3](../plans/known-unknowns.md)),
-and which wheels. Both are read off the parts, not derived. Numbers that depend on them live in
-[`src/config.py`](../../src/config.py) and change with one edit.
+**Motors confirmed:** both `device_id` **48** with `motor.info` `max_speed` **930 deg/s** (measured
+2026-09-01), so [KU-T3](../plans/known-unknowns.md) is closed at the hub. **Wheel diameter and track
+width are still UNMEASURED** — they are read off the built robot, not derived, and every distance/turn
+number in [`src/config.py`](../../src/config.py) depends on them. The rear caster is *unidirectional*,
+which matters: it rolls freely forward/back but resists sideways scrub, so a pivot turn drags it and
+that shows up as a heading-vs-encoder discrepancy to calibrate out, not a bug.
 
 ## Colour sensor — the target detector
 
 | | |
 |---|---|
 | **PROPOSED** | Mounted **flat, facing straight down**, near the front of the robot and **close to the drive axle**. About **16 mm above the floor** (LEGO's optimal reading distance). Not tilted. |
-| **RESULTING** | `<<< describe: how far above the floor, how far forward, rigid or sprung >>>` |
+| **RESULTING (2026-09-01)** | **TWO colour sensors, not one** — ports **C and D** (`device.id` 61), facing down. **UPDATE, later 2026-09-01:** the wheel geometry lets them mount **UNDERNEATH the robot, near the ground** — no longer the ~51 mm front-corner position. This puts them close to the 16 mm optimum and **lets colour and motors run in the same session.** Exact standoff still to be read off the built robot. |
 
-**Why close to the axle:** distance from the drive axle couples the robot's pitch into the sensor's
-standoff *and* costs heading error on turns — two independent reasons for the same placement
-([sensor-mounting-geometry.md](../research/sensor-mounting-geometry.md)).
+⚠ **Height RESOLVED 2026-09-01** by mounting the sensors underneath the robot (see RESULTING above). The earlier front-corner position was ~51 mm — ~3× too high. LEGO's optimal reading distance is **16 mm** (2 studs), with a
+~12 mm illuminated spot there. At ~51 mm the spot spreads and dims and ambient light contaminates it, so
+`color()` will be unreliable; `reflection()`/`rgbi()` may still give a weak signal. **Recommend lowering
+both sensors to ~16 mm.** The exact usable range is one bench height-sweep (rides with GATE 1).
+
+**Two sensors, one on each front corner, is a real capability, not just redundancy:** they straddle the
+robot's width, so together they cover a wider swath per pass (fewer lanes, less run time — see the
+coverage recomputation) *and* their left/right difference gives an edge/heading signal a single centred
+sensor cannot. The spacing between them is a Designer choice that is not yet fixed.
+
+**Why keep them near the axle:** distance from the drive axle couples the robot's pitch into the
+sensor's standoff *and* costs heading error on turns ([sensor-mounting-geometry.md](../research/sensor-mounting-geometry.md)).
+Front-corner mounting trades some of that for width and forward lookahead — a deliberate tension to
+resolve with the Designer.
 
 ## Distance sensor — boundary detection, IF we buy one
 
@@ -91,3 +105,17 @@ Append a line when the design changes. **A change nobody wrote down becomes a bu
 
 Detailed as-built facts go in [build-record.md](./build-record.md); port assignments live **only** in
 [port-map.md](./port-map.md).
+
+---
+
+## Open risk — a curled or bent sticky note
+
+Raised by the operator 2026-09-01: **what if a sticky note is bent upward** so its face is not flat on
+the floor? A downward colour sensor expects a flat surface at ~16 mm. A note curled up presents a
+near-vertical or tilted face, so the sensor may see the floor *under* the raised edge, a weak/wrong
+reflection off the angled face, or the note only as a brief narrow event instead of a full-width one.
+
+**Not being solved now — captured so it is not forgotten.** It is a detection-robustness problem, filed
+as a known-unknown, and it interacts with the event-width discriminator (a curled note is narrower in
+the sensor's view than a flat one). Revisit after GATE 1 establishes what a *flat* note even reads as —
+there is no point hardening against a curled note before we can reliably see a flat one.

@@ -331,6 +331,42 @@ explanation** before you do anything else.
 
 ---
 
+## 9a. Running a *stored* program — the slot route (UNTESTED)
+
+Everything above **deploys a module** (`import`-able) or **runs source in RAM** (`run.py`, leaves
+nothing). Neither makes the hub run a program *by itself*. The Hub OS owns the boot path — `/flash/main.py`
+does **not** autorun (measured after a real power cycle, KU-M16) — so the supported way to store and run a
+standalone program is the Hub OS **program-slot** mechanism, driven by LEGO's binary control protocol.
+
+> **Status: UNTESTED on our hardware.** The proven routes are §§ 4–6 above. The slot route is
+> primary-source + host-checked only; run it over USB first to make it MEASURED, and file the transcript
+> under [../findings/runs/](../findings/runs/). Full protocol, message layouts, checksum and the
+> **[UNVERIFIED]** register: [../research/program-upload-protocol.md](../research/program-upload-protocol.md).
+
+```bash
+./hub_programmer/slot_upload.py prog.py                 # DRY RUN — opens no port/radio, prints frames
+./hub_programmer/slot_upload.py prog.py --slot 3 --apply # USB: prove identity, upload to slot 3, start it
+./hub_programmer/slot_upload.py prog.py --ble --apply    # BLE (untethered): scan our address, prove UUID
+./hub_programmer/slot_upload.py prog.py --apply --listen 20   # watch console 20 s after start
+```
+
+- **USB-primary, BLE for untethered.** USB (`/dev/spike`) is point-to-point and cannot hit another
+  team's hub — develop there. `--ble` is the driving-robot path; it filters on our BLE address, then
+  proves identity with a 16-byte `DeviceUuidRequest` match before writing, and reports the negotiated MTU.
+- **This client never sends Ctrl-C.** Unlike `upload.py`/`run.py`, the slot protocol is driven by the
+  running Hub OS; Ctrl-C would kill it. Do not mix a REPL session and a slot-upload session on the same
+  connection.
+- **DRY RUN by default**, like `upload.py`. Without `--apply` it touches no hardware and prints every
+  frame it would send. `--apply` uploads with the protocol's whole-file + per-chunk CRC32, starts the
+  slot, and prints `ConsoleNotification` output as text.
+- **Firmware is not implicated.** A slot is a filesystem write (like `/flash/lib`), not a firmware flash;
+  `send()` refuses the firmware message ids `0x0A/0x0B/0x14/0x15`. Blacklist item 1 stands.
+
+**The REPL/module route (ADR-0007, §§ 4–6) remains the one proven way to get code onto this hub.** Do not
+depend on the slot route until it has been run against the hub.
+
+---
+
 ## 10. What this runbook does **not** establish
 
 Be precise about the boundary — half of the deploy story is proven and half is not.

@@ -1,0 +1,27 @@
+# ran: examples/drive_moves.py
+# NOTE: this is program OUTPUT; the source is in examples/drive_moves.py
+
+# examples/drive_moves.py — the checkpoint: forward, back, turn right, turn left.
+==============================================================
+DRIVE MOVES -- forward / back / turn right / turn left
+==============================================================
+  motor A status 0 (0=READY)
+  motor B status 0 (0=READY)
+
+  MOVING in 3 s -- clear the floor or prop the wheels up.
+  FORWARD     left(A)= -250  right(B)= +250 dps  for 1500 ms
+             encoder delta: left -366  right +366 deg
+  BACKWARD    left(A)= +250  right(B)= -250 dps  for 1500 ms
+             encoder delta: left +367  right -367 deg
+  TURN RIGHT  left(A)= -250  right(B)= -250 dps  for 900 ms
+             encoder delta: left -217  right -217 deg
+  TURN LEFT   left(A)= +250  right(B)= +250 dps  for 900 ms
+             encoder delta: left +217  right +216 deg
+
+  Done. Did each labelled move match the robot's actual motion?
+  FORWARD went backward  -> flip LEFT_FWD and RIGHT_FWD.
+  FORWARD spun in place  -> LEFT_PORT/RIGHT_PORT are swapped.
+  TURN RIGHT turned left -> same swap, or the two signs disagree.
+
+DONE.
+>>> 

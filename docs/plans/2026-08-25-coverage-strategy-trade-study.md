@@ -11,6 +11,32 @@ Governing arithmetic: [../findings/coverage-time-budget.md](../findings/coverage
 not restated here, extended. Open questions: [./questions-for-the-professor.md](./questions-for-the-professor.md).
 This study is the mitigation artifact for **R-01** in [./risk-register.md](./risk-register.md).
 
+> ## ⚠ Read this before acting on §1 or §12 — 2026-09-01
+>
+> **This study's central purchasing question is moot: we already own TWO colour sensors**, MEASURED on
+> the hub (ports C and D, `device.id()` = 61 on both). The standing recommendation *"buy one colour
+> sensor now"* is **satisfied, not pending**, and the §10 decision table's rule that *"only the middle
+> column justifies a second sensor"* no longer bears on a purchase.
+>
+> **Three numbers here are superseded** by
+> [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md), rewritten the same day:
+>
+> - **§2 `swath = N × L` understates two sensors.** The gap *between* two sensors on one bar is charged
+>   **build tolerance**, not odometry error, so the correct pitch is `P = S + (W − 2e − m)`. At a
+>   65 mm spacing that is **2.59×**, not 2.00×. The 2× figure is right only for `S` = lane pitch.
+> - **§3's `v` bracket (150 / 250 mm/s) is superseded.** The hub reports `max_speed = 930` deg/s
+>   (MEASURED), which converts to ground speed only through the **unmeasured** wheel diameter.
+> - **§3's unreconciled lane pitch is settled at 41 mm**, matching [`../../src/config.py`](../../src/config.py).
+>
+> **§4–§9 remain valid and are not restated in the finding** — in particular §7.1 (the 31.5 mm worst
+> chord and the ~195 mm/s classification ceiling, which **a second sensor does not raise**), §7.2
+> (multiple sensors make de-duplication *simpler*), §7.3 (O7 dominates O6) and §7.4 (the sweeping arm is
+> dominated). §8.5a's "drive faster" path survives with 930 deg/s in place of the datasheet figure.
+>
+> **The open question this study should now answer is O3's spacing, not O3-vs-O4.** A third sensor would
+> fill the hub and foreclose the boundary sensor (§6.1) — do not cost it before the wheel and `e` are
+> measured.
+
 ---
 
 ## 1. Read this cell and start building

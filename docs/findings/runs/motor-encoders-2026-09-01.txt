@@ -1,0 +1,5 @@
+# ran: examples/motor_encoder_verbose.py
+# NOTE: this is program OUTPUT; the source is in examples/motor_encoder_verbose.py
+
+# examples/motor_encoder_verbose.py — everything a motor and its encoder will tell us, by hand.
+>>> 

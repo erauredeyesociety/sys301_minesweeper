@@ -53,9 +53,9 @@ team's first robot. They exist to force ranking, and the ranking is the useful o
 
 | Rank | ID | Risk | L | I | Exp | Threatens | Owner | Status |
 |---:|---|---|:-:|:-:|:-:|---|---|---|
-| 1 | **R-01** | Exhaustive coverage does not fit the demo slot | 4 | 5 | **20** | Demo Day | Programmer → professor | `OPEN` |
-| 2 | **R-02** | Lane drift makes the sweep miss mines a working detector would have seen | 4 | 4 | **16** | Demo Day | Programmer + Designer | `OPEN` |
-| 3 | **R-03** | Only ~5 hardware sessions; one lost is 20 % of the schedule | 4 | 4 | **16** | M1, M2, Demo Day | Whole team | `WATCHING` |
+| 1 | **R-02** | Lane drift makes the sweep miss mines a working detector would have seen | 4 | 4 | **16** | Demo Day | Programmer + Designer | `OPEN` |
+| 2 | **R-03** | Only ~5 hardware sessions; one lost is 20 % of the schedule | 4 | 4 | **16** | M1, M2, Demo Day | Whole team | `WATCHING` |
+| 3 | **R-01** | Exhaustive coverage does not fit the demo slot | 3 | 5 | **15** | Demo Day | Programmer → professor | `WATCHING` — trigger FIRED 1 SEP |
 | 4 | **R-04** | No deploy route from Ubuntu to the hub ever works | 3 | 5 | **15** | M1 and everything after | Programmer | `OPEN` |
 | 5 | **R-05** | 56 SB does not cover the sensors the design needs | 3 | 4 | **12** | M2, M3 | Supplier | `OPEN` |
 | 6 | **R-06** | Hub is SPIKE 2 generation; most online material is for the wrong API | 3 | 4 | **12** | M1, M2 | Programmer | `OPEN` |
@@ -75,22 +75,40 @@ team's first robot. They exist to force ranking, and the ranking is the useful o
 
 ## R-01 — Exhaustive coverage does not fit the demo slot
 
-**L 4 × I 5 = 20 · Threatens: Demo Day (10 SEP) · Owner: Programmer, via a question to the professor**
+**L 3 × I 5 = 15 · Threatens: Demo Day (10 SEP) · Owner: Programmer, via a question to the professor ·
+Status `WATCHING` — the 1 SEP trigger has FIRED**
 
-A downward colour sensor traces a **line, not a swath**. To guarantee a 76 mm note is not missed, lanes
-must be under 76 mm apart — under ~46 mm once realistic cross-track error is allowed. If "10×10" means
-feet, that is **125–204 m of driving, 8–23 minutes**, before turn overhead, and classification pushes it
-toward the upper half by capping traverse speed at ~160 mm/s.
-Full arithmetic: [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md).
+**Re-judged 2026-09-01, L 4 → 3. What changed it: we own TWO colour sensors, not one** (MEASURED on the
+hub, ports C and D), and two sensors on one bar multiply the pass pitch by **2.59×**, which brings the
+10-foot arena in **under 5 minutes on Ø88 wheels (4.0 min) and to 5.5 min on Ø56** — where the
+single-sensor design needed an unreachable 2003 mm/s. Most cells of the Q1 × Q2 table now fit a plausible
+slot. **The impact is unchanged at 5** and the risk is not closed: the units are still unanswered, the
+**wheel diameter is unmeasured and by itself swings the 10-foot answer 2.7× (4.0–10.9 min)**, and colour
+classification still does not reach 5 minutes at 3 m under *any* configuration we can build.
+Full arithmetic, redone: [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md).
+
+A downward colour sensor traces a **line, not a swath** — that has not changed, and it is still the root
+of this risk. What changed is how many lines we have and what each one costs: the gap *between* two
+sensors on a rigid bar is charged **build tolerance**, not odometry error, so the second line is cheaper
+than the first and the gain exceeds 2×. The exact gain depends on the sensor spacing `S`, which the
+**Designer has not chosen** — 41 mm spacing gives 2.00×, 65 mm gives 2.59×, and above ~71 mm coverage is
+no longer guaranteed at all.
 
 - **Cause:** [KU-P1](./known-unknowns.md) (units unknown) × [KU-P2](./known-unknowns.md) (time limit
-  unknown) × [KU-M4](./known-unknowns.md) (cross-track error assumed, not measured). It is a product of
-  three unknowns, which is why its likelihood is high even though no single input is known to be bad.
+  unknown) × [KU-M3](./known-unknowns.md) (**wheel diameter unmeasured — new to this product as of
+  2026-09-01, and now the largest of the three multipliers**). [KU-M4](./known-unknowns.md) (cross-track
+  error) has **largely dropped out**: with two sensors, `e` doubling from 15 to 25 mm costs 24 % more run
+  time instead of 95 %, and the single-sensor design's cliff — at `e` ≥ 38 mm *no* lane pitch guarantees
+  coverage — does not exist for two. It is still a product of three unknowns, but one of the three is now
+  closable **today, with a ruler, by the Builder, at no cost**.
 - **Mitigation:** Ask Q1, Q2 and Q5 **in one written message, first** — they are free to ask and they
   gate the architecture. Meanwhile keep arena size, lane pitch, and speed as parameters in
   [config.py](../../src/config.py), never as constants, so an answer changes a value and not the
-  design. Do **not** tune a sweep before the units are known; tuning for the wrong arena is a wasted
-  class session.
+  design — and **add `N_SENSORS` and `SENSOR_SPACING_MM` to that list**, with the pitch computed from
+  the spacing rather than hard-coded. Do **not** tune a sweep before the units are known; tuning for the
+  wrong arena is a wasted class session. **New and cheapest of all: measure the wheel diameter.** It is
+  a ruler, it needs no hub and no purchase, and it collapses a 2.7× spread in every run time this risk
+  turns on ([KU-M3](./known-unknowns.md)).
 - **Contingency (if it is 10 ft and the slot is short):** the options are costed and cross-tabulated
   against Q1 × Q2 in [2026-08-25-coverage-strategy-trade-study.md](./2026-08-25-coverage-strategy-trade-study.md),
   which exists as this risk's mitigation artifact — more colour sensors across the robot's width (money: R-05), a wider mechanical swath (the Designer's,
@@ -98,22 +116,38 @@ Full arithmetic: [../findings/coverage-time-budget.md](../findings/coverage-time
   reported honestly**. The third is the cheapest and is defensible in a systems-engineering report
   *provided we say so*, which is exactly what [../directives/honest-instrumentation.md](../directives/honest-instrumentation.md)
   requires. Which one is right depends on the scoring rule — "found all" and "found the most, fastest"
-  choose differently.
-- **Trigger — act when either fires:** the professor answers "feet" or gives a slot under ~10 minutes;
-  **or** 1 SEP arrives with Q1 still unanswered, at which point we commit to the pessimistic reading and
-  design for it rather than waiting.
+  choose differently. **Revised 2026-09-01:** the first option has already been taken — we have the two
+  sensors — so the contingency ladder is now (a) **space them at 60–65 mm** rather than at the lane
+  pitch, which is free and worth 2.59× against 2.00×; (b) measure the wheel and `e`, either of which can
+  close the remaining 0.5 min on the Ø56 10-foot cell; (c) a **third** sensor, which would fill the hub
+  and foreclose the boundary sensor, and should not be bought before (a) and (b) are done; (d)
+  probabilistic coverage, unchanged and still the honest floor.
+- **Trigger — ⚠ FIRED 2026-09-01.** The second condition was *"1 SEP arrives with Q1 still unanswered,
+  at which point we commit to the pessimistic reading and design for it rather than waiting."* **1 SEP
+  has arrived and Q1 is still unanswered** ([questions-for-the-professor.md](./questions-for-the-professor.md)
+  §1). Per this file's own rule, that is no longer a risk but a problem with a response due today:
+  **design to the 10-foot reading**, presence-first with classification layered on top, two sensors at
+  60–65 mm, and the O7 time-box carried regardless. The first condition — the professor answers "feet"
+  or names a slot under ~10 minutes — remains armed and would only confirm what we are now building.
+
+Redrawn 2026-09-01 for two sensors. Path lengths are the two-sensor figures at 65 mm spacing.
 
 ```mermaid
 flowchart TD
     Q["Q1 answer:<br/>10x10 means ..."] --> SMALL["inches / 76 mm cells<br/>path under 10 m"]
-    Q --> BIG["feet or 30 cm tiles<br/>path 120-204 m"]
+    Q --> BIG["feet or 30 cm tiles<br/>2 sensors: 88 m, 29 passes"]
     SMALL --> KEEP["Exhaustive sweep as designed.<br/>Spend the slack on FR-2b and margin"]
     BIG --> SLOT{"Demo slot from Q2"}
     SLOT -->|"generous"| KEEP
-    SLOT -->|"short or unknown"| TRADE["ADR: pick one<br/>KU-D5"]
-    TRADE --> A["More sensors<br/>gated on 56 SB - R-05"]
+    SLOT -->|"short or unknown"| WHEEL{"Wheel diameter<br/>MEASURE IT FIRST"}
+    WHEEL -->|"88 mm"| FITS["4.0 min presence-only.<br/>Fits a 5 min slot"]
+    WHEEL -->|"56 mm"| EDGE["5.5 min. Close the gap with<br/>measured t_turn or e,<br/>or accept O7 time-box"]
+    WHEEL -->|"24 mm"| TRADE["10.9 min - ADR: pick one<br/>KU-D5"]
+    EDGE --> TRADE
+    TRADE --> A["A 3rd sensor<br/>fills the hub, R-05"]
     TRADE --> B["Wider mechanical swath<br/>Designer, slow - R-08"]
     TRADE --> C["Probabilistic coverage,<br/>report the fraction honestly"]
+    CLS["Colour classification<br/>caps v at ~195 mm/s"] --> NEVER["No 3 m arena reaches<br/>5 min at any N or wheel"]
 ```
 
 ## R-02 — Lane drift makes the sweep miss mines a working detector would have seen
@@ -136,6 +170,12 @@ flowchart TD
   completeness.
 - **Trigger:** the UMBmark run shows cross-track error above 15 mm, **or** any dry run's counted total
   varies between two passes over an identical layout.
+- **Note 2026-09-01 — the two-sensor build softens the *time* consequence, not the *miss* consequence.**
+  The contingency "reduce lane pitch, which costs run time and pushes back into R-01" is now much
+  cheaper: with two sensors an `e` of 25 mm instead of 15 mm costs 24 % more run time rather than 95 %
+  ([../findings/coverage-time-budget.md](../findings/coverage-time-budget.md)). This does **not** reduce
+  L or I here — a note missed is still missed silently, and the pair of sensors shares the same heading
+  error, so nothing about the drift itself improves. It only means we can afford to respond.
 
 ## R-03 — Only about five hardware sessions remain; one lost is 20 % of the schedule
 
@@ -193,6 +233,14 @@ flowchart TD
 - **Trigger:** the Supplier's price report shows the design's sensor set costing more than **46 SB**
   (56 minus a 10 SB reserve for meeting bills and role-violation penalties, which come out of the same
   budget).
+- ⚠ **Unreconciled 2026-09-01 — the Supplier must answer this before the row can be re-scored.** The
+  cause above says *"the ledger shows no sensor owned"*. That is still what
+  [../../inventory.py](../../inventory.py) says, and **two colour sensors are physically on the hub**
+  (ports C and D, MEASURED). Either they came from the yellow box — which answers
+  [KU-T4](./known-unknowns.md) *yes*, costs 0 SB, and drops this risk sharply — or they were bought and
+  the ledger is stale. **No price is guessed here.** Note also that the coverage redo removes the *need*
+  for a third sensor in most cells ([../findings/coverage-time-budget.md](../findings/coverage-time-budget.md)),
+  which is the other half of what made this risk bite.
 
 ## R-06 — The hub is the SPIKE 2 generation and most online material is for the wrong API
 
@@ -392,6 +440,12 @@ flowchart TD
 
 ## What I would spend the next hour on
 
+> **Stale in one respect, 2026-09-01:** R-01 is no longer the highest-exposure row (15, behind R-02 and
+> R-03 at 16), and the hub *has* since been reached. The recommendation below is still right about what
+> to do — Q1 is **still unasked and still free** — but the cheapest action in the project today is now
+> **the Builder putting a ruler across a wheel**, which needs no answer from anyone and collapses a 2.7×
+> spread in every coverage time ([../findings/coverage-time-budget.md](../findings/coverage-time-budget.md)).
+
 **R-01 — and specifically, sending the professor Q1, Q2 and Q5 in one written message, then spending
 what is left of the hour on the fallback trade study before the answer arrives.**
 
@@ -449,4 +503,5 @@ When the Sprint 1 plan is archived, this file carries the whole set forward.
 | Date | Change | By |
 |---|---|---|
 | 2026-08-25 | Created. 17 risks scored and ranked; Sprint 1's R1–R8 mapped in rather than duplicated. All L/I values are `[JUDGED]` — no historical data exists for this team. | Claude |
+| 2026-09-01 | **R-01 re-judged L 4 → 3, exposure 20 → 15, rank 1 → 3, status `OPEN` → `WATCHING`.** What changed it: we own **two** colour sensors, MEASURED on ports C and D, and the redone budget shows two sensors on one bar multiply the pass pitch by 2.59× — bringing 10 feet under 5 minutes on Ø88 and to 5.5 min on Ø56, against an unreachable 2003 mm/s for one sensor. Impact stays 5. **R-01's 1 SEP trigger is recorded as FIRED** — Q1 is still unanswered, so the response is due today, not eventually. Cause updated: KU-M4 (cross-track error) largely drops out of the product and **KU-M3 (wheel diameter) enters it**, now the largest multiplier at 2.7×. Contingency ladder rewritten, diagram redrawn. Dated notes added to **R-02** (the time consequence softens; the silent-miss consequence does not) and **R-05** (two sensors are on the hub and the ledger records none — Supplier to reconcile; no price guessed). | Claude |
 | 2026-08-25 | Adversarial audit: R-03 status aligned with the summary table; R-04 contingency now flags the Hub OS update prompt on a teammate's machine; R-05 mitigation reconciled with the trade study's standing recommendation; R-07 no longer implies `scripts/setup-host.sh` exists; R-11's downgrade caution re-attributed; R-01 diagram range corrected to 120–204 m. | Claude (audit) |

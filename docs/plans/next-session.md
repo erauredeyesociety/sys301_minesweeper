@@ -11,19 +11,38 @@
 
 ---
 
-## Read this first — the 60-second state of the project
+## Read this first — the 60-second state (updated 2026-09-01)
 
-**Closed on 2026-08-27 (do not re-investigate):** the API generation is **SPIKE 3**; the deploy route
-**works and is proven**; the firmware is **provably untouched**; **Bluetooth works** and our hub is
-**identified by UUID**; IMU units are **measured** (milli-g, decidegrees).
+**Closed, do NOT re-investigate:** SPIKE 3 API; deploy over USB proven; firmware provably untouched;
+Bluetooth works and our hub is identified by UUID; IMU units measured; **the robot is BUILT and
+DRIVES** — forward/back/turn confirmed, port map locked (A=left, B=right, forward `A:-v B:+v`, direct
+drive 360 enc-deg/rev); two colour sensors, matched, re-mountable low; docs-rag `/api/ask` works
+(needs the ERAU VPN up for skytracker).
 
-**The project is now blocked on three things, in this order:**
+**Telemetry architecture decided** ([telemetry-while-driving.md](../research/telemetry-while-driving.md)):
+a **slot program** drives motors AND emits telemetry (print → ConsoleNotification) under the live Hub
+OS — so "BLE while driving" is solved in principle. Recommendation: **log on hub, retrieve after**, not
+live streaming. Deeper workaround research is in flight.
 
-1. **One question to the professor** — the units of "10×10". Free. Gates the architecture.
-2. **One colour sensor** — gates the entire detection design, and does **not** need the robot.
-3. **Motors mounted** — gates every odometry number.
+**The top of next session, in order (each unblocks the most for its cost):**
 
-**Nothing else on this page matters as much as those three.**
+1. **LOWER THE COLOUR SENSORS to ~16 mm**, then run the **real GATE-1 optical burst** — `rgbi()` +
+   `reflection()` on matte yellow notes, both real tapes, floor, and air. It unblocks **three of four**
+   design areas (colour fusion, boundary detection, matched-sensor coverage) and needs **neither** the
+   wheel diameter **nor** the units answer. *The single highest-value bench task.* (Group E)
+2. **Measure the wheel diameter with a ruler** (mm) — the one number that turns every encoder degree
+   into real distance. Then the calibration drive (below) recovers track width and turn-scale. (Group F)
+3. **Ask the professor the units of "10×10"** — still THE architecture blocker; free. (Group A)
+4. **The G4 telemetry test** — upload a ~5-line slot program that spins a motor and `print()`s numbered
+   lines; watch for `ConsoleNotification`s while it drives (and that it finishes with no listener).
+   **Run the companion in the same session:** subscribe with `DeviceNotificationRequest 0x28` (interval
+   1000 ms) and watch for `DeviceNotification 0x3C` — a NEW finding says the **firmware pushes IMU,
+   encoders and colour with ZERO hub code**, program-independent, which may be a *better* live path than
+   `print()` ([ble-while-driving-workarounds-2026-09-01.md](../research/ble-while-driving-workarounds-2026-09-01.md)).
+   Converts "BLE while driving" from inferred to proven. Needs a clean-boot window. (Group D)
+5. **The calibration drive** (once diameter is known) — a gyro-vs-encoder square/straight run that sets
+   track width, the caster turn-scale, and the fault-detection thresholds (slip / lifted). Design in
+   [odometry-fusion-and-health-2026-09-01.md](../research/odometry-fusion-and-health-2026-09-01.md). (Group F)
 
 ---
 

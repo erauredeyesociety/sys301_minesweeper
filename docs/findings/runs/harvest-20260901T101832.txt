@@ -1,0 +1,147 @@
+# harvest 20260901T101832   port /dev/spike
+# READ-ONLY. Nothing was written to the hub.
+
+# PHASE 1 -- LEGO COBS control protocol over USB, no Ctrl-C sent
+-> InfoRequest          00 00 02
+-> DeviceUuidRequest    07 19 02
+<- raw 05 18 00 94 00 07 35 07 18 08 17 53 33 52 48 31 30 23
+   decoded 1b 03 97 00 00 36 00 1b 00 14 50 30 51 4b 32 33 20
+     device_uuid  0397000036001b00145030514b323320
+
+
+########## CORE ##########
+# CORE
+# port /dev/spike @ 115200 8N1   deadline 60s
+
+===== uname =====
+(sysname='SPIKE', nodename='SPIKE', release='1.24.0', version='v1.20.0-1742.gf212bbe83 on 2025-03-27', machine='SPIKE Prime with STM32F413')
+
+===== implementation =====
+(name='micropython', version=(1, 24, 0, ''), _machine='SPIKE Prime with STM32F413', _mpy=7942)
+
+===== path =====
+['', '.frozen', '/flash', '/flash/lib']
+
+===== device_uuid =====
+03970000-3600-1B00-1450-30514B323320
+
+===== hardware_id =====
+E
+
+===== battery =====
+mV 8185 mA 131 degC 312
+
+===== mem =====
+free 212000 alloc 1824
+
+===== flash =====
+['README.txt', 'boot.py', 'config', 'lib', 'main.py', 'program', 'pybcdc.inf']
+
+===== flash/lib =====
+['config.py']
+
+===== program slots =====
+[]
+
+===== statvfs =====
+(4096, 4096, 7936, 7914, 7914, 0, 0, 0, 0, 255)
+
+
+########## PORTS + LIVE READINGS ##########
+# PORTS + LIVE READINGS
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== device ids =====
+A 48
+B 48
+C 61
+D 61
+E -
+F -
+
+===== motor info =====
+A (device_id=48, max_speed=930)
+B (device_id=48, max_speed=930)
+C -
+D -
+E -
+F -
+
+===== motor encoders =====
+A abs -82 rel -82 vel 0 st 0
+B abs -104 rel -104 vel 0 st 0
+
+===== colour sensors =====
+C color 10 refl 55 rgbi (266, 249, 213, 568)
+D color 10 refl 45 rgbi (214, 202, 177, 462)
+
+===== imu =====
+tilt (-13, 65, 152) acc (-111, 257, 954) gyro (0, 0, -5) up 0 stable False
+
+
+########## CONSTANTS ##########
+# CONSTANTS
+# port /dev/spike @ 115200 8N1   deadline 50s
+
+===== motor status =====
+{'CONTINUE': 3, 'STALLED': 2, 'RUNNING': 1, 'DISCONNECTED': 5, 'ERROR': 4, 'CANCELLED': 3, 'READY': 0}
+
+===== motor stop =====
+{'HOLD': 2, 'BRAKE': 1, 'SMART_BRAKE': 5, 'SMART_COAST': 4, 'COAST': 0}
+
+===== colour =====
+{'MAGENTA': 1, 'YELLOW': 7, 'TURQUOISE': 5, 'GREEN': 6, 'PURPLE': 2, 'WHITE': 10, 'BLACK': 0, 'BLUE': 3, 'RED': 9, 'ORANGE': 8, 'AZURE': 4, 'UNKNOWN': -1}
+
+===== orientation =====
+{'UP': 0, 'RIGHT': 1, 'LEFT': 3, 'DOWN': 2}
+
+
+########## API SURFACE ##########
+# API SURFACE
+# port /dev/spike @ 115200 8N1   deadline 90s
+
+===== dir motor =====
+['__class__', '__init__', '__name__', 'stop', 'BRAKE', 'CANCELLED', 'CLOCKWISE', 'COAST', 'CONTINUE', 'COUNTERCLOCKWISE', 'DISCONNECTED', 'ERROR', 'HOLD', 'LONGEST_PATH', 'READY', 'RUNNING', 'SHORTEST_PATH', 'SMART_BRAKE', 'SMART_COAST', 'STALLED', '__dict__', 'absolute_position', 'get_duty_cycle', 'info', 'relative_position', 'reset_relative_position', 'run', 'run_for_degrees', 'run_for_time', 'run_to_absolute_position', 'run_to_relative_position', 'set_duty_cycle', 'status', 'velocity']
+
+===== dir motor_pair =====
+['__class__', '__init__', '__name__', 'stop', 'PAIR_1', 'PAIR_2', 'PAIR_3', '__dict__', 'move', 'move_for_degrees', 'move_for_time', 'move_tank', 'move_tank_for_degrees', 'move_tank_for_time', 'pair', 'unpair']
+
+===== dir runloop =====
+['__class__', '__name__', 'CANCELLED', 'SUCCESS', 'TIMEOUT', 'WAITING', '__dict__', 'run', 'sleep_ms', 'until', 'wait']
+
+===== dir color_sensor =====
+['__class__', '__name__', '__dict__', 'color', 'reflection', 'rgbi']
+
+===== dir distance_sensor =====
+['__class__', '__name__', 'clear', '__dict__', 'distance', 'get_pixel', 'set_pixel', 'show']
+
+===== dir force_sensor =====
+['__class__', '__name__', '__dict__', 'force', 'pressed', 'raw']
+
+===== dir device =====
+['__class__', '__name__', 'id', '__dict__', 'data', 'get_duty_cycle', 'ready', 'reset_mode', 'set_duty_cycle', 'set_mode', 'write_mode']
+
+===== dir motion_sensor =====
+['__class__', '__name__', 'BACK', 'BOTTOM', 'DOUBLE_TAPPED', 'FALLING', 'FRONT', 'LEFT', 'RIGHT', 'SHAKEN', 'TAPPED', 'TOP', 'UNKNOWN', '__dict__', 'acceleration', 'angular_velocity', 'gesture', 'get_yaw_face', 'quaternion', 'reset_tap_count', 'reset_yaw', 'set_yaw_face', 'stable', 'tap_count', 'tilt_angles', 'up_face']
+
+===== dir light_matrix =====
+['__class__', '__name__', 'clear', 'write', 'CANCELLED', 'IMAGE_ANGRY', 'IMAGE_ARROW_E', 'IMAGE_ARROW_N', 'IMAGE_ARROW_NE', 'IMAGE_ARROW_NW', 'IMAGE_ARROW_S', 'IMAGE_ARROW_SE', 'IMAGE_ARROW_SW', 'IMAGE_ARROW_W', 'IMAGE_ASLEEP', 'IMAGE_BUTTERFLY', 'IMAGE_CHESSBOARD', 'IMAGE_CLOCK1', 'IMAGE_CLOCK10', 'IMAGE_CLOCK11', 'IMAGE_CLOCK12', 'IMAGE_CLOCK2', 'IMAGE_CLOCK3', 'IMAGE_CLOCK4', 'IMAGE_CLOCK5', 'IMAGE_CLOCK6', 'IMAGE_CLOCK7', 'IMAGE_CLOCK8', 'IMAGE_CLOCK9', 'IMAGE_CONFUSED', 'IMAGE_COW', 'IMAGE_DIAMOND', 'IMAGE_DIAMOND_SMALL', 'IMAGE_DUCK', 'IMAGE_FABULOUS', 'IMAGE_GHOST', 'IMAGE_GIRAFFE', 'IMAGE_GO_DOWN', 'IMAGE_GO_LEFT', 'IMAGE_GO_RIGHT', 'IMAGE_GO_UP', 'IMAGE_HAPPY', 'IMAGE_HEART', 'IMAGE_HEART_SMALL', 'IMAGE_HOUSE', 'IMAGE_MEH', 'IMAGE_MUSIC_CROTCHET', 'IMAGE_MUSIC_QUAVER', 'IMAGE_MUSIC_QUAVERS', 'IMAGE_NO', 'IMAGE_PACMAN', 'IMAGE_PITCHFORK', 'IMAGE_RABBIT', 'IMAGE_ROLLERSKATE', 'IMAGE_SAD', 'IMAGE_SILLY', 'IMAGE_SKULL', 'IMAGE_SMILE', 'IMAGE_SNAKE', 'IMAGE_SQUARE', 'IMAGE_SQUARE_SMALL', 'IMAGE_STICKFIGURE', 'IMAGE_SURPRISED', 'IMAGE_SWORD', 'IMAGE_TARGET', 'IMAGE_TORTOISE', 'IMAGE_TRIANGLE', 'IMAGE_TRIANGLE_LEFT', 'IMAGE_TSHIRT', 'IMAGE_UMBRELLA', 'IMAGE_XMAS', 'IMAGE_YES', 'SHOWING', 'SUCCESS', '__dict__', 'get_orientation', 'get_pixel', 'set_orientation', 'set_pixel', 'show', 'show_image']
+
+===== dir sound =====
+['__class__', '__name__', 'stop', 'ANY', 'DEFAULT', 'WAVEFORM_SAWTOOTH', 'WAVEFORM_SINE', 'WAVEFORM_SQUARE', 'WAVEFORM_TRIANGLE', '__dict__', 'beep', 'play', 'volume']
+
+===== modules =====
+__main__          binascii          gc                platform
+_asyncio          bluetooth         hashlib           random
+_system/default   builtins          heapq             re
+_system/menu      cmath             hub               runloop
+_system/scratch   collections       io                select
+_system/test_selector               color             json              struct
+array             color_matrix      machine           sys
+asyncio/__init__  color_sensor      math              time
+asyncio/core      deflate           micropython       uasyncio
+asyncio/event     device            motor             uctypes
+asyncio/funcs     distance_sensor   motor_pair        vfs
+asyncio/lock      errno             orientation       zlib
+asyncio/stream    force_sensor      os
+Plus any modules on the filesystem

@@ -8,6 +8,7 @@ Each file carries a `# ran:` header naming the program that produced it, so it i
 
 | File | Produced by | What it captures |
 |---|---|---|
+| harvest-20260901T101832.txt | One-window harvest, 2026-09-01. **The LEGO COBS control protocol answered over USB** (DeviceUuidResponse with our exact UUID), so slot upload over the cable is possible. Full API surface, port map (A/B motors, C/D colour), constants, battery 8185 mV. |
 | `gyro-drift-2026-08-27.txt` | `examples/gyro_drift.py` | Hub stationary on a flat surface for 30 s: yaw reading, accumulated drift, and an accelerometer disturbance check per sample — so a drift number cannot be quoted from a run where the hub was nudged |
 | `imu-units-and-rate-2026-08-27.txt` | `examples/imu_units_and_rate.py` | Whether `tilt_angles()` returns degrees or decidegrees (derived against the gravity vector rather than assumed from a datasheet), and the achieved sample rate. ⚠ **Contains one DISCARDED number — see below** |
 

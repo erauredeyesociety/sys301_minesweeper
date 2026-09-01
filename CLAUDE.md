@@ -182,22 +182,26 @@ verification still happens, it just isn't narrated. Paste output when it's surpr
 deliverable, or when asked.
 
 **Retrieval.** This project has a **docs-rag** over its own `docs/` at `http://127.0.0.1:10060`
-([runbook](docs/runbooks/docs-rag.md)). ⚠ **It is only PARTIALLY working: search yes, `/api/ask` no.**
-That distinction is the whole value — `ask` synthesises an answer so you don't read and reason over
-chunks yourself; search alone still makes you do that work and burn the tokens. Until `ask` works,
-docs-rag saves you *finding* the file, not *reading* it.
+([runbook](docs/runbooks/docs-rag.md)). **✅ FULLY WORKING as of 2026-08-27 — search *and* `/api/ask`.**
+`ask` is the point of it: it synthesises an answer so you don't read and reason over chunks yourself.
+**Use it before grepping a 120-file tree.**
 
-> **Temporary pass, granted by the operator 2026-08-26:** use search-only docs-rag anyway. It is
-> genuinely useful for locating the right file in a 90-file tree, and the VPN outage blocking `ask` is
-> not a reason to leave it idle. **This is revocable — the operator will say when to stop.** It does
-> **not** change the status: the honest answer to "is the docs-rag working?" is still **PARTIAL**, and
-> it stays that way until `/api/ask` answers. Check with `./scripts/stack.sh status`, which
-reports search and ask separately. **The fix is remote `qwen3.5:9b` on skytracker, gated on the ERAU
-VPN — not a local model. No sub-5B, and never pull a generation model on initiative: shared GPU is
-operator-gated** ([ADR-0006](docs/decisions/0006-docs-rag-llm-is-operator-gated.md)), and **ResearchHub** for
-academic papers — query it with **`./scripts/rh-query.sh "question"`**, never raw curl: it repairs a
-stale tunnel itself and distinguishes tunnel-down (exit 3) from ResearchHub-down (exit 4) from
-query-failed (exit 5), so an empty result is genuinely empty
+```bash
+./scripts/stack.sh status          # search and ask are reported SEPARATELY
+curl -s -X POST http://127.0.0.1:10060/api/ask \
+  -H 'Content-Type: application/json' -d '{"question":"..."}'   # field is `question`, not `query`
+```
+
+**It depends on the ERAU VPN.** The LLM is remote — `qwen3:14b` on skytracker, reached through
+`./scripts/sky-ollama.sh up`. If the VPN is down, bring the tunnel up first; if that fails, `ask` fails
+and you are back to search-only. **The local ollama is not needed and its being down is not a fault**
+([ADR-0006](docs/decisions/0006-docs-rag-llm-is-operator-gated.md): no sub-5B, and **never pull a
+generation model on initiative** — the shared GPU is operator-gated). Expect **~80 s warm**, longer on
+the first call while 9.3 GB loads into GPU memory: **slow is not broken**.
+
+Also **ResearchHub** for academic papers — query it with **`./scripts/rh-query.sh "question"`**, never
+raw curl: it repairs a stale tunnel itself and distinguishes tunnel-down (exit 3) from ResearchHub-down
+(exit 4) from query-failed (exit 5), so an empty result is genuinely empty
 ([runbook](docs/runbooks/researchhub-tunnel.md)). Order and fail-open rules:
 [docs/directives/knowledge-retrieval.md](docs/directives/knowledge-retrieval.md). Re-ingest after
 writing docs. Both are conveniences — if either is down, grep and carry on.

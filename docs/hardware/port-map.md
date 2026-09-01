@@ -1,8 +1,8 @@
 # Hub Port Map — SINGLE SOURCE OF TRUTH
 
-> Status: **ALL PORTS UNASSIGNED** — nothing has been mounted or physically confirmed.
-> **Confirmed empty on the hub itself, 2026-08-27:** `device.id()` raised `OSError` on all six ports and
-> `motor.status()` returned `5` on all six. That is *confirmation of the blanks*, not an assignment.
+> Status: **ASSIGNED AND CONFIRMED ON HARDWARE, 2026-09-01.** `device.id()` read on the hub, and the
+> drive directions confirmed by watching the robot (`examples/drive_moves.py`). On 2026-08-27 all six
+> ports read empty; parts were mounted since.
 > Hub: LEGO Education SPIKE Prime Technic Large Hub 45601 `[ASSUMED — see ../scope.md § Assumptions]`,
 > 6 LPF2 ports labelled **A–F**.
 
@@ -21,12 +21,17 @@ that is the bug.
 
 | Port | Device | Purpose | Physically confirmed (date) |
 |---|---|---|---|
-| **A** | *UNASSIGNED* | — | — |
-| **B** | *UNASSIGNED* | — | — |
-| **C** | *UNASSIGNED* | — | — |
-| **D** | *UNASSIGNED* | — | — |
-| **E** | *UNASSIGNED* | — | — |
-| **F** | *UNASSIGNED* | — | — |
+| **A** | Motor (`device.id` 48) | **LEFT drive wheel.** Forward = NEGATIVE velocity (`LEFT_FWD = -1`). | 2026-09-01 (drive test) |
+| **B** | Motor (`device.id` 48) | **RIGHT drive wheel.** Forward = POSITIVE velocity (`RIGHT_FWD = +1`). | 2026-09-01 (drive test) |
+| **C** | Colour sensor (`device.id` 61) | Target/boundary detection. Mounted low, underneath. | 2026-09-01 |
+| **D** | Colour sensor (`device.id` 61) | Second detector, straddling robot width. | 2026-09-01 |
+| **E** | *empty* | — | 2026-09-01 (OSError) |
+| **F** | *empty* | — | 2026-09-01 (OSError) |
+
+**Drive convention, confirmed by watching the robot** (`examples/drive_moves.py`, encoder deltas
+symmetric to ±1°): direct drive, 1 wheel rev = 360 encoder-deg. Forward drove left −366 / right +366;
+turn-right pivoted clockwise. So a positive robot-forward command is `A: -v, B: +v`. **Motors are
+mounted mirrored — this is the sign flip, and it is now MEASURED, not assumed.**
 
 `Device` = the LEGO part and its part number (e.g. "Large Angular Motor 45602").
 `Purpose` = what the mission code calls it (e.g. "left drive", "floor sensor", "front bumper").

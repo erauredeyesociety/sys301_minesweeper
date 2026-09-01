@@ -197,6 +197,29 @@ done the work. Each closes as a decision — and the ones marked **ADR** close a
 
 ---
 
+## Opened and closed 2026-09-01 (drive checkpoint + research session)
+
+**Closed this session** (measured or decided): KU-M15 (motor status constants — DISCONNECTED=5,
+CANCELLED=CONTINUE=3), KU-M16 (`/flash/main.py` does **not** autorun), KU-T3/KU-T4 (2 motors id 48 on
+A/B, 2 colour sensors id 61 on C/D — we own two, not one), KU-M20 (`rgbi()` range 0–1024), and the
+drive-direction/mirror-sign convention (A=left, B=right, forward `A:-v B:+v`, direct drive 360
+enc-deg/rev).
+
+**Newly open, ranked into [next-session.md](./next-session.md):**
+
+| ID | Unknown | How it resolves |
+|---|---|---|
+| **KU-M21** | **Wheel diameter (mm)** — turns every encoder degree into real distance (`π·D·enc/360`). | Ruler, off-hub. Operator. |
+| **KU-M22** | **Real GATE-1 optical signatures** — `rgbi()`+`reflection()` for matte yellow / real blue tape / real silver tape / floor / air, at ~16 mm on both sensors. Unblocks colour fusion, boundary detection, matched-sensor coverage. | Lower the sensors, then a bench optical burst. Needs no wheel diameter and no units answer. |
+| **KU-M23** | **Sensor standoff** — the actual mounted height, and the usable range (gloss saturates close, signal dies far; 16 mm optimal). | Measure after lowering; height sweep. |
+| **KU-M24** | **Telemetry concurrency (G4)** — does `print()` from a driving slot program reach the host as a `ConsoleNotification`, and does it finish with no listener? Proves "BLE while driving". | Upload a 5-line slot program that spins a motor + prints; watch notifications. Clean-boot window. |
+| **KU-M25** | **Slot upload works** — `hub_programmer/slot_upload.py` is built but unrun; does the real upload+start sequence succeed on our hub? | Run it `--apply` first thing after a power cycle (no REPL first). |
+| **KU-M26** | **Stopping/coast distance** — the ~9° datum is a *startup* ramp, not a decel coast; no coast datum exists. Gates stop-before-boundary. | One KU-M13-style stop test with the offset. |
+| **KU-M27** | **Fault-detection thresholds** (slip/stuck, lifted/pushed) and the turn-scale + track width — all from one calibration drive. | Gyro-vs-encoder calibration drive (design in flight, `docs/research/`). Needs KU-M21 first. |
+| **KU-M28** | **Driving yaw drift** — stationary drift is ≤0.0033 °/s; drift *while accelerating/turning* is unmeasured and is what heading-hold actually depends on. | Measure during the calibration drive. |
+
+---
+
 ## What to close first
 
 Ranked by *consequence × cost to close*, not by how interesting they are.
@@ -227,6 +250,7 @@ Ranked by *consequence × cost to close*, not by how interesting they are.
 
 | Date | Change | By |
 |---|---|---|
+| 2026-09-01 | Drive checkpoint: robot drives, port map + mirror sign locked. Closed KU-M15/M16/M20/T3/T4. Opened KU-M21–M28 (wheel diameter, real GATE-1 optics, telemetry G4, slot upload, coast distance, fault thresholds, driving drift). Telemetry architecture decided (log-and-retrieve). Colour method characterised on substitute surfaces. | Claude |
 | 2026-08-25 | Created. 12 professor unknowns, 13 measurement unknowns, 8 teammate unknowns, 8 decisions — mined from `scope.md`, `questions-for-the-professor.md`, the three research documents' open-question sections, the runbooks' UNVERIFIED markers, and `config.py`'s `[ASSUMED]` values. | Claude |
 | 2026-08-27 | Mission answers relayed by a teammate: **KU-P3 CLOSED** (no walls, floor tape), **KU-P5 PARTIAL** (mines yellow, hedged — decoys still open), **KU-P0 PARTIAL, not closed** — the autonomy answer contradicts itself, and the simplification it promised is retracted regardless of how it resolves. Added KU-P13 (which tape), KU-P14 (tape width / is crossing scored), KU-P15 (what a blind operator may use, and does it cost points). Re-ranked what to close first: KU-P1 is now the single biggest free win. | Claude |
 | 2026-08-25 | Adversarial audit: corrected the KU-M7 lane-pitch figure (~16 mm → ~21 mm on the finding's formula), the KU-T6 share of spend (18 % → 23 % of 44 SB), KU-D4's leaning (it contradicted the trade study's standing recommendation to buy one colour sensor now), and marked KU-D7's encoder figures as resting on the assumed 56 mm wheel. | Claude (audit) |

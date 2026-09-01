@@ -1,5 +1,20 @@
 # ADR-0006 — The docs-rag's LLM is an operator-gated decision; remote 9B is the target
 
+> **DEPLOYED 2026-08-27 — the decision stands; the model NAME differs, and that is recorded here
+> rather than by editing the decision below.**
+>
+> This ADR names **`qwen3.5:9b` remote** as the quality unlock. **That model is not installed on
+> skytracker and never was.** The only generation model there is **`qwen3:14b`**, dated 2026-02-21 —
+> months older than this project. docs-rag was pointed at it, and `/api/ask` works: ~79 s warm,
+> correct answers with correct citations.
+>
+> **Nothing was pulled.** The constraints this ADR actually imposes are all satisfied: remote not
+> local, above the 5B floor (14B), and the shared GPU untouched on our initiative. The operator was
+> asked and answered *"whatever is running on skytracker."*
+>
+> Config: [`docs-rag/.env`](../../docs-rag/.env) · runbook: [../runbooks/docs-rag.md](../runbooks/docs-rag.md)
+
+
 - **Date:** 2026-08-26
 - **Status:** Accepted
 - **Deciders:** Operator (correcting Claude)

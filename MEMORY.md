@@ -3,7 +3,7 @@
 Durable project context across sessions. Pointers and hard-won facts, not a duplicate of the docs.
 Operational rules live in [CLAUDE.md](CLAUDE.md); current state lives in [docs/todo.md](docs/todo.md).
 
-> Last updated: 2026-08-27 (hub connected, characterised and programmed; Bluetooth working)
+> Last updated: 2026-09-01 (robot drives on command; docs-rag /api/ask working)
 
 ---
 
@@ -22,6 +22,17 @@ Operational rules live in [CLAUDE.md](CLAUDE.md); current state lives in [docs/t
   `diff` against `docs/archives/hub-baseline/`. That habit is what makes "the firmware is untouched"
   provable instead of merely asserted.
 - **Units:** `acceleration()` milli-g (1 g ≈ 989) · `tilt_angles()` **decidegrees**, yaw wraps ±180°.
+- **Robot is BUILT: differential drive.** Port **A = LEFT wheel, B = RIGHT wheel** (both `device.id`
+  48), rear unidirectional caster, colour sensors on **C and D** (`device.id` 61) mounted low. Motors
+  are mirrored: **robot-forward = `A:-v, B:+v`.** Direct drive → **1 wheel rev = 360 encoder-deg**;
+  distance = π × wheel-diameter (diameter still unmeasured). Max speed **930 dps** (measured).
+  Confirmed by driving: [[../findings/drive-checkpoint-2026-09-01]].
+- **docs-rag `/api/ask` WORKS** via `qwen3:14b` on skytracker — run `./scripts/sky-ollama.sh up` (needs
+  ERAU VPN), then `curl .../api/ask -d '{"question":"..."}'` (~80 s). Not sub-5B; nothing pulled.
+- **BLE and the REPL are mutually exclusive on one hub:** any probe's Ctrl-C interrupts the Hub OS,
+  which owns the CONNECT button, BLE advertising, and the USB control-protocol responder — restart to
+  recover. A **slot program** runs under the live Hub OS, so it can drive motors AND stream telemetry
+  over BLE at once (the untethered path; `hub_programmer/slot_upload.py`, untested).
 - **Three folders, three verbs:** `probes/` reads (read-only by contract) · `hub_programmer/` writes ·
   `examples/` discovers · `src/` runs on the robot. Never do discovery in `src/`.
 - ⚠ **Never press-and-hold the CONNECT button while plugging in USB** — that is the DFU gesture.

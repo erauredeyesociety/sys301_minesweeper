@@ -3,6 +3,11 @@
 > Last updated: 2026-08-27 · **mode: hub is LIVE; still blocked on the professor's answers for the
 > mission numbers.**
 
+> **2026-09-01 checkpoint: the robot drives.** Forward/back/turn confirmed, drive convention locked
+> ([findings/drive-checkpoint-2026-09-01.md](./findings/drive-checkpoint-2026-09-01.md)). docs-rag
+> `/api/ask` now works. Still owed: wheel diameter (ruler), the units of 10×10 (professor),
+> re-run the two stalled workflows (transcript docs + coverage recompute), and the real GATE 1.
+
 ## ▶ NEXT SESSION — START HERE
 
 **[plans/next-session.md](./plans/next-session.md)** — the ordered plan, grouped by **what each item

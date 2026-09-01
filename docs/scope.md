@@ -226,6 +226,35 @@ Full records: [docs/decisions/INDEX.md](./decisions/INDEX.md)
 
 ---
 
+## Our hub — identity of record
+
+**This is Team 21's hub. Every ID below is measured off the physical unit; none is a guess.**
+
+| Property | Value | How read |
+|---|---|---|
+| `hub.device_uuid()` | **`03970000-3600-1B00-1450-30514B323320`** | USB **and** confirmed over BLE |
+| `hub.hardware_id()` | **`E`** | USB |
+| `machine.unique_id()` | `36 00 1B 00 14 50 30 51 4B 32 33 20` (the tail of the UUID) | USB |
+| BLE address | **`64:8C:BB:0A:1C:8C`** | BLE scan |
+| BLE advertised name | **`Team 21`** | BLE scan (user-settable — not proof) |
+| Firmware | MicroPython v1.20.0-1742.gf212bbe83 (2025-03-27), STM32F413, RPC 1.0.47, Hub OS 1.8.149 | USB + BLE |
+
+**Identify by connecting and comparing the `device_uuid`** (`DeviceUuidRequest 0x1A`). **Never by name**
+(anyone can set it, including to ours) and **never by BLE address alone** (its type is unverified and
+may rotate). Full record: [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md),
+[findings/ble-protocol-2026-08-27.md](./findings/ble-protocol-2026-08-27.md).
+
+**Why this is in scope, not just a finding.** The team may **contract its programming/design services
+to other groups for Schrute Bucks** (authorized; see [plans/competitive-interference.md](./plans/competitive-interference.md)
+and the class economy). That means working against **other hubs with different `device_uuid`s, MACs and
+names.** So the rule is permanent: **our tooling matches the specific hub it is told to target and
+verifies the UUID before it acts** — it never assumes "the LEGO hub in range is ours." We already
+connected to another team's hub once by taking the first match
+([lessons_learned/prove-identity-before-you-act.md](./lessons_learned/prove-identity-before-you-act.md)).
+When we take a contract, record that hub's IDs in the job's own note, never overwrite this block.
+
+---
+
 ## Critical Notes
 
 - **"You MAY NOT work on the project outside of class" — RESOLVED 2026-08-25 by the operator.** The rule governs *team collaboration* (the whole team convening to build together), not the individual programming component. The Programmer and Designer may work on software and design outside class. **This is not a blocker.** Physical assembly and store purchases still happen in class with the roles enforced, and the operator keeps the human-side coordination record.
@@ -242,5 +271,6 @@ Full records: [docs/decisions/INDEX.md](./decisions/INDEX.md)
 | 2026-08-25 | Initial draft from course instructions + operator answers. Mission left PENDING. | Claude |
 | 2026-08-25 | Added FR-2b (color classification), RR-4/RR-5 (motors, changing prices), the 2-motor/2-wheel design decision, and the parts-owned status. | Claude |
 | 2026-08-25 | Captured the verbal design briefing (§ Mission): find all mines, yellow sticky notes, 10×10 area. Resolved the out-of-class-work constraint — not a blocker. Status Draft → Active. | Claude |
+| 2026-09-01 | Added **§ Our hub — identity of record** (device_uuid `03970000-3600-1B00-1450-30514B323320`, BLE `64:8C:BB:0A:1C:8C`, name `Team 21`), because contracting services to other groups means targeting other hubs and identity must be verified, never assumed. | Claude |
 | 2026-08-27 | **Deploy path established and the firmware proved untouched.** Code reaches the hub over USB with no LEGO app: base64 chunks over the MicroPython REPL into `/flash/lib`, verified by a SHA-256 the hub computes on itself ([ADR-0007](./decisions/0007-deploy-by-writing-modules-to-flash-lib.md), [runbooks/deploy-to-hub.md](./runbooks/deploy-to-hub.md)). Baseline re-capture + diff showed the one expected delta and nothing else ([findings/firmware-integrity-proof.md](./findings/firmware-integrity-proof.md)). IMU units derived from gravity — milli-g and decidegrees, yaw wraps at ±180° ([findings/imu-characterisation-2026-08-27.md](./findings/imu-characterisation-2026-08-27.md)). **What is NOT established: how a *program* is launched** — whether `/flash/main.py` autoruns at boot is untested. | Claude |
 | 2026-08-27 | Recorded three relayed answers (§ Mission): mine colour yellow *(hedged)*, **no walls — floor-tape boundary**, and an autonomy reply that **contradicts itself** and is therefore NOT treated as answered. Superseded everything assuming walls; gave FR-6 its first possible design element; **withdrew FR-1's claim that teleoperation would simplify the project**. Closed the Hub OS generation (SPIKE 3, measured) and the motor type (both Medium 45603, operator-reported). The **units of "10×10" remain unanswered and still gate the architecture**. | Claude |
