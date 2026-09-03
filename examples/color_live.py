@@ -51,7 +51,7 @@ print("")
 print("  Surfaces that matter: floor | YELLOW note | BLUE tape | SILVER tape")
 print("  Watch the 'name' column and the r:g:b ratios, not the raw numbers.")
 print("")
-print("   t(s)  P  color name      refl |   r    g    b    i | r%%   g%%   b%%")
+print("   t(s)  P  color name      refl |   r    g    b    i | r%    g%    b%")
 print("  " + "-" * 70)
 
 t0 = time.ticks_ms()

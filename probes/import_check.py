@@ -28,7 +28,7 @@ import _hubio                                                # noqa: E402
 
 # The pure modules, in dependency order -- config first, since others import it.
 DEFAULT = ["config", "calibration", "detector", "sweep",
-           "result", "odometry", "classify", "telemetry"]
+           "result", "odometry", "motion_tuning", "classify", "telemetry"]
 
 
 def main(argv):

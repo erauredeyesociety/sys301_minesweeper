@@ -150,6 +150,30 @@ attended budget. Hence the next two sections.
 
 ---
 
+## Movement-tuning sidecar outputs
+
+These are **computed after the CSVs are captured**. They add no hub I/O and no autonomous run to this
+plan; they name the small pure functions/config values the Programmer should derive from BM-3, BM-4,
+BM-8 and the pre/post-roll rows.
+
+| Output | Formula | Gate it controls |
+|---|---|---|
+| `HEADING_KP_PCT_PER_DEG` | bench seed `2.0`; replace with `0.4/(k_pair*h)`, where `k_pair = yaw_rate_dps / turn_pct` and `h = 1/SAMPLE_RATE_HZ` | enables heading hold only after a short P-only lane is stable |
+| `HEADING_CORR_LIMIT_PCT` | seed `20.0`; lower if BM-8 shows weave, raise only if correction saturates without weave | max left/right split in `hub_motors.drive(left_pct, right_pct)` |
+| `D_eff_mm` | `360*measured_distance_mm/(pi*abs((left_delta_deg+right_delta_deg)/2))` using forward-positive encoder deltas | replaces `WHEEL_DIAMETER_MM`; `--distance` remains gated until this exists |
+| `TURN_ENC_SCALE` | origin-regression slope `sum(encdiff_deg*yaw_deg)/sum(encdiff_deg^2)`, `encdiff = right_fwd-left_fwd` | degraded encoder-turn fallback and gyro-vs-encoder turn health |
+| `TRACK_WIDTH_MM` | `D_eff_mm/(2*abs(TURN_ENC_SCALE))`, after CW/CCW diagnostics are clean | encoder turn geometry only; healthy turns still close on gyro |
+| `STOP_MARGIN_MM` | `p95(coast_mm) + speed_mms*LATENCY_S + STOP_GUARD_MM` | boundary/note-safe stop distance; do not reuse the checkpoint startup-ramp loss |
+| `TURN_SETTLE_MS` | first post-stop time where yaw stays inside `TURN_TOL` | settle-and-verify before reading a turn residual |
+| `CROSS_TRACK_ERROR_MM` | BM-8-lite lateral offset p95 at the chosen speed and lane length | `lane_pitch_mm() > 0` before any mission sweep |
+
+**Stage gates:** import/pure math passes (`G0`) -> sign convention check (`G1`) -> diameter spread
+`<= 2%` (`G2`) -> CW/CCW turn scale sane (`G3`) -> stop margin inside allowance (`G4`) -> heading-hold
+cross-track inside lane budget (`G5`) -> mission wiring (`G6`). A failed gate is written as
+`UNKNOWN`/`DROPPED`; it never promotes an assumed value into code.
+
+---
+
 ## BM-0 is a gate, not a measurement — and it should already be done
 
 **Run it first, and expect to tick it rather than run it.** [verification-plan.md](./verification-plan.md)

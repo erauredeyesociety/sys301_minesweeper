@@ -38,6 +38,7 @@ constants. **Encoders are PRIMARY, the IMU CONFIRMS** — with one deliberate ex
 - [1. Distance and variable-rate turn kinematics](#1-distance-and-variable-rate-turn-kinematics)
 - [2. Fault detection as small pure functions](#2-fault-detection-as-small-pure-functions)
 - [3. Minimal self-tuning / calibration](#3-minimal-self-tuning--calibration)
+- [3A. Sidecar pure movement-tuning functions](#3a-sidecar-pure-movement-tuning-functions)
 - [4. New function signatures, by module](#4-new-function-signatures-by-module)
 - [RECOMMENDED CHANGES to other files](#recommended-changes-to-other-files)
 - [Unknowns](#unknowns)
@@ -61,19 +62,17 @@ The whole design rests on the mirror-mount sign convention, so state the code re
 
 **Where the sign lives today, verified in the source, not assumed:**
 
-- `hub_motors.drive()` **does NOT apply the mirror sign.** It clamps percent and scales by
-  `DRIVE_MAX_DPS` — nothing else. The signs are **only a comment** beside the port map
-  ([`src/hub_motors.py`](../../src/hub_motors.py) lines 52–56). *(This corrects a companion brief that
-  claimed `drive()` "already multiplies by LEFT_FWD/RIGHT_FWD"; it does not — writes apply no sign today.)*
-- `hub_motors.read_motor_degrees()` returns **raw port positions**, no sign applied.
-- `odometry.Odometry.update()` differences the raw positions and takes a plain mean — so **fed the real
-  mirrored encoders it computes ≈ 0 mm for a genuine forward move** (`−366` and `+366` average to zero).
-  This is a **latent bug**, not a style point, and §1.1 is its fix.
+- `hub_api.LEFT_MOTOR_FORWARD_SIGN = -1` and `RIGHT_MOTOR_FORWARD_SIGN = +1` are the current source
+  constants. They mirror the measured port map and are host-safe plain integers.
+- `hub_motors.drive()` applies the signs on the **write** path, so callers pass forward-positive left/right
+  wheel commands; `drive(50, 50)` means robot-forward, not "same raw motor sign."
+- `hub_motors.read_motor_degrees()` applies the signs on the **read** path, so `Odometry.update()` receives
+  forward-positive wheel degrees and stays mirror-agnostic. Fed the checkpoint row through this path, a
+  forward move integrates to positive distance instead of `(raw_L + raw_R)/2 = 0`.
 
-**The rule, stated once, applied once each side:** `config` is the single source of truth for the two
-signs. **Writes** apply them (add to `drive()`); **reads stay raw**, and **odometry applies the read-side
-sign itself** at its difference step. One flip on the write path, one on the read path — never both, never
-neither.
+**The rule, stated once:** runtime odometry consumes **forward-positive** wheel degrees. Raw CSV analysis
+or any probe that reads ports directly must apply the same signs exactly once before taking a mean or a
+difference.
 
 ```
 left_fwd  = LEFT_SIGN  * raw_left     # LEFT_SIGN  = −1
@@ -88,13 +87,14 @@ the single most damaging error in this whole design:**
 | **Translation** (body forward) | `(left_fwd + right_fwd) / 2` | (366+366)/2 = **+366** | (217+(−217))/2 = **0** |
 | **Yaw differential** (turning) | `right_fwd − left_fwd` | 366−366 = **0** | −217−217 = **−434** |
 
-> **⚠ Sign-inversion guard (challenger PRIMARY correction, folded in).** In **raw** port terms the yaw
+> **Sign-inversion guard (challenger PRIMARY correction, folded in).** In **raw** port terms the yaw
 > differential is `raw_R + raw_L` (the **SUM**), because the motors are mirrored — **NOT** `raw_R − raw_L`.
 > Raw `R − L` measures **forward translation** (~2v on a straight, ~0 on a spin): exactly backwards. Any
 > cross-check, fit, or heading-from-encoders fed the raw port difference will see a huge differential on
 > every straight (false "turn"/false slip everywhere) and ~0 during a real spin (slip never detected where
 > it matters). **`heading_from_encoders(left, right)` in `odometry.py` already computes `(right − left)`,
-> so it MUST be fed sign-corrected mm, never raw** — the same requirement §1.1 imposes on `update()`.
+> so it MUST be fed sign-corrected mm/deg, never raw.** The current runtime path already satisfies this;
+> offline analysis helpers must make it explicit in their arguments.
 
 Everything below assumes this correction is in place.
 
@@ -105,7 +105,8 @@ Everything below assumes this correction is in place.
 ### 1.1 Distance — mirror applied per wheel, then the mean
 
 Direct drive is confirmed, so per-wheel ground distance is the existing `degrees_to_mm`, i.e.
-`π·D·(ΔEnc/360)`, with the sign applied **before** the mean:
+`pi*D*(dEnc/360)`. Runtime `dEnc` from `hub_motors.read_motor_degrees()` is already forward-positive.
+If a helper is fed raw port deltas from a CSV, apply the sign before the mean:
 
 ```
 s_L      = LEFT_SIGN  * π * D * (ΔEnc_L / 360)
@@ -113,17 +114,17 @@ s_R      = RIGHT_SIGN * π * D * (ΔEnc_R / 360)
 d_center = (s_L + s_R) / 2                       # body translation this tick
 ```
 
-- `D = WHEEL_DIAMETER_MM` — still `[ASSUMED 56]`, one ruler read of the **effective rolling** diameter
-  pending ([KU-M3]). **Until then, work in revs / encoder-deg** — `body_revs = mean signed revs` needs no
-  `D` and is all the sweep needs to command a lane.
-- **Fix `Odometry.update()`** to apply `left_sign`/`right_sign` at its difference step (constructor
-  defaults from config; the old call form stays valid). This is the §0 latent-bug repair: without it a
-  forward move integrates to ≈ 0 mm.
+- `D = WHEEL_DIAMETER_MM` — if the sidewall/ruler confirms 2.5 in wheels, the nominal seed is
+  `25.4*2.5 = 63.5 mm`; the value that belongs in config is still the **effective rolling** diameter under
+  load, per surface, from BM-3.
+- **Do not add a second sign flip in `Odometry.update()` while `hub_motors.read_motor_degrees()` remains
+  forward-positive.** If a future reader deliberately returns raw port degrees, change the contract and
+  update this brief first.
 - `heading_from_encoders()` is unchanged in *form* — but it is now fed the **sign-corrected** `s_L, s_R`,
   so on a straight it correctly yields ~0° and on a spin a real heading change. (Reused, not rewritten.)
 
-Pure helpers (host-runnable, no hub import): `signed_wheel_mm(...)`, `forward_distance_mm(...)`,
-`body_revs(...)`. See §4.
+Pure helpers (host-runnable, no hub import): `apply_motor_signs(...)`, `forward_distance_mm(...)`,
+`body_revs(...)`. See §3A and §4.
 
 ### 1.2 Turns are GYRO-CLOSED — the one place "encoders primary" inverts
 
@@ -470,6 +471,120 @@ threshold event. The **only** thing that waits on the ruler is the mm distance s
 
 ---
 
+## 3A. Sidecar pure movement-tuning functions
+
+This is the 2026-09-03 sidecar target: small, host-runnable arithmetic that can be reviewed and tested
+without touching the hub. The executor that eventually calls these functions remains hub-facing; these
+functions take numbers and return numbers/status only.
+
+### 3A.1 Straight-line heading hold
+
+Use the gyro yaw as the controlled variable and the encoders as distance/progress. `hub_motors.drive()`
+already accepts forward-positive wheel percents, so the pure function should return that same convention:
+
+```
+heading_error_deg = normalize_angle(yaw_deg - target_yaw_deg)
+derr_deg_s        = normalize_angle(heading_error_deg - prev_error_deg) / dt_s
+integral_deg_s    = clamp(integral_deg_s + heading_error_deg * dt_s,
+                          -HEADING_I_LIMIT_DEG_S, HEADING_I_LIMIT_DEG_S)
+
+# Positive turn_pct means CCW/left correction in the odometry frame.
+turn_pct = clamp(-(Kp*heading_error_deg + Ki*integral_deg_s + Kd*derr_deg_s),
+                 -HEADING_CORR_LIMIT_PCT, HEADING_CORR_LIMIT_PCT)
+
+left_pct  = clamp(base_pct - turn_pct, -100, 100)
+right_pct = clamp(base_pct + turn_pct, -100, 100)
+```
+
+Suggested config seeds, all `[ASSUMED]` until BM-8/M7 data exists:
+
+| Constant | Seed | Derivation / replacement |
+|---|---:|---|
+| `HEADING_CORR_LIMIT_PCT` | `20.0` | below the Prime Lessons +/-30 clamp; preserves speed and avoids violent weave |
+| `HEADING_KP_PCT_PER_DEG` | `2.0` | P-only bench seed at low speed; replace with `0.4/(k_pair*h)` |
+| `HEADING_KI_PCT_PER_DEG_S` | `0.0` | enable only after P-only is stable; steady bias is what earns `Ki` |
+| `HEADING_KD_PCT_S_PER_DEG` | `0.0` | add only if measured loop period/noise supports it |
+| `HEADING_I_LIMIT_DEG_S` | `20.0` | anti-windup guard; tighten from logged saturation time |
+| `HEADING_MAX_START_ERROR_DEG` | `5.0` | staged gate: do not start a lane if the robot is not already roughly squared |
+
+The measured plant gain is `k_pair = yaw_rate_dps / turn_pct` from a short, attended, fixed-correction
+run at the intended base speed, with `h = 1 / SAMPLE_RATE_HZ`. Well-damped first-order behavior starts
+near `Kp = 0.4/(k_pair*h)` and must also satisfy the stability bound `k_pair*Kp*h < 2`.
+
+### 3A.2 Effective rolling wheel diameter
+
+For the 2.5 inch wheel candidate, the nominal seed is `63.5 mm`; do not treat that as the rolling value.
+BM-3 replaces it with the loaded, surface-specific diameter:
+
+```
+# left_deg/right_deg are forward-positive. If they came from raw ports, apply
+# LEFT_MOTOR_FORWARD_SIGN/RIGHT_MOTOR_FORWARD_SIGN exactly once before this call.
+center_deg = (left_delta_deg + right_delta_deg) / 2
+D_eff_mm   = 360 * measured_distance_mm / (pi * abs(center_deg))
+```
+
+Equivalently, if the command was exactly `N` verified wheel revolutions,
+`D_eff_mm = measured_distance_mm / (pi*N_actual)` where `N_actual = abs(center_deg)/360`. Use the median
+of the BM-3 trials, record spread, and keep the runbook's rule: spread above 2 percent is a slip/mechanics
+finding, not a number to average away.
+
+### 3A.3 Track width and turn scale from gyro-vs-encoder
+
+Keep two products from the same spin logs:
+
+```
+encdiff_deg = right_fwd_delta_deg - left_fwd_delta_deg
+yaw_deg     = unwrap_gyro_delta_deg
+
+TURN_ENC_SCALE = sum(encdiff_deg * yaw_deg) / sum(encdiff_deg * encdiff_deg)
+TRACK_WIDTH_MM = D_eff_mm / (2 * abs(TURN_ENC_SCALE))
+```
+
+`TURN_ENC_SCALE` is body-deg per sign-corrected encoder-differential degree. For rates, the same regression
+is `K_YAW = sum(encdiff_dps*gyro_dps) / sum(encdiff_dps^2)`. A non-positive scale is a sign-convention
+failure. Fit CW and CCW separately first: a same-direction error is track/effective-wheelbase; a
+direction-reversing error is wheel diameter mismatch or asymmetric drag. Only publish one
+`TRACK_WIDTH_MM` after that diagnostic is clean.
+
+### 3A.4 Stop/coast distance and turn settle
+
+The checkpoint's `~9 deg` is startup ramp loss, not stopping coast. Measure stop behavior directly from
+post-stop encoder/yaw samples:
+
+```
+center_coast_deg = ((left_settle_deg - left_stop_deg)
+                    + (right_settle_deg - right_stop_deg)) / 2
+coast_mm         = pi * D_eff_mm * abs(center_coast_deg) / 360
+decel_mms2       = speed_mms * speed_mms / (2 * coast_mm)        # if coast_mm > 0
+
+turn_coast_deg   = abs(normalize_angle(yaw_settle_deg - yaw_stop_deg))
+turn_decel_dps2  = omega_stop_dps * omega_stop_dps / (2 * turn_coast_deg)
+```
+
+The usable stop margin is not just coast. Gate boundary and note-safe stops with
+`STOP_MARGIN_MM = p95(coast_mm) + speed_mms*LATENCY_S + STOP_GUARD_MM`, where `LATENCY_S` includes one
+measured loop period plus command/print latency. `TURN_SETTLE_MS` is the first post-stop time where the
+yaw trace stays inside tolerance; start with 200 ms only as a bench seed.
+
+### 3A.5 Safe staged gates
+
+No autonomous free run until the gates are true in order:
+
+| Gate | Pure predicate / value checked |
+|---|---|
+| `G0_IMPORT` | host import succeeds; no `hub_*` import from pure modules |
+| `G1_SIGNS` | checkpoint row, after sign application: forward `center_deg > 0` and `abs(encdiff_deg)` small |
+| `G2_DIAMETER` | `D_eff_mm` present for the surface; BM-3 spread <= 2 percent |
+| `G3_TURN_SCALE` | CW/CCW `TURN_ENC_SCALE` positive, close, and residual below the chosen p95 bound |
+| `G4_STOP_MARGIN` | measured `STOP_MARGIN_MM` less than the lane-end/boundary allowance |
+| `G5_HEADING_HOLD` | BM-8-lite `CROSS_TRACK_ERROR_MM` at the chosen speed keeps `lane_pitch_mm() > 0` |
+| `G6_MISSION` | all above plus color gate and timebox pass; otherwise run staged bench commands only |
+
+The important split: a failed gate returns `UNKNOWN`/`DEGRADED` and stops escalation; it never silently
+falls back to an assumed diameter, track, or stop distance.
+
+---
+
 ## 4. New function signatures, by module
 
 All **pure** (host-runnable, no hub import) unless marked HUB-FACING. All thresholds default from
@@ -477,15 +592,18 @@ All **pure** (host-runnable, no hub import) unless marked HUB-FACING. All thresh
 
 | Module | Signature | Purpose |
 |---|---|---|
-| `src/odometry.py` | `signed_wheel_mm(dEnc_L_deg, dEnc_R_deg, diameter_mm=None, left_sign=None, right_sign=None) -> (s_L, s_R)` | mirror-applied per-wheel signed ground distance |
-| `src/odometry.py` | `forward_distance_mm(dEnc_L_deg, dEnc_R_deg, diameter_mm=None, left_sign=None, right_sign=None) -> float` | body translation `(s_L+s_R)/2` |
-| `src/odometry.py` | `body_revs(dEnc_L_deg, dEnc_R_deg, left_sign=None, right_sign=None) -> float` | mean signed revolutions; **no D** — the sweep-command quantity |
-| `src/odometry.py` | `Odometry.__init__(..., left_sign=None, right_sign=None)` + apply at the `update()` difference step | store & apply the mirror signs (fixes the §0 latent bug; old call form valid) |
+| `src/odometry.py` | `apply_motor_signs(left_raw_deg, right_raw_deg, left_sign=-1, right_sign=+1) -> (left_fwd_deg, right_fwd_deg)` | raw CSV/probe helper only; runtime `hub_motors.read_motor_degrees()` already returns forward-positive |
+| `src/odometry.py` | `forward_distance_mm(left_fwd_delta_deg, right_fwd_delta_deg, diameter_mm=None) -> float` | body translation from forward-positive deltas: `pi*D*((L+R)/2)/360` |
+| `src/odometry.py` | `body_revs(left_fwd_delta_deg, right_fwd_delta_deg) -> float` | mean forward-positive revolutions; **no D** — the sweep-command quantity |
+| `src/odometry.py` | `heading_hold_pair(base_pct, yaw_deg, target_yaw_deg, dt_s, integral_deg_s, prev_error_deg, kp, ki, kd, corr_limit_pct) -> (left_pct, right_pct, new_integral, error_deg)` | straight-line gyro heading hold, returning forward-positive wheel percents for `hub_motors.drive()` |
+| `src/odometry.py` | `effective_wheel_diameter_mm(measured_distance_mm, left_fwd_delta_deg, right_fwd_delta_deg) -> float` | BM-3 conversion: `360*d/(pi*abs(mean_delta_deg))` |
+| `src/odometry.py` | no `Odometry` sign change while the current read contract stands | `Odometry.update()` consumes forward-positive degrees; adding another sign flip would re-break distance |
 | `src/odometry.py` | `turn_speed_profile(angle_done_deg, angle_total_deg, cruise_dps, creep_dps, ramp_frac, brake_frac, shape="cosine") -> float` | ease-in/cruise/ease-out spin magnitude, floored at creep (S-curve or trapezoid) |
 | `src/odometry.py` | `plan_turn(turn_deg, lane_length_mm=None, cruise_dps=None, decel_dps2=None, drive_max_dps=None) -> dict` | auto-tune cruise / TOL / brake / ramp / TURN_ENC_SCALE from named constants |
 | `src/odometry.py` | `encoder_turn_to_body_deg(enc_diff_deg, turn_enc_scale=None) -> float` | DEGRADED encoder-only body angle (stuck gyro only) |
 | `src/odometry.py` | `turn_converged(residual_deg, tol_deg) -> bool` | health check |
 | `src/odometry.py` | `gyro_stalled(enc_advanced_deg, yaw_change_deg, min_enc_deg, min_yaw_deg) -> bool` | stuck-gyro-during-spin (CRUISE-gated) |
+| `src/odometry.py` | `stop_margin_mm(coast_samples_mm, speed_mms, latency_s, guard_mm) -> float` | boundary-safe stop allowance: `p95(coast)+v*latency+guard` |
 | `src/odometry.py` | `class FaultTuning(...)` | derived-threshold bundle (auto-tune output) |
 | `src/odometry.py` | `sigma_band(mad, n_sigma, floor) -> float` | N-sigma-from-MAD with the mandatory floor; the 1.48 conversion named once |
 | `src/odometry.py` | `derive_fault_tuning(gyro_noise_dps, accel_noise_mg, tilt_noise_ddeg, k_yaw, k_yaw_resid_dps, div_p95_deg, n_sigma=None) -> FaultTuning` | the auto-tune, run once at run start |
@@ -493,8 +611,8 @@ All **pure** (host-runnable, no hub import) unless marked HUB-FACING. All thresh
 | `src/odometry.py` | `disturbance(enc_left_dps, enc_right_dps, accel_mg, d_tilt_ddeg, yaw_rate_dps, tuning) -> str\|None` | wheels still + IMU moving ⇒ lifted/pushed/tipped (post-settle gate) |
 | `src/odometry.py` | `HEALTH_OK/SLIP/STALL/DISTURBED = "ok"/"slip"/"stall"/"disturbed"` | plain string status constants (no enum) |
 | `src/hub_imu.py` | (no new signatures) — consumers of `read_yaw_deg()` route deltas through `normalize_angle`; `omega_gyro` source is `angular_velocity()` **or** differenced `tilt_angles()` yaw, and which one is recorded | the deadband caveat (5.5) rides here |
-| `src/config.py` | new constants (Groups N/S/D + turn-profile block + floors) | see RECOMMENDED CHANGES |
-| `data_analysis/motion.py` | `estimate_k_yaw(enc_diff_dps, omega_gyro_dps) -> (k_yaw, rms_resid)` | log-side K_YAW + trust residual by origin-regression; **`enc_diff_dps` must be sign-corrected** |
+| `src/config.py` | new constants (heading hold + Groups N/S/D + turn-profile + stop-margin block + floors) | see RECOMMENDED CHANGES |
+| `data_analysis/motion.py` | `estimate_turn_scale(encdiff_deg, yaw_deg) -> (turn_enc_scale, rms_resid)` and `estimate_k_yaw(encdiff_dps, omega_gyro_dps) -> (k_yaw, rms_resid)` | log-side turn scale and K_YAW by origin-regression; inputs must be forward-positive/sign-corrected |
 
 **Where the split falls:** the pure run-time consumers live in **`src/odometry.py`** (already the pure
 motion-math home holding `heading_disagreement_deg`); the log-side estimator lives in
@@ -506,18 +624,22 @@ part of this Write task** — see RECOMMENDED CHANGES.
 
 ## RECOMMENDED CHANGES to other files
 
-**Not applied here — this brief writes only itself (collision safety).** Each is a proposal for the
-operator.
-
-- **`docs/research/INDEX.md`** — *(edited by this task: the one other file)* add a summary row for this
-  brief. REQUIRED or `./scripts/check-docs.py` INDEX coverage flags the new doc.
+**This sidecar applies docs only.** Each source change below is additive and should be implemented after
+the bench gates are agreed; no hub I/O belongs inside these pure helpers.
 
 - **[`src/config.py`](../../src/config.py)** — add, with each derivation in its comment:
-  - **Drivetrain:** `LEFT_MOTOR_FORWARD_SIGN = −1`, `RIGHT_MOTOR_FORWARD_SIGN = +1` (MEASURED 2026-09-01).
+  - **Drivetrain:** if the 2.5 in wheels are confirmed, seed `WHEEL_DIAMETER_MM = 63.5` only as
+    `[ASSUMED]`; replace with BM-3 `D_eff` before any `--distance` move is trusted. Keep the measured
+    motor signs single-sourced (`hub_api` today, or aliases here if they are moved deliberately).
+  - **Heading hold:** `HEADING_CORR_LIMIT_PCT = 20.0`, `HEADING_KP_PCT_PER_DEG = 2.0`,
+    `HEADING_KI_PCT_PER_DEG_S = 0.0`, `HEADING_KD_PCT_S_PER_DEG = 0.0`,
+    `HEADING_I_LIMIT_DEG_S = 20.0`, `HEADING_MAX_START_ERROR_DEG = 5.0` — bench seeds, not claims.
   - **Turn-profile block:** `TURN_CRUISE_DPS (~200)`, `TURN_CREEP_DPS (~80)`, `TURN_RAMP_FRAC (~0.25)`,
     `TURN_BRAKE_FRAC (~0.30)` or `TURN_BRAKE_DEG`, `TURN_TOL_DDEG (~20)`, `TURN_SETTLE_MS (~200)`,
     `TURN_MAX_TRIES (3)`, `TURN_DECEL_DPS2 (1000, UNVERIFIED)`. Comment that `TURN_CRUISE_DPS` (plateau)
     differs from the existing `TURN_RATE_DPS` (time-estimate mean).
+  - **Stop margin:** `STOP_GUARD_MM`, `STOP_LATENCY_S`, and `STOP_MARGIN_MM` as derived values from
+    measured post-stop coast, not from the checkpoint startup-ramp datum.
   - **Group N:** `GYRO_NOISE_DPS`, `ACCEL_NOISE_MG`, `TILT_NOISE_DDEG` (`[ASSUMED]`, "MEASURE with motors
     on the floor"), `YAW_DRIFT_DPS = 0.0033` (MEASURED 2026-08-27, PARTIAL/KU-M28),
     `GRAVITY_MG = 989.0` (MEASURED).
@@ -531,17 +653,15 @@ operator.
     caveat. Change the `HEADING_DISAGREE_LIMIT_DEG` comment to say it is **DERIVED** from `DIV_P95_DEG` at
     run start, evaluated on **straight segments only**.
 
-- **[`src/odometry.py`](../../src/odometry.py)** — add the pure signatures in §4; extend
-  `Odometry.__init__`/`update()` to apply `left_sign`/`right_sign` at the difference step **(this is the
-  §0 latent-bug fix — a forward move currently integrates to ≈0 mm)**; update `heading_disagreement_deg()`
-  docstring: threshold now the straight-drive p95, grows on turns by design (caster), callers gate it to
-  straights. Stays pure — no hub import.
+- **[`src/odometry.py`](../../src/odometry.py)** — add the pure signatures in §4. Do **not** add a second
+  sign flip to `Odometry.update()` while `hub_motors.read_motor_degrees()` remains forward-positive. Update
+  `heading_disagreement_deg()` docstring: threshold now the straight-drive p95, grows on turns by design
+  (caster), callers gate it to straights. Stays pure — no hub import.
 
-- **[`src/hub_motors.py`](../../src/hub_motors.py)** — **add sign application inside `drive()`** from the
-  new config constants (writes apply no sign today — the comment is not code); replace the hard-coded
-  `LEFT_FWD/RIGHT_FWD` **comment** with references to the config constants (single source of truth); add
-  one comment stating reads are raw, writes are signed, odometry applies the read-side sign (**no double
-  flip**).
+- **[`src/hub_motors.py`](../../src/hub_motors.py)** — preserve the current contract: `drive()` and
+  `read_motor_degrees()` both apply the measured signs, and downstream code sees forward-positive wheel
+  values. If the signs move to `config.py`, make that a single-source aliasing change only; do not change
+  behavior.
 
 - **[`src/sweep.py`](../../src/sweep.py)** — at the `CMD_TURN` docstring, add a wiring note: the executor
   maps positive = right to the CCW-positive odometry frame (`target = yaw − turn_deg`,

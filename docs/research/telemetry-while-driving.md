@@ -52,6 +52,20 @@ of any BLE-telemetry work is proving `slot_upload.py` **over USB first** (USB is
 touch another team's hub). That the slot sequence is unrun is the first UNVERIFIED item, not a detail —
 [program-upload-protocol.md](./program-upload-protocol.md) §6 item 1.
 
+**Expected operator-visible states, if a motor program may already be running:**
+
+- **REPL-run program (`hub_programmer/run.py` / paste mode):** the motor can spin and USB `print()` can work,
+  but this is **not** a BLE-capable state. The tool reached the REPL by sending `Ctrl-C`, and the later
+  hardware lesson says that interrupts the Hub OS services that own CONNECT, advertising and FD02. If the
+  CONNECT button then looks dead, the expected fix is a normal hub power cycle, **not** `boot.py`,
+  `hub.config`, `machine.*`, or user `bluetooth.BLE()` calls.
+- **Slot program:** expected to run **under** the live Hub OS. Therefore CONNECT/FD02 advertising should
+  still be available while the program runs, until a central connects; `ConsoleNotification` and
+  `DeviceNotification` should continue to be Hub-OS services. This remains **G4/G5-unmeasured on our hub**.
+- **Already connected:** a scan may no longer see the hub once a BLE central is attached. The operator tell
+  is the measured CONNECT light state: flashing blue = advertising, solid blue = connected. Treat
+  "silent scan + solid blue" as "already connected" before debugging advertising.
+
 ### 1.2 Telemetry leaves as `print()`, not as user BLE code
 
 Under a running slot program, telemetry leaves the hub as **ordinary `print()`**, which LEGO's firmware

@@ -30,6 +30,117 @@ heartbeat) and it is NOT re-argued here. What was already concluded there and is
 
 ---
 
+## 0a. 2026-09-03 fallback answer -- SD card, hub flash, and log recovery
+
+**Question answered:** if live BLE telemetry is too fragile, can the team store the run on the SPIKE Prime /
+Pybricks hub and pull it later?
+
+**Short verdict:** there is no SD-card or removable-media fallback on SPIKE Prime 45601. The usable
+stock-firmware path is the hub's internal `/flash` filesystem, measured on our hub at **32,452,608 B free**
+before the first project write. Log full telemetry there while untethered, then retrieve over **USB after the
+robot stops**. BLE retrieval is possible only as a slow console dump because LEGO's Hub OS 3 protocol has
+upload/program-flow/notification messages but **no file-download message**. Under **Pybricks**, the current
+stable PrimeHub API exposes only **512 B** of user persistent storage, not a general file system suitable for
+CSV logs; Pybricks is therefore not a log-offload solution for this project and remains excluded by ADR-0001.
+
+### Hardware/media answer
+
+| Question | Answer | Evidence |
+|---|---|---|
+| Does SPIKE Prime 45601 have an SD/microSD slot? | **No usable SD/removable-media path found.** Plan as if the only persistent store is internal flash. | LEGO's 45601 product/spec pages list six LPF2 ports, USB, Bluetooth, battery, speaker, matrix, IMU, MicroPython, and internal program/content memory; no card slot is listed. Our hub's root mount listing is only `['flash']`, with no `/sd` or other media mount. |
+| Is anything removable? | The **battery** is removable without tools; it is not storage media. | LEGO 45601 technical specifications, power-supply section. |
+| What storage does the hub publish? | Internal memory: LEGO specifies **32 MB for programs, sound, and content**. Our stock Hub OS exposes that as `/flash`. | LEGO technical specifications; `docs/archives/hub-baseline/04-filesystem.txt`. |
+
+This is a negative conclusion by enumeration, not by teardown: no source says "there is no SD slot" in those
+words. The load-bearing facts are that LEGO's own feature/interface list names the available physical
+interfaces, and our live filesystem probe found no removable mount.
+
+### Persistent storage by firmware
+
+| Firmware state | Persistent storage available to user code | Telemetry implication |
+|---|---|---|
+| **Stock LEGO Hub OS 3, our accepted path** | `/flash` MicroPython filesystem. Baseline: block size 4096, total blocks 7936, free blocks 7923 => **32,452,608 B free**; `/flash/lib` is on `sys.path`; `/flash/program` was empty in the baseline. | Suitable for full-run CSV telemetry if a **slot program** can `open()`/write it; that exact slot-program write is still gate **U-11**, but REPL writes to `/flash/lib` are proven by ADR-0007. |
+| **Pybricks on SPIKE Prime / Inventor Hub** | `hub.system.storage(offset, read=...)` / `write=...`, capped at **512 B**; saved to flash on normal shutdown, persists after battery removal, cleared by Pybricks firmware update. Pybricks program slots are also persistent on normal shutdown. | Fine for calibration bytes, a run counter, or a tiny summary. **Not enough for telemetry logs.** Current Pybricks file-system access for Prime/Inventor is an open feature issue, not a stable API. |
+
+Do not confuse Pybricks EV3 documentation with SPIKE Prime. Pybricks `DataLog` creates files on EV3, whose
+MicroPython environment is built around an SD-card-backed Linux filesystem. The current Pybricks PrimeHub
+stable docs point users to 512 B `system.storage`, not general `open()` file logging.
+
+### How to log while untethered on stock Hub OS
+
+The recommended stock path is boring in the best way:
+
+1. Run the mission as a **Hub OS slot program**, not through the REPL. The REPL route sends `Ctrl-C` to get a
+   prompt; that interrupts the Hub OS that owns BLE and slot execution.
+2. At run start, check space with `os.statvfs('/flash')` and choose one log file under `/flash`, for example
+   `/flash/team21-run.csv` or `/flash/log-<counter>.csv`.
+3. Write `telemetry.header_lines(...)`, then append `telemetry.Recorder.format(...) + '\n'` records.
+4. Batch writes in RAM, for example flush every 10-50 records or around 0.5-2 KiB. Do **not** open/close or
+   flush on every sample unless a bench test proves the latency is harmless.
+5. On normal stop/report, write `Recorder.trailer()` and close the file in `finally` so a truncated file is
+   detectable by `seq_last` / `sum_seq`.
+
+Capacity is not the first-order constraint. Using the existing ~120 B worst-record estimate:
+
+| Rate/run | Computed log size |
+|---|---|
+| 20 Hz for 10 min | ~1.44 MB |
+| 20 Hz for 23 min | ~3.31 MB |
+| 100 Hz for 10 min | ~7.2 MB |
+| 100 Hz for 23 min | ~16.56 MB |
+
+All fit under the measured free `/flash` space with room left for code, but run
+`./hub_programmer/upload.py --list` before relying on that number because project uploads and prior logs
+consume 4096-byte blocks.
+
+### Retrieval with the repo as it exists today
+
+| Retrieval path | Current status | Use / next code task |
+|---|---|---|
+| **USB after stop** | **Best path, but no polished `download` command exists yet.** `upload.py --list` can list `/flash` and free bytes; `upload.py` already has REPL command/read/hash primitives; `run.py --save` can execute a one-off reader in RAM and save its printed output. | Main-agent code task: add a small host-side downloader, likely in `hub_programmer/`, that reads `/flash/<log>` in chunks, base64-encodes or otherwise frames safely, saves to `docs/findings/runs/`, and compares a hub-computed SHA-256 with the host file. Do not put it in `probes/` if it can delete/rename, and keep it read-only by default. |
+| **Manual USB REPL / `run.py --save` bridge** | Feasible for a short-term bench recovery, awkward for a full log. | A temporary reader can `open('/flash/team21-run.csv','rb')`, print bounded/base64 chunks, and let `hub_programmer/run.py --save ...` capture stdout. This reuses existing tooling but still needs a helper source file or pasted one-off program. |
+| **BLE after stop, stock Hub OS 3** | Fallback only. LEGO protocol notifications can carry console output, but the message table has no file-download request. | The running program must dump its own log by `print()`/`ConsoleNotification`, and the host must reassemble frames. `slot_upload.py --listen` can capture console output from a program it starts; it is not yet a standalone "ask an already-running mission to send file X" client. Expect tens of seconds to minutes for full logs at the current conservative BLE rates. |
+| **Pybricks BLE** | Different protocol from this repo's stock FD02 tooling. | Pybricks exposes stdin/stdout over its BLE service / Nordic UART pattern once a Pybricks program is loaded, but that does not help this stock-firmware repo, and Pybricks still lacks full-file logging on PrimeHub today. |
+
+### Risks and limits
+
+- **Flash wear:** treat `/flash` as internal flash, not an SD card. LEGO specifies 32 MB program/content
+  memory; the teardown-cited Winbond W25Q256JV part is rated at minimum 100k program/erase cycles per sector,
+  but the SPIKE firmware's exact wear-leveling/metadata behavior is not documented here. Sequential append to
+  one file for course-scale runs is reasonable; per-sample open/close/flush and repeated overwrite of the
+  same tiny file are the patterns to avoid.
+- **Write latency:** sector erase and filesystem metadata updates can pause user code. Batch writes and make
+  U-11 measure "slot program writes while motors run" before promoting `/flash` logging from INFERRED to
+  MEASURED.
+- **Power loss:** a crash or hard power-off may lose the last buffered records. Bound the batch size so the
+  worst-case loss is acceptable; write the integrity trailer on normal stop so missing tails are obvious.
+- **Storage hygiene:** logs will accumulate. Use one project prefix, list free space before runs, and delete
+  only files the team created. `upload.py --remove` already refuses stock files and guarded directories.
+- **Motor/BLE contention:** stock `motor.run()` is fire-and-forget, but Python scheduling is cooperative.
+  `print()` and file writes still consume loop time, and a back-pressured console may stall the loop until G4b
+  proves otherwise. Keep the live BLE heartbeat off by default; the `/flash` log is the record of account.
+- **User-code BLE ownership:** do not call `bluetooth.BLE()` from mission code on stock Hub OS. It risks
+  displacing the Hub-OS-owned FD02 service and buys no storage fallback.
+
+### Sources added on 2026-09-03
+
+- LEGO Education 45601 product page: https://education.lego.com/en-us/products/lego-technic-large-hub-for-spike-prime-/45601/
+- LEGO Education 45601 technical specifications PDF: https://assets.education.lego.com/v3/assets/blt293eea581807678a/bltf512a371e82f6420/5f8801baf4f4cf0fa39d2feb/techspecs_techniclargehub.pdf?locale=en-us
+- LEGO SPIKE Prime Hub OS 3 protocol: https://lego.github.io/spike-prime-docs/ , especially
+  https://lego.github.io/spike-prime-docs/connect.html and
+  https://lego.github.io/spike-prime-docs/messages.html
+- Pybricks PrimeHub stable API (`system.storage`): https://docs.pybricks.com/en/stable/hubs/primehub.html
+- Pybricks getting-started / program slots: https://pybricks.com/learn/getting-started/pybricks-environment/
+- Pybricks hub-to-PC communication / BLE stdin-stdout: https://pybricks.com/projects/tutorials/wireless/hub-to-device/pc-communication/
+- Pybricks file-system access feature issue for Prime/Inventor context: https://github.com/pybricks/support/issues/1989
+- Pybricks EV3-only `DataLog` contrast: https://docs.pybricks.com/en/v2.0/tools.html
+- Winbond W25Q256JV datasheet, used only for flash-endurance context if the teardown part number is correct:
+  https://resources.ampheo.com/static/datasheets/winbond-electronics-corporation/w25q256jveiq-tray.pdf
+- Community teardown naming the SPI flash part, treated as non-primary hardware detail:
+  https://github.com/gpdaniels/spike-prime
+
+---
+
 ## 0. The one-paragraph answer to "can we BLE while the motors run?"
 
 **Yes — and no workaround is needed for the basic case.** A single stock-firmware slot program runs
@@ -91,7 +202,7 @@ with a cheap live confidence check. **Higher tier = better on all three axes tog
 
 | # | Path | Stock-firmware feasibility | Rough throughput | Simplicity | Rank |
 |---|---|---|---|---|---|
-| 10 | **On-hub `/flash` log → USB retrieval after stop** | **HIGH** — ADR-0007 proves `/flash` writable over REPL; slot-program write INFERRED | **Highest effective** — USB 115200 ≈ 11.5 KB/s, ~16–21 s for a 184 KB log, deterministic | **Highest** — reuses `Recorder` verbatim, no listener, fail-safe | **T1 — record of account** |
+| 10 | **On-hub `/flash` log → USB retrieval after stop** | **HIGH** — ADR-0007 proves `/flash` writable over REPL; slot-program write INFERRED; free space measured 32,452,608 B on 2026-08-27 baseline | **Highest effective** — USB 115200 ≈ 11.5 KB/s, ~16–21 s for a 184 KB log, deterministic | **Highest** — reuses `Recorder` verbatim, no listener, fail-safe | **T1 — record of account** |
 | 1 | **`print()` → ConsoleNotification, ~3 Hz heartbeat (default OFF)** | INFERRED (gate G4); the known path | ~273 B/s at 3 Hz — fits even the 667 B/s floor | **Highest** — one `print()` per N ticks | **T1 — live half** |
 | 2 | **TunnelMessage 50 via `hub.config['module_tunnel']`** (BLE) | STOCK-CAPABLE, `[UNVERIFIED]` our build; SPIKE-3 third-party working | Binary → ~2–3× denser than CSV; same latency floor as #1 | Medium — undocumented API, callback + keep-alive loop | **T2 — best live upgrade** |
 | 3 | **DeviceNotification 60** (host sends `DeviceNotificationRequest 40`, BLE) | STOCK — a LEGO message; `[UNVERIFIED]` our build | Firmware-set interval; **off-VM, does not perturb the loop** | High — zero hub-side code | **T2 — non-perturbing witness** |
@@ -120,7 +231,8 @@ list* — what to reach for if that pairing is not enough, and what to never rea
   reads the file over the REPL. Zero cable drag during the run, deterministic ~16–21 s bulk pull,
   fail-safe (needs no listener), reuses the pure formatter unchanged. **Catch:** nothing is visible until
   the run ends; slot-program `open()`/write of `/flash` is INFERRED-yes (ADR-0007 proves `/flash` writable
-  over the REPL) but UNRUN as a slot program (gate **U-11**); `/flash` free space is UNMEASURED (**U-12**).
+  over the REPL) but UNRUN as a slot program (gate **U-11**); `/flash` free space is now MEASURED from the
+  baseline at **32,452,608 B free** before the first project upload, and should be re-listed before each run.
 - **(#1) ConsoleNotification heartbeat.** `print()` one full record every N ticks (~3 Hz), which LEGO's
   firmware wraps as `ConsoleNotification 0x21` (`string[256]`, NUL-terminated, fragmented at the packet
   size, reassemble on the `0x02` delimiter — LEGO's own `app.py` omits this buffering and loses long

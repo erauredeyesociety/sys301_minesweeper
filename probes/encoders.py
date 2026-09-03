@@ -28,6 +28,7 @@ import _hubio                                                # noqa: E402
 
 BAUD = 115200
 PROMPT = b">>>"
+MOTOR_IDS = (48, 49, 65)
 
 
 def main(argv):
@@ -71,11 +72,12 @@ def main(argv):
         for L in ("A", "B", "C", "D", "E", "F"):
             r = line("import device;from hub import port;exec(\"try:\\n print(device.id(port.%s))\\nexcept: print(-1)\")" % L)
             try:
-                if int(r.strip()) == 48:
+                if int(r.strip()) in MOTOR_IDS:
                     present.append(L)
             except Exception:
                 pass
-        print("motors (device.id 48) on ports: %s" % (present or "NONE FOUND"))
+        print("motors (device.id %s) on ports: %s" % ("/".join([str(i) for i in MOTOR_IDS]),
+                                                       present or "NONE FOUND"))
         if not present:
             print("no motors detected; nothing to stream"); return 2
 

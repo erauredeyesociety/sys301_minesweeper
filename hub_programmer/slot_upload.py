@@ -92,7 +92,12 @@ NUM_SLOTS = 20                   # slots 0..19 (glossary.rst)
 # allowlist-by-exclusion so the refusal is in code, not just in prose.
 FIRMWARE_IDS = frozenset({0x0A, 0x0B, 0x14, 0x15})
 
-DEFAULT_CHUNK = 4096             # max_chunk_size fallback; replaced by InfoResponse when read
+DEFAULT_CHUNK = 4096             # max_chunk_size when an InfoResponse reports it
+# Our hub answers InfoRequest but NOT with a parseable InfoResponse over USB (measured 2026-09-03), so
+# a >4096-byte program fell back to a 4096-byte TransferChunk that the hub does NOT ACK. 512 is small
+# enough that the hub accepts it and is a multiple of 4, so the running CRC still chains to the
+# whole-file CRC -- multi-chunk uploads (any program over one chunk) then just work. Override: --chunk.
+SAFE_CHUNK = 512
 
 
 # --- checksum: standard reflected CRC-32 (binascii.crc32), LEGO's crc.py ----
@@ -333,22 +338,14 @@ def request(tx, payload, want_id, deadline):
 
 
 # --- the upload+start sequence, run once against either transport -----------
-def run_sequence(tx, name, slot, data, listen_s):
-    # 1. PROVE IDENTITY before writing anything.
-    print("\n[1] identity: DeviceUuidRequest 0x1A")
-    msg = request(tx, m_device_uuid_request(), DEVICE_UUID_RESPONSE, deadline=6.0)
-    if not msg or len(msg) < 17:
-        print("    no DeviceUuidResponse -- cannot prove this is our hub. ABORT (write nothing).")
-        return 2
-    got = msg[1:17]
-    print("    hub uuid bytes: %s" % got.hex())
-    if not uuid_matches(got):
-        print("    UUID DOES NOT MATCH OUR HUB (%s). ABORT -- writing nothing." % OUR_DEVICE_UUID)
-        return 2
-    print("    *** identity proven: this is our hub ***")
-
-    # 2. InfoRequest -> learn max_chunk_size / max_packet_size.
-    print("\n[2] InfoRequest 0x00 (learn sizes)")
+def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
+    # 1. InfoRequest FIRST -- it OPENS the control session. MEASURED 2026-09-03:
+    #    the hub does NOT answer DeviceUuidRequest over USB until an InfoRequest has
+    #    been sent (usb_protocol.py sends Info first and gets a clean identity reply;
+    #    sending identity first gets silence). Both are read-only queries, so this
+    #    changes nothing about the safety guarantee: no WRITE happens until identity
+    #    is proven in step 2 below.
+    print("\n[1] InfoRequest 0x00 (opens session, learn sizes)")
     info = request(tx, m_info_request(), INFO_RESPONSE, deadline=6.0)
     chunk_size = DEFAULT_CHUNK
     if info:
@@ -361,7 +358,24 @@ def run_sequence(tx, name, slot, data, listen_s):
                 tx._packet_size = min(tx._packet_size, hub_pkt)
                 print("    BLE packet_size capped to %d" % tx._packet_size)
     else:
-        print("    no InfoResponse; using fallback max_chunk_size %d" % chunk_size)
+        chunk_size = SAFE_CHUNK
+        print("    no InfoResponse; using safe multi-chunk size %d" % chunk_size)
+    if chunk_override:
+        chunk_size = chunk_override
+        print("    chunk size overridden to %d (--chunk)" % chunk_size)
+
+    # 2. PROVE IDENTITY before writing anything (still before the first WRITE below).
+    print("\n[2] identity: DeviceUuidRequest 0x1A")
+    msg = request(tx, m_device_uuid_request(), DEVICE_UUID_RESPONSE, deadline=6.0)
+    if not msg or len(msg) < 17:
+        print("    no DeviceUuidResponse -- cannot prove this is our hub. ABORT (write nothing).")
+        return 2
+    got = msg[1:17]
+    print("    hub uuid bytes: %s" % got.hex())
+    if not uuid_matches(got):
+        print("    UUID DOES NOT MATCH OUR HUB (%s). ABORT -- writing nothing." % OUR_DEVICE_UUID)
+        return 2
+    print("    *** identity proven: this is our hub ***")
 
     # 3. ClearSlotRequest (NACK tolerated -- means the slot was already empty).
     print("\n[3] ClearSlotRequest 0x46 slot %d" % slot)
@@ -458,6 +472,23 @@ def dry_run(name, slot, data, chunk_size):
     return 0
 
 
+def minify_source(text):
+    """Strip comments + docstrings so the bytes uploaded to program.py are minimal -- the SOURCE file
+    stays fully commented. Uses python_minifier when installed; otherwise returns text unchanged and
+    lets multi-chunk carry the size. Never renames: names stay readable in a hub traceback."""
+    try:
+        import python_minifier
+    except ImportError:
+        return text, False
+    try:
+        out = python_minifier.minify(text, remove_literal_statements=True,
+                                     rename_locals=False, rename_globals=False, hoist_literals=False)
+        return out, True
+    except Exception as exc:
+        print("    minify skipped (%s) -- uploading full source" % type(exc).__name__)
+        return text, False
+
+
 def usage():
     print(__doc__.split("STATUS:")[0].strip())
     return 64
@@ -475,9 +506,13 @@ def main(argv):
     address = opt("--address", OUR_BLE_ADDRESS)
     wait_s = float(opt("--wait", "90"))
     name_override = opt("--name", None)
+    chunk_arg = opt("--chunk", None)
+    chunk_override = int(chunk_arg) if chunk_arg else None
+    do_minify = "--no-minify" not in argv
 
     files = [a for a in argv[1:] if not a.startswith("--")
-             and argv[argv.index(a) - 1] not in ("--slot", "--listen", "--address", "--wait", "--name")]
+             and argv[argv.index(a) - 1] not in
+             ("--slot", "--listen", "--address", "--wait", "--name", "--chunk")]
     if not files:
         return usage()
     local = files[0]
@@ -489,8 +524,25 @@ def main(argv):
         return 64
 
     with open(local, "rb") as fh:
-        data = fh.read()
-    name = name_override or os.path.basename(local)
+        raw = fh.read()
+    data = raw
+    if do_minify:
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            text = None
+        if text is not None:
+            out, did = minify_source(text)
+            if did:
+                data = out.encode("utf-8")
+                print("minify  : %d -> %d bytes (comments/docstrings stripped; source untouched)"
+                      % (len(raw), len(data)))
+    # The slot's runnable entry point is the FIXED name "program.py" (raw source) -- ProgramFlow
+    # selects by slot NUMBER, so uploading under the source basename ACKs but leaves the slot with
+    # nothing to run (measured 2026-09-03: "program started" but no execution). LEGO's own app.py and
+    # community uploaders both use "program.py". --name still overrides. See
+    # docs/research/slot-execution-and-live-motor-control-2026-09-03.md
+    name = name_override or "program.py"
 
     print("local   : %s  (%d bytes)" % (local, len(data)))
     print("target  : slot %d  name %r" % (slot, name))
@@ -498,7 +550,7 @@ def main(argv):
     print("checksum: whole-file crc32 0x%08X\n" % crc(data))
 
     if not apply_it:
-        return dry_run(name, slot, data, DEFAULT_CHUNK)
+        return dry_run(name, slot, data, chunk_override or SAFE_CHUNK)
 
     # --apply: open the transport, prove identity, run the sequence.
     if use_ble:
@@ -511,7 +563,7 @@ def main(argv):
         try:
             tx = BleTransport(address, wait_s)
             tx.open()
-            return run_sequence(tx, name, slot, data, listen_s)
+            return run_sequence(tx, name, slot, data, listen_s, chunk_override)
         except Exception as exc:
             print("BLE ERROR: %s: %s" % (type(exc).__name__, exc))
             return 3
@@ -535,7 +587,7 @@ def main(argv):
             print("BUSY_OR_DENIED: %s: %s" % (port, exc))
             return 4
         try:
-            return run_sequence(tx, name, slot, data, listen_s)
+            return run_sequence(tx, name, slot, data, listen_s, chunk_override)
         finally:
             tx.close()
 

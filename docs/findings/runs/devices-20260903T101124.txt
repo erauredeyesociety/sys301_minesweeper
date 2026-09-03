@@ -1,0 +1,45 @@
+# devices — what is on each port, read once
+# port /dev/spike @ 115200 8N1   deadline 90s
+
+===== motor status constants =====
+{'CONTINUE': 3, 'STALLED': 2, 'RUNNING': 1, 'DISCONNECTED': 5, 'ERROR': 4, 'CANCELLED': 3, 'READY': 0}
+
+===== stop constants =====
+{'HOLD': 2, 'BRAKE': 1, 'SMART_BRAKE': 5, 'SMART_COAST': 4, 'COAST': 0}
+
+===== device ids A-F =====
+A 48
+B 48
+C 61
+D 61
+E -
+F -
+
+===== motor A =====
+abs 35 rel 35 vel 0 duty 0 status 0
+
+===== motor B =====
+abs 134 rel 134 vel 0 duty 0 status 0
+
+===== motor info A =====
+(device_id=48, max_speed=930)
+
+===== colour C =====
+color -1 refl 82 rgbi (485, 304, 283, 849)
+
+===== colour D =====
+color -1 refl 65 rgbi (390, 247, 232, 675)
+
+===== colour constants =====
+{'MAGENTA': 1, 'YELLOW': 7, 'TURQUOISE': 5, 'GREEN': 6, 'PURPLE': 2, 'WHITE': 10, 'BLACK': 0, 'BLUE': 3, 'RED': 9, 'ORANGE': 8, 'AZURE': 4, 'UNKNOWN': -1}
+
+==============================================================
+RESULT: REPL prompt observed — the above is the hub's own words.
+
+READING THIS
+  device.id() 48 vs 49 vs 65 distinguishes Medium / Large / Small angular
+  motors. Whatever it reports is the answer -- the operator's recollection
+  is not, and this is what closes KU-T3.
+
+  colour: rgbi() is (r, g, b, intensity). Its RANGE is unknown until we
+  see values over a bright and a dark surface -- do not assume 0-255.

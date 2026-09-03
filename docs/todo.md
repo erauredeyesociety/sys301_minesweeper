@@ -1,12 +1,13 @@
 # SYS 301 Minesweeper — Todo (SSOT)
 
-> Last updated: 2026-08-27 · **mode: hub is LIVE; still blocked on the professor's answers for the
-> mission numbers.**
+> Last updated: 2026-09-03 · **mode: demo-readiness audit; hub is live, robot is built and drives,
+> but the no-laptop stored-program path and mission program are not ready to claim yet.**
 
 > **2026-09-01 checkpoint: the robot drives.** Forward/back/turn confirmed, drive convention locked
 > ([findings/drive-checkpoint-2026-09-01.md](./findings/drive-checkpoint-2026-09-01.md)). docs-rag
 > `/api/ask` now works. Still owed: wheel diameter (ruler), the units of 10×10 (professor),
-> re-run the two stalled workflows (transcript docs + coverage recompute), and the real GATE 1.
+> real GATE 1 on the actual notes/tape/floor, a measured stored-program run, and the `src/hub_api.py`
+> port constants.
 
 ## ▶ NEXT SESSION — START HERE
 
@@ -15,8 +16,9 @@ needs** (professor only · teammate only · hub over USB · a colour sensor with
 built · a keyboard), so whatever is present at the start of class can be worked immediately.
 
 **The three real blockers, in order:** ① the **units of "10×10"** — one free question, gates the
-architecture · ② **one colour sensor** — gates the whole detection design and does **not** need the
-robot · ③ **motors mounted** — gates every odometry number.
+architecture · ② the **real GATE-1 optical burst** on actual notes/tape/floor — gates the detection
+rule · ③ the **stored-program/standalone path** — `/flash/main.py` does not autorun, and
+`slot_upload.py --apply` is still unmeasured on our hub.
 
 **Do not re-investigate** the API generation, the deploy route, or whether Bluetooth works. All three
 are closed by measurement — [session_records/2026-08-27](./session_records/2026-08-27_hub-first-contact-usb-and-ble.md).
@@ -25,7 +27,7 @@ are closed by measurement — [session_records/2026-08-27](./session_records/202
 
 ## CURRENT STATE
 
-**Everything buildable without the hub or the professor's answers is built.** 15 `src/` modules (8 pure,
+**Everything buildable without the professor's answers is built.** 15 `src/` modules (8 pure,
 7 hub-facing, one per device), the full SE planning layer, Bluetooth answered, telemetry designed and
 widened to 21 columns, the analysis layer specced. `src/main.py` is deliberately unwritten — it is where
 every open unknown converges.
@@ -33,7 +35,14 @@ every open unknown converges.
 **The hub has been connected — 2026-08-27, over USB, on `/dev/spike`.** It is SPIKE 3 /
 MicroPython 1.24.0, its filesystem is baselined, and **code has been put on it**: `/flash/lib/config.py`
 uploaded and imported, with the firmware **proved unchanged** by a baseline re-capture and diff. The IMU
-is characterised. **All six ports A–F read EMPTY** — nothing is mounted yet.
+is characterised.
+
+**The robot has since been built and measured — 2026-09-01.** A=left motor, B=right motor, C/D=colour
+sensors, E/F empty; forward is `A:-v, B:+v`. The examples that hard-code those ports can demo safely
+when their headers are followed, but `src/hub_api.py` still has the hardware port constants set to
+`None`, so the reusable `src/` hardware layer will fail loudly until those constants are transcribed.
+`/flash/main.py` was confirmed not to autorun; the Hub OS slot upload path is built, dry-run checked,
+and still untested with `--apply`.
 
 | What | Where |
 |---|---|
@@ -41,32 +50,40 @@ is characterised. **All six ports A–F read EMPTY** — nothing is mounted yet.
 | The one write, the diff, and why the firmware cannot be touched by it | [findings/firmware-integrity-proof.md](./findings/firmware-integrity-proof.md) |
 | IMU units, ±180° yaw wrap, read cost, drift | [findings/imu-characterisation-2026-08-27.md](./findings/imu-characterisation-2026-08-27.md) |
 | How to put code on the hub | [runbooks/deploy-to-hub.md](./runbooks/deploy-to-hub.md) · [ADR-0007](./decisions/0007-deploy-by-writing-modules-to-flash-lib.md) |
+| Built robot port/sign convention | [hardware/port-map.md](./hardware/port-map.md) · [findings/drive-checkpoint-2026-09-01.md](./findings/drive-checkpoint-2026-09-01.md) |
+| Colour first-look and two-sensor agreement | [findings/colour-first-look-2026-09-01.md](./findings/colour-first-look-2026-09-01.md) |
 
-⚠ **That session opened seven new unknowns as well as closing four** (KU-M14 … KU-M20) — the IMU timing
-anomaly, the `motor` status constants, whether `/flash/main.py` autoruns, how long the BLE advertising
-window stays open, whether a hub program may drive the radio (**it must not** — see
-[research/ble-bring-up.md](./research/ble-bring-up.md) § 4.4), the `angular_velocity()` zero-reading, and
-the `rgbi()` range.
+⚠ **Carry the remaining unknowns forward accurately.** Closed since first contact: motor status values,
+drive sign convention, two colour sensors, `rgbi()` range, and `/flash/main.py` **not** autorunning.
+Still open for Demo Day readiness: stored slot upload on real hardware, wheel diameter, real surface
+separability, time/arena units, the IMU timing anomaly, BLE advertising timing, and the
+`angular_velocity()` zero-reading.
 [plans/known-unknowns.md](./plans/known-unknowns.md).
 
 Narrative: [session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md](./session_records/2026-08-26_code-implementation-bluetooth-and-analysis-planning.md)
 
 ## NEXT ACTION
 
-**Ask the professor.** The hub is no longer the blocker; the *mission numbers* are. Everything below
-still needs neither hub nor further hardware:
+**Ask the professor, then close the demo gates.** The hub and basic drive are no longer the blocker; the
+*mission numbers*, the stored-program route, and the `src/` port constants are.
 
-0. **Two cheap hub questions to ride along on the next session** (operator decides when): does
-   `/flash/main.py` autorun at boot (**KU-M16** — this is the difference between a robot that runs and a
-   robot tethered to a laptop on Demo Day), and `print(motor.READY, motor.STALLED, motor.DISCONNECTED)`
-   (**KU-M15**, one read-only line).
-1. **Ask the professor — Q0 FIRST**, then Q1/Q2/Q3/Q5 → [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md)
+1. **Before presenting an autonomous demo:** transcribe the confirmed A/B/C/D port map into
+   `src/hub_api.py` (outside this doc-only audit), then run `./scripts/check-docs.py` and the hub import
+   check after upload.
+2. **Prove the stored-program path on hardware:** run
+   `python3 hub_programmer/slot_upload.py <demo>.py --slot N --apply --listen 20` over USB first,
+   save the transcript, then test the same stored program
+   with the laptop disconnected. `./hub_programmer/slot_upload.py ...` currently fails until its
+   executable bit is fixed.
+3. **Ask the professor — Q0 FIRST**, then Q1/Q2/Q3/Q5 → [plans/questions-for-the-professor.md](./plans/questions-for-the-professor.md)
    **Q0: must it be autonomous, or may a human drive it?** "Autonomous" appears nowhere in the
    course instructions — we inferred it. A "human may drive" answer removes sweep planning,
    odometry accuracy, heading hold, and the whole coverage-time problem.
-2. **Supplier: buy ONE colour sensor** — required under every branch → [plans/sensor-decision-matrix.md](./plans/sensor-decision-matrix.md)
-3. **Colour separability go/no-go** — needs the sensor + the real note pack, **not the robot**
-4. **Builder: read the part numbers off the two motors** — closes KU-T3
+4. **Real GATE-1 colour separability go/no-go** — needs the mounted C/D sensors, the real note pack,
+   the real tape, and the floor, **not autonomous movement**.
+5. **Measure wheel diameter and track width** — turns the confirmed encoder degrees into distance.
+6. **Builder: confirm the part numbers printed on the two motors** — `device.id` already says both
+   connected motors are the same kind; the casing read closes the paperwork loop.
 
 **Start every session with `./scripts/stack.sh up`.** Nothing starts at boot by design.
 
@@ -82,17 +99,19 @@ _(nothing — all host-side work is complete)_
 - [ ] Buy the distance sensor or not — **Blocked by**: professor Q3 (boundary type). 56 SB remaining.
 - [ ] Color classification (FR-2b) — **Blocked by**: professor Q5. If yellow is the only color present, plain reflected-light detection is far more robust and this requirement goes away.
 - [x] ~~Hub OS / API generation identification~~ — **CLOSED 2026-08-27: SPIKE 3, MicroPython 1.24.0**, measured over USB → [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)
-- [ ] **Standalone boot** — does `/flash/main.py` autorun? **Blocked by**: an operator-approved hub session. It changes boot behaviour on shared equipment (KU-M16)
-- [ ] `src/` — **Blocked by**: the above. `src/` is not blocked.
+- [x] ~~`/flash/main.py` autorun?~~ — **CLOSED 2026-09-01: it does not autorun.** Demo Day needs the Hub OS slot route or another measured stored-program path.
+- [ ] **Stored slot route** — `hub_programmer/slot_upload.py` is dry-run checked but `--apply` is untested on our hub; no TR-3 claim until a stored program starts with the laptop disconnected.
+- [ ] **`src/hub_api.py` port constants** — blocked only by a code edit window. The confirmed port map exists; the constants are still `None`.
 
 ## 🟢 Up Next
 
 - [x] ~~test floor~~ — **not happening by decision** ([ADR-0005](./decisions/0005-no-test-suite-verify-on-hardware.md)). Verification is the robot; the `src/` import boundary is checked by `./scripts/check-docs.py`. See [../test_methodology.md](../test_methodology.md)
 - [x] ~~`src/` pure logic~~ — **written and PARKED 2026-08-25.** `config.py`, `calibration.py`, `detector.py`, `sweep.py`, `result.py`: all pure Python, host-runnable, no hub imports. Hand-checked working (a 2-note stream with a mid-note dropout counts 2, not 3). **Not being extended** until the research and planning above are done and the professor's answers land — the arena values in `config.py` are placeholders, not measurements
+- [x] ~~Buy/mount colour sensors~~ — **done 2026-09-01:** two colour sensors on C/D, matched on the same surface. The real notes/tape/floor separability test is still owed.
 - [ ] **Go/no-go bench experiment, before any sweep code:** pairwise separability of the real sticky-note pack on the real floor. If the colours are not separable, classification is off the table and we fall back to presence detection — [research/color-discrimination.md](./research/color-discrimination.md) §8
 - [x] ~~**Find out which two motors we own**~~ — **answered by the operator 2026-08-27: both Technic Medium Angular 45603** (KU-T3). ±1110 deg/s no-load, 360 counts/rev. Confirm against the casing next time the motors are handled.
 - [x] ~~`scripts/setup-host.sh`~~ — **applied 2026-08-27** with `--apply`, before the hub was ever plugged in. ModemManager `inactive`/disabled, udev rule written, `/dev/spike` symlink live. ⚠ Note the honest footnote: `mmcli -L` returned `No modems were found`, so ModemManager had **not** actually grabbed the device — the mitigation is a kept precaution, not a fixed fault. [findings/host-environment.md](./findings/host-environment.md)
-- [ ] Decide sensor mounting height/angle from [research/color-discrimination.md](./research/color-discrimination.md) and [research/detection-and-sweep-techniques.md](./research/detection-and-sweep-techniques.md) **before** the Supplier buys mounting blocks
+- [ ] Lock sensor mounting height/angle from [research/color-discrimination.md](./research/color-discrimination.md) and [research/detection-and-sweep-techniques.md](./research/detection-and-sweep-techniques.md); the sensors are mounted low, but the real surface burst decides whether that height is good enough.
 - [ ] Confirm the operator's team role (assumed: Programmer) and the other three names/roles → [course/team/roles.md](./course/team/roles.md)
 - [ ] Journal entry for 25 AUG (Sprint 1 start) → [course/journal/INDEX.md](./course/journal/INDEX.md)
 - [x] ~~Test the CSER `.docx` LibreOffice round-trip~~ — **done, it survives.** All 20 styles and the trim size intact; one sample image + one OLE object lost (replaced anyway). [findings/cser-template-libreoffice-roundtrip.md](./findings/cser-template-libreoffice-roundtrip.md)
@@ -100,7 +119,8 @@ _(nothing — all host-side work is complete)_
 
 ## 📋 Backlog
 
-- [ ] Fill [hardware/port-map.md](./hardware/port-map.md) once motors/sensors are mounted (operator describes; we record)
+- [x] ~~Fill [hardware/port-map.md](./hardware/port-map.md) once motors/sensors are mounted~~ — done 2026-09-01.
+- [ ] Transcribe [hardware/port-map.md](./hardware/port-map.md) into `src/hub_api.py` once code edits are clear.
 - [ ] Draft the Intro Report skeleton → [course/report/outline.md](./course/report/outline.md)
 - [ ] UMBmark square-path odometry calibration once the robot drives
 
@@ -141,5 +161,6 @@ _(nothing — all host-side work is complete)_
 - **Professor Q5 is a run-time question, not just a robustness one.** Classification needs several pure
   samples inside a note, which caps traverse speed (~160 mm/s at a 20 mm chord vs ~360 mm/s at 30 mm).
   Ask it alongside Q1 and Q2.
-- **ModemManager is active on this host** and will corrupt the first hub serial session. Clear it before
-  the hub is ever plugged in, or the team will misdiagnose it as "Linux doesn't work with LEGO".
+- **On a fresh host, run `./scripts/setup-host.sh` before first hub contact.** On this machine the
+  mitigation was applied 2026-08-27 and ModemManager was inactive/disabled; do not resurrect the older
+  "ModemManager is active" warning without measuring it again.

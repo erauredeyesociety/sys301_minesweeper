@@ -59,15 +59,28 @@ def available():
 # the port OBJECT, COLOR_PORT = _port.E; on SPIKE 2 write the STRING, COLOR_PORT = "E". Fill these in
 # only after api_generation() has been read off the actual hub.
 #
-# MEASURED 2026-08-27, first contact: our hub is SPIKE 3, and ALL SIX PORTS A-F WERE EMPTY --
-# device.id(port) raised OSError on every one and motor.status(port) returned 5 on every one. The
-# motors were not connected yet. So these four stay None because that is still the truth, not
-# because nobody has looked. 5 is what an UNOCCUPIED port returns; which named motor constant
-# equals 5 has not been read (KU-M15).
-LEFT_MOTOR_PORT = None
-RIGHT_MOTOR_PORT = None
-COLOR_PORT = None
-DISTANCE_PORT = None
+# MEASURED 2026-09-03 after rebuild, read-only probes over USB:
+#   A motor id 48, B motor id 48, C colour id 61, D colour id 61, E/F empty.
+# The physical left/right and signs below come from the 2026-09-01 drive test; re-run a short
+# wheels-up move if the build changes again.
+if API == API_SPIKE3:
+    LEFT_MOTOR_PORT = _port.A
+    RIGHT_MOTOR_PORT = _port.B
+    COLOR_PORT = _port.C
+    SECOND_COLOR_PORT = _port.D
+    DISTANCE_PORT = None
+elif API == API_SPIKE2:
+    LEFT_MOTOR_PORT = "A"
+    RIGHT_MOTOR_PORT = "B"
+    COLOR_PORT = "C"
+    SECOND_COLOR_PORT = "D"
+    DISTANCE_PORT = None
+else:
+    LEFT_MOTOR_PORT = None
+    RIGHT_MOTOR_PORT = None
+    COLOR_PORT = None
+    SECOND_COLOR_PORT = None
+    DISTANCE_PORT = None
 
 # The mirrored-motor sign convention, MEASURED 2026-09-01 by watching the robot drive
 # (examples/drive_moves.py, confirmed by the operator; docs/hardware/port-map.md).

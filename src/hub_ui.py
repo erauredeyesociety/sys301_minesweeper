@@ -34,6 +34,7 @@ _GLYPHS = {
     "hourglass": ("11111", "01110", "00100", "01110", "11111"),  # STATUS_TIMEBOX
     "diagonal":  ("10000", "01000", "00100", "00010", "00001"),  # STATUS_ABORTED / DEGRADED
     "arrow":     ("00100", "01110", "10101", "00100", "00100"),  # sweeping -- static, changed on state
+    "s":         ("01111", "10000", "01110", "00001", "11110"),  # ARMED -- the START ritual "S"
 }
 
 # 3x5 font padded into the 5x5. Digits, not a dot tally: a misread digit is obviously a misread, a

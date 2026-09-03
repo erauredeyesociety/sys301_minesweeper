@@ -8,7 +8,8 @@ Closes two unknowns in one pass:
     than by eye.
 
 READ-ONLY. Reads encoder positions and colour values. Does NOT command motion,
-does NOT change a device mode.
+does NOT change a device mode, and does NOT assume the robot is still wired
+A/B motors and C/D colour after a rebuild.
 
     python3 probes/devices.py
 
@@ -38,29 +39,30 @@ PROBES = [
      ' try:\\n  print(L, device.id(getattr(port,L)))\\n'
      ' except Exception as e:\\n  print(L, \'-\')")'),
 
-    # Motors: encoder state, without moving anything.
-    ("motor A",
-     "import motor; from hub import port; "
-     "print('abs', motor.absolute_position(port.A), 'rel', motor.relative_position(port.A), "
-     "'vel', motor.velocity(port.A), 'duty', motor.get_duty_cycle(port.A), "
-     "'status', motor.status(port.A))"),
-    ("motor B",
-     "import motor; from hub import port; "
-     "print('abs', motor.absolute_position(port.B), 'rel', motor.relative_position(port.B), "
-     "'vel', motor.velocity(port.B), 'duty', motor.get_duty_cycle(port.B), "
-     "'status', motor.status(port.B))"),
-    ("motor info A",
-     "import motor; from hub import port; print(motor.info(port.A))"),
+    # Motors: encoder state, without moving anything. Known angular motor ids seen in LEGO docs and
+    # our probes: 48/49/65. The loop keeps working if the Builder swaps ports later.
+    ("motors A-F",
+     'import device,motor; from hub import port; '
+     'exec("for L in [\'A\',\'B\',\'C\',\'D\',\'E\',\'F\']:\\n'
+     ' p=getattr(port,L)\\n'
+     ' try:\\n  did=device.id(p)\\n'
+     ' except Exception:\\n  did=-1\\n'
+     ' if did in (48,49,65):\\n'
+     '  print(L, \'id\', did, \'info\', motor.info(p), \'abs\', motor.absolute_position(p), '
+     '\'rel\', motor.relative_position(p), \'vel\', motor.velocity(p), \'duty\', '
+     'motor.get_duty_cycle(p), \'status\', motor.status(p))\\n'
+     ' else:\\n  print(L, \'not_motor\', did, \'status\', motor.status(p))")'),
 
-    # Colour sensors: the three reads the mission depends on.
-    ("colour C",
-     "import color_sensor; from hub import port; "
-     "print('color', color_sensor.color(port.C), 'refl', color_sensor.reflection(port.C), "
-     "'rgbi', color_sensor.rgbi(port.C))"),
-    ("colour D",
-     "import color_sensor; from hub import port; "
-     "print('color', color_sensor.color(port.D), 'refl', color_sensor.reflection(port.D), "
-     "'rgbi', color_sensor.rgbi(port.D))"),
+    # Colour sensors: the three reads the mission depends on, over every port because rebuilds happen.
+    ("colour sensors A-F",
+     'import device,color_sensor; from hub import port; '
+     'exec("for L in [\'A\',\'B\',\'C\',\'D\',\'E\',\'F\']:\\n'
+     ' p=getattr(port,L)\\n'
+     ' try:\\n  did=device.id(p)\\n'
+     ' except Exception:\\n  did=-1\\n'
+     ' try:\\n  print(L, \'id\', did, \'color\', color_sensor.color(p), \'refl\', '
+     'color_sensor.reflection(p), \'rgbi\', color_sensor.rgbi(p))\\n'
+     ' except Exception as e:\\n  print(L, \'not_colour\', did)")'),
 
     # The colour constant table, so a returned integer can be named.
     ("colour constants",
@@ -73,9 +75,8 @@ def main():
                             title="devices — what is on each port, read once")
     print()
     print("READING THIS")
-    print("  device.id() 48 vs 49 vs 65 distinguishes Medium / Large / Small angular")
-    print("  motors. Whatever it reports is the answer -- the operator's recollection")
-    print("  is not, and this is what closes KU-T3.")
+    print("  device.id() 48 vs 49 vs 65 distinguishes angular motors. Whatever")
+    print("  it reports is the answer -- the operator's recollection is not.")
     print()
     print("  colour: rgbi() is (r, g, b, intensity). Its RANGE is unknown until we")
     print("  see values over a bright and a dark surface -- do not assume 0-255.")

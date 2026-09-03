@@ -33,13 +33,12 @@ live streaming. Deeper workaround research is in flight.
 2. **Measure the wheel diameter with a ruler** (mm) — the one number that turns every encoder degree
    into real distance. Then the calibration drive (below) recovers track width and turn-scale. (Group F)
 3. **Ask the professor the units of "10×10"** — still THE architecture blocker; free. (Group A)
-4. **The G4 telemetry test** — upload a ~5-line slot program that spins a motor and `print()`s numbered
-   lines; watch for `ConsoleNotification`s while it drives (and that it finishes with no listener).
-   **Run the companion in the same session:** subscribe with `DeviceNotificationRequest 0x28` (interval
-   1000 ms) and watch for `DeviceNotification 0x3C` — a NEW finding says the **firmware pushes IMU,
-   encoders and colour with ZERO hub code**, program-independent, which may be a *better* live path than
-   `print()` ([ble-while-driving-workarounds-2026-09-01.md](../research/ble-while-driving-workarounds-2026-09-01.md)).
-   Converts "BLE while driving" from inferred to proven. Needs a clean-boot window. (Group D)
+4. **The G4 telemetry test** — from a clean Hub OS state, prove the slot route first, then run the
+   motor+`print()` BLE test and the `DeviceNotification` companion in the order in Group D. Expected:
+   REPL-run motor code kills BLE/CONNECT; slot-run motor code keeps Hub OS alive, so `print()` should
+   surface as `ConsoleNotification 0x21` and the firmware should push hardware snapshots as
+   `DeviceNotification 0x3C` after `DeviceNotificationRequest 0x28`. Passing G4/G4b/G5 converts
+   "BLE while driving" from inferred to measured. (Group D)
 5. **The calibration drive** (once diameter is known) — a gyro-vs-encoder square/straight run that sets
    track width, the caster turn-scale, and the fault-detection thresholds (slip / lifted). Design in
    [odometry-fusion-and-health-2026-09-01.md](../research/odometry-fusion-and-health-2026-09-01.md). (Group F)
@@ -89,19 +88,56 @@ Full wording: [questions-for-the-professor.md](./questions-for-the-professor.md)
 
 ---
 
-## GROUP D — needs the hub, and one variable changed at a time *(the retracted claim)*
+## GROUP D — needs the hub, and a live Hub OS
 
-**This is a controlled experiment, and it exists because a claim was retracted for want of it.**
-Do not skip a step or the result means nothing again.
+**Known lesson:** REPL probes and `hub_programmer/run.py` send `Ctrl-C`; after that, the Hub OS services
+that own CONNECT/FD02 are down until restart. If Bluetooth matters, power-cycle first and use only the
+LEGO control protocol or BLE in the window that follows.
 
-1. Power-cycle. **Touch no serial port.** Press CONNECT. Scan → *expected: appears.*
-2. Power-cycle. **Run one probe.** Press CONNECT. Scan.
-   - **Appears** → probing is irrelevant, and `probes/` carries no Bluetooth cost.
-   - **Silent** → probing suppresses the radio, and that becomes a real operational rule.
+Before G4, measure the live radio state without changing anything else:
 
-Also worth timing while connected: **how long the advertising window stays open** (KU-M17), and
-**negotiating a larger MTU** — we are using **23 against an available 509**, a 20× throughput gap that
-must be closed before any telemetry design is trusted (KU-M17, [ble-protocol](../findings/ble-protocol-2026-08-27.md)).
+1. Power-cycle. **Touch no serial port.** Press CONNECT once. Scan → *expected: appears*; time how long
+   the advertising window stays open (KU-M17).
+2. Connect one BLE client and verify the UUID. Expected CONNECT light: **solid blue**. While solid blue,
+   a second scanner may see nothing; record that as "already connected" unless the light says otherwise.
+3. Read the real MTU / usable write size and log it with the transcript. The old "MTU 23" was a bleak
+   reporting default, not a measured wire value.
+
+### Clean G4/G5 window — motors + print telemetry + possible control
+
+Run this as one controlled window. **No REPL tools in the middle:** no `hub_programmer/run.py`, no
+`hub_programmer/upload.py`, no `_hubio` probe, no raw serial terminal. Those send `Ctrl-C` and invalidate
+the BLE question by interrupting the Hub OS.
+
+1. **Safety/setup.** Robot on blocks or held; wheels spin free. Close every USB/BLE client
+   (`fuser -v /dev/spike` should be empty). Power-cycle with the centre button, wait for the normal Hub OS
+   menu/matrix. Do not press-and-hold CONNECT.
+2. **Advertising/connection state.** Press CONNECT once only if needed. Expected light states from our
+   measurement: flashing blue = advertising, solid blue = connected. Once solid blue, a second scan may see
+   nothing; treat that as "already connected" before treating it as "Bluetooth off."
+3. **DeviceNotification baseline.** With no slot program running, connect over BLE, verify the UUID, send
+   `DeviceNotificationRequest(1000)`, and log raw `0x3C` frames defensively. Then send interval `0` and
+   disconnect. If no `0x3C` arrives here, do not combine it with motor motion yet.
+4. **Slot route proof over USB, not BLE.** Run
+   `python3 hub_programmer/slot_upload.py examples/g4_spin_and_print.py --slot N --apply --listen 25`
+   with a throwaway slot `N`. This is the first hardware proof of `ProgramFlowRequest`/slot execution; it
+   should show Ack responses and USB-side `ConsoleNotification 0x21`. If this fails, stop.
+5. **G4 over BLE.** Power-cycle again. Connect a BLE listener/capture client, verify UUID, and watch for
+   `ConsoleNotification 0x21`; ideally the same client also sends `DeviceNotificationRequest(1000)`. Start
+   the stored G4 program through the Hub OS slot route, not `run.py`. Expected: motor A moves, numbered G4
+   lines arrive over BLE, and `0x3C` motor position advances. If using today's `slot_upload.py`, remember it
+   can listen for console but does **not** request `DeviceNotification` yet.
+6. **G4b no-listener.** Power-cycle. Start the same stored slot with **no BLE client and no USB console
+   listener during the run**; best is the hub slot UI, acceptable is a start command that disconnects
+   immediately. Time it by stopwatch: the current G4 program should stop the motor after about 20 s. A
+   stall here means `print()` is not safe as a live heartbeat.
+7. **G5 both motors only after G4/G4b pass.** Use the same clean Hub OS pattern with a bounded two-motor
+   slot program, still on blocks/held. Expected: both encoder fields advance in `DeviceNotification`, BLE
+   console line count stays >=99%, and motor stop timing does not stretch.
+
+**Never fix a failed step by enabling Bluetooth in hub code.** User `bluetooth.BLE()`/`gap_advertise()` can
+displace the Hub-OS-owned FD02 service. Restart the Hub OS with the normal power button and re-run the
+single failed step.
 
 ---
 

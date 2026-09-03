@@ -1,0 +1,44 @@
+# ports — what is attached to A-F
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== port constants =====
+['A', 'B', 'C', 'D', 'E', 'F']
+
+===== A =====
+A ready= True id= 48
+
+===== B =====
+B ready= True id= 48
+
+===== C =====
+C ready= True id= 61
+
+===== D =====
+D ready= True id= 61
+
+===== E =====
+E EMPTY OSError
+
+===== F =====
+F EMPTY OSError
+
+===== motor status sweep =====
+A 0
+B 0
+C 5
+D 5
+E 5
+F 5
+
+==============================================================
+RESULT: REPL prompt observed — the above is the hub's own words.
+
+READING THIS
+  'EMPTY' means nothing is attached to that port -- device.id() raises
+  when the port is bare, and that exception IS the result, not a bug.
+  An 'id=' number identifies the device type. Record which letter the
+  Builder actually used; the code should not hard-code a guess.
+
+  Run this BEFORE and AFTER plugging something in. If a port changes
+  from EMPTY to an id without restarting the hub, hot-plug works and
+  we have MEASURED it rather than assumed it.

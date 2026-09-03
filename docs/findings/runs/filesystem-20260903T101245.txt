@@ -1,0 +1,79 @@
+# filesystem — read-only listing and reads of /flash
+# port /dev/spike @ 115200 8N1   deadline 70s
+
+===== listing /flash =====
+['README.txt', 'boot.py', 'config', 'lib', 'main.py', 'program', 'pybcdc.inf']
+
+===== sizes =====
+[('README.txt', 528), ('boot.py', 196), ('config', 196), ('lib', 134684116), ('main.py', 1853), ('program', 1853), ('pybcdc.inf', 2597)]
+
+===== is there a lib/? =====
+True ['config.py']
+
+===== program slots =====
+[]
+
+===== config entry =====
+config 16384 134341803
+
+===== README.txt =====
+This is a MicroPython board
+You can get started right away by writing your Python code in 'main.py'.
+For a serial prompt:
+ - Windows: you need to go to 'Device manager', right click on the unknown device,
+   then update the driver software, using the 'pybcdc.inf' file found on this drive.
+   Then use a terminal program like Hyperterminal or putty.
+ - Mac OS X: use the command: screen /dev/tty.usbmodem*
+ - Linux: use the command: screen /dev/ttyACM0
+Please visit http://micropython.org/help/ for further help.
+
+===== boot.py =====
+# boot.py -- run on boot to configure USB and filesystem
+# Put app code in main.py
+import micropython, hub
+micropython.alloc_emergency_exception_buf(128)
+hub.config["hub_os_enable"] = True
+
+===== main.py =====
+# examples/heartbeat.py — the smallest program that answers KU-M16.
+#
+# DEPLOYED AS /flash/main.py:
+#   ./hub_programmer/upload.py examples/heartbeat.py --to /flash/main.py --apply --force
+#   then POWER-CYCLE the hub and watch. Restore with:
+#   ./hub_programmer/upload.py hub_programmer/restore/main.py --to /flash/main.py --apply --force
+#
+# THE QUESTION: does /flash/main.py autorun at boot, and does the LEGO Hub OS
+# keep running alongside it? That gates Demo Day -- it is the difference between
+# a robot that runs standalone and a robot tethered to a laptop. It is also the
+# gate on BLE telemetry: print() only reaches the host as a ConsoleNotification
+# if the Hub OS is alive to carry it.
+#
+# IT REPORTS ITSELF THREE WAYS ON PURPOSE, so the answer is readable no matter
+# which channels turn out to work:
+#   1. the 5x5 light matrix -- visible with NO laptop at all
+#   2. print() -- reaches USB serial, and BLE if the Hub OS is up
+#   3. a beep at startup -- audible confirmation it began
+#
+# It never commands motion. It cannot drive the robot anywhere.
+#
+# MicroPython: no f-strings.
+import time
+import hub
+# Beep once so the start is unmistakable even if nothing else works.
+try:
+
+===== filesystem free space =====
+block 4096 total 7936 free 7914 => bytes free 32415744
+
+===== mount points =====
+['flash']
+
+==============================================================
+RESULT: REPL prompt observed — the above is the hub's own words.
+
+WHY THIS MATTERS
+  /flash/lib is on sys.path. If it exists and is writable, our pure
+  modules (config, detector, sweep, odometry, ...) can live there and
+  be imported by a program, without the LEGO app being involved.
+  'program' is where stored slots live -- do not disturb them.
+  Free space bounds how much we can deploy; record it.

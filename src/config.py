@@ -93,9 +93,10 @@ WIDTH_GATE_SLACK = 2.0         # [ASSUMED] how much wider than a full chord an e
 # why they live here and are passed as arguments elsewhere -- measuring them changes a number,
 # never a line of code. We own a hodge-podge of parts and several wheel sizes, so do not treat any
 # of this as settled until scripts/measure-drivetrain runs on the real robot.
-WHEEL_DIAMETER_MM = 56.0       # [ASSUMED] LEGO Ø56 (base set). We may be running Ø24 or Ø88.
-                               # MEASURE the EFFECTIVE rolling diameter under load, not the moulded
-                               # number -- they differ, and the difference is surface-dependent.
+WHEEL_DIAMETER_MM = 63.5       # OPERATOR-REPORTED 2026-09-03: 2.5 in wheel diameter.
+                               # Still MEASURE the EFFECTIVE rolling diameter under load, not just
+                               # the moulded number -- they differ, and the difference is
+                               # surface-dependent.
 TRACK_WIDTH_MM = 176.0         # [ASSUMED] placeholder. Distance between the wheel contact patches.
                                # Derive it from a spin-turn test, not a ruler: the effective value
                                # is what makes a commanded 360 deg turn actually close.

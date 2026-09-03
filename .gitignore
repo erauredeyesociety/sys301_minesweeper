@@ -25,6 +25,10 @@ logs/
 # Scratch buffer (CLAUDE.md exempts tmp*.md from the no-root-md rule)
 tmp*.md
 
+# Timestamped host-side telemetry captures
+tmp/telemetry/*
+!tmp/telemetry/.gitkeep
+
 # Runtime tunnel caches (not source)
 scripts/.sky-ollama-port
 scripts/.rh-tunnel.pid

@@ -4,10 +4,12 @@
 > (course instructions p.1; violations cost 2 Schrute Bucks each). Read this once now, and once at the
 > start of class on 10 SEP. Under pressure you follow the checklist — you do not improvise.
 >
-> **Status:** written 2026-08-25. The mission and the arena are still **PENDING**
-> ([../scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25)), so every step that depends on them is marked
-> **`PENDING`** and must be filled in before the first dry run. The hub's light/sound vocabulary in § 5
-> is **`PROPOSED`** — it is not implemented yet.
+> **Status:** written 2026-08-25; demo-readiness audit 2026-09-03. The robot is now built and its
+> port map is measured (A/B motors, C/D colour sensors), but the mission and arena are still
+> **PENDING** ([../scope.md § Mission](../scope.md#mission--partial-verbal-briefing-captured-2026-08-25)).
+> The actual no-laptop Demo Day path is also **not proven yet**: `/flash/main.py` does not autorun, and
+> `hub_programmer/slot_upload.py` is built but untested on hardware. The hub's light/sound vocabulary
+> in § 5 is **`PROPOSED`** — it is not implemented yet.
 >
 > Related: [hub-identification.md](./hub-identification.md) ·
 > [../directives/honest-instrumentation.md](../directives/honest-instrumentation.md) ·
@@ -25,6 +27,27 @@
 | **Supplier** (green) | Handle money; buy/sell at the store; load the yellow box | Touch supplies once boxed, except to sell back |
 
 If the robot needs a part change mid-demo, **the Builder does it** — nobody hands you a piece.
+
+---
+
+## 0a. Demo-safe script menu, before the real mission program exists
+
+This is for showing/selling the project to other teams without accidentally running an autonomous floor
+demo. The Builder still owns every robot-touching action.
+
+| Script | Good demo use | Rule |
+|---|---|---|
+| `examples/color_live.py` / `examples/color_classify_demo.py` | Show the two colour sensors reacting to surfaces. | Read-only; no motors. Use the real floor, note pack, and tape if available. |
+| `examples/light_matrix_and_buttons.py` / `examples/heartbeat.py` | Show hub matrix, sound, buttons, battery/yaw reporting. | No drive motion. `heartbeat.py` is only for a controlled `/flash/main.py`/boot-path check, then restore `hub_programmer/restore/main.py`. |
+| `examples/motor_encoder_verbose.py` | Show encoder telemetry while a human turns wheels by hand. | Read-only; no powered motion. |
+| `examples/motor_safe_spin.py` / `examples/drive_moves.py` / `examples/g4_spin_and_print.py` | Show the drive stack at bounded speed. | Wheels off the ground or robot physically held/blocked. Do **not** sell these as autonomous arena runs. |
+| `examples/sweep_skeleton.py` / `examples/drive_straight_encoders.py` / `examples/square_odometry.py` | Engineering calibration / development only. | They command continuous drive/turn motion, and some sign knobs still default to `+1/+1` even though measured forward is `A:-v, B:+v`. Run on blocks first; floor only after the signs are checked against the port map, with a cleared patch and Builder control. |
+
+Stored-program note: the old README/`upload-to-hub.md` slot instructions are not the authority. Use
+[deploy-to-hub.md](./deploy-to-hub.md). As of 2026-09-03, `hub_programmer/slot_upload.py` dry-runs pass
+with `python3`, but `./hub_programmer/slot_upload.py ...` fails unless the executable bit is fixed, and
+the `--apply` sequence has not been measured on the hub. A USB `run.py` demo is tethered and kills the
+Hub OS; it does **not** satisfy TR-3 standalone.
 
 ---
 
@@ -56,11 +79,11 @@ Every one of them ends with § 2.
 | # | Check | Pass looks like |
 |---|---|---|
 | 2.1 | **Battery.** Hub charged as far as the class allows. | Reading recorded, not guessed. Read it from the hub, not from the app — see the battery probe in [hub-identification.md § 5.7](./hub-identification.md). **`UNVERIFIED`:** which call returns battery on this hub. **`PENDING`:** what "enough charge for a run" is in volts/percent — measure it during dry runs and write the number here. |
-| 2.2 | **The program is on the hub, in a known slot.** | Slot number written on a card that goes in the yellow box. **`PENDING`:** the slot number. |
-| 2.3 | **The program runs standalone, laptop unplugged.** | You unplug the USB, press run on the hub, and it starts. If it only runs tethered, it will fail on Demo Day. This is requirement TR-3. |
+| 2.2 | **The stored program route is known and written down.** | A route card goes in the yellow box: exact file, exact command, and slot number if using the Hub OS slot route. **`PENDING`:** first measured `slot_upload.py --apply` transcript on our hub. Invoke it as `python3 hub_programmer/slot_upload.py ...` until the executable bit is fixed. |
+| 2.3 | **The program runs standalone, laptop unplugged.** | You start the recorded stored program with USB unplugged and the laptop put away. If it only runs through `hub_programmer/run.py`, it is a bench demo, not Demo Day. This is requirement TR-3. |
 | 2.4 | **Port map matches the physical build.** | Every cable seated, and each one matches [../hardware/port-map.md](../hardware/port-map.md) exactly. Photograph the ports; a photo settles arguments a memory cannot. |
 | 2.5 | **Nothing loose.** | Gentle shake, nothing rattles or shifts. Sensor mounting height unchanged — detection thresholds depend on it. |
-| 2.6 | **Box contents.** | Robot · USB cable · spare cable if the budget bought one · slot card · the last calibration numbers |
+| 2.6 | **Box contents.** | Robot · USB cable · spare cable if the budget bought one · route/slot card · the last calibration numbers |
 
 **Do not open the LEGO SPIKE App or Web App to do any of this** unless the operator has explicitly
 approved it, and if it prompts to update the Hub OS, **STOP**
@@ -77,7 +100,7 @@ Fifteen minutes, in this order. Anything that fails goes to the Programmer immed
 | 3.1 | Unbox; visual inspection against the 2.4 photo | Build identical to pack-out |
 | 3.2 | Power on | Hub boots; no error pattern on the matrix |
 | 3.3 | Battery | At or above the threshold from 2.1. If low, charge now and say so in the team channel. |
-| 3.4 | Correct slot selected | Slot from the card in 2.2 |
+| 3.4 | Correct stored program selected | Route/slot from the card in 2.2 |
 | 3.5 | **Dry start, robot held off the floor or on a safe patch** | Program starts, reaches the calibrate/ready state, then you stop it. Confirms the program is alive **before** you are on the clock. |
 | 3.6 | Laptop **disconnected and put away** | The run must not depend on a cable, and a dangling cable is the classic way a robot gets yanked mid-run |
 | 3.7 | Failure drill (§ 6) read aloud once | You can name all five actions without looking |
@@ -172,15 +195,15 @@ Five atomic actions. Memorise these; the table below maps each symptom to **exac
 | ID | Action |
 |---|---|
 | **A1 STOP** | Press the hub's centre button **once** to stop the running program |
-| **A2 RESTART** | Press the centre button **once** to re-launch the selected slot |
+| **A2 RESTART** | Press the centre button **once** to re-launch the recorded stored program/slot |
 | **A3 HANDS OFF** | Do nothing. Let the run finish. Watch and remember. |
-| **A4 POWER CYCLE** | Hold the centre button to power off, press again to power on, reselect the slot. **`UNVERIFIED`:** the exact hold duration — measure it on a dry run and write it here. |
+| **A4 POWER CYCLE** | Hold the centre button to power off, press again to power on, reselect the recorded program/slot. **`UNVERIFIED`:** the exact hold duration — measure it on a dry run and write it here. |
 | **A5 CALL IT** | Announce to the instructor that the attempt is over, and record what happened |
 
-**`UNVERIFIED` — every button behaviour above.** The hub has never been connected
-([hub-identification.md](./hub-identification.md)): single-press-stops, single-press-relaunches-the-slot,
-and hold-to-power-off are the expected stock-firmware behaviours, not observed ones. Confirm all three on
-the first dry run and rewrite this table with what the hub actually did.
+**`UNVERIFIED` — every Demo Day button behaviour above.** The hub has been connected and driven, but
+this runbook still has no measured transcript for single-press-stops, single-press-relaunches-the-slot,
+or hold-to-power-off in the stored-program path. Confirm all three on the first dry run and rewrite this
+table with what the hub actually did.
 
 | Observable symptom | Action | Why this one |
 |---|---|---|
@@ -250,9 +273,11 @@ valuable line in the whole document.
 | Target type and how targets are placed | The briefing |
 | Time limit, attempts allowed, whether intervention is permitted | The briefing |
 | Whether the deliverable is a count, a map, a retrieval, or avoidance | The briefing |
-| Program slot number; what the calibration routine does | Mission code, not yet written |
+| Stored-program route/slot number, including first measured `slot_upload.py --apply` run on our hub | Hub session with transcript filed in `docs/findings/runs/` |
+| `src/hub_api.py` port constants transcribed from the confirmed A/B/C/D port map | Programmer code edit; not done in this doc-only audit |
+| What the calibration routine does | Mission code, not yet written |
 | Per-color calibration bands (§ 4) and the order DONE displays per-color counts, total, unclassified (§ 5) | Briefing (which colors) + Programmer (FR-2b / FR-4 implementation) |
-| Battery threshold in real units; **all** hub button behaviours in § 6, including the power-off hold time | Observation on the first hub session / dry run |
+| Battery threshold in real units; **all** hub button behaviours in § 6, including the power-off hold time | Observation on the stored-program dry run |
 | Whether the hub may be charged between classes, and by whom | Written ruling from Dr. Watson / the TA |
 | § 5 light-and-sound vocabulary | Programmer implements it, then this table is verified against the code |
 
