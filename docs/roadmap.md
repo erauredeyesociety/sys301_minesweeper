@@ -12,6 +12,14 @@ and parameterize, so an answer changes a value, not the architecture.
 ⚠ **Open risk:** if "10×10" means feet, exhaustive single-sensor coverage doesn't fit a demo slot —
 [findings/coverage-time-budget.md](./findings/coverage-time-budget.md).
 
+## M2 — Robot drives, and the program is written (2026-09-01 → 2026-09-03) ✓ mostly
+- [x] **Robot drives straight** — 1 ft square proven; **wheel Ø 63.5 mm + track width 95 mm MEASURED** — [findings/square-drive-fusion-2026-09-03.md](./findings/square-drive-fusion-2026-09-03.md)
+- [x] **Untethered stored-program path PROVEN** — upload as `program.py` → unplug → runs on battery → replug → retrieve; `slot_upload.py --apply` hardened (auto-minify + safe multi-chunk) — [findings/standalone-run-and-retrieve-2026-09-03.md](./findings/standalone-run-and-retrieve-2026-09-03.md)
+- [x] **`src/main.py` WRITTEN** — irreducible-core competition program, reviewed (no motor-safety/crash bug); hub call sites `[UNVERIFIED]` — [findings/main-py-irreducible-core-2026-09-03.md](./findings/main-py-irreducible-core-2026-09-03.md)
+- [x] **`floor_anomaly` detection validated** — 0%-false on real floor data; true-positive still owed — [findings/detection-telemetry-build-2026-09-03.md](./findings/detection-telemetry-build-2026-09-03.md)
+- [x] **`deploy_deps.py`** auto-resolves + deploys a program's `src/` imports to `/flash/lib`
+- [ ] **Next (hardware):** first `main.py` run (KU-M29/M30) · real-mine detection (KU-M22/M32) · units of "10×10" (KU-P1) — [plans/next-session.md](./plans/next-session.md)
+
 ## M1 — Hub bring-up ✓ (2026-08-27)
 - [x] Host prepared before first contact (ModemManager, udev, `/dev/spike`) — `./scripts/setup-host.sh --apply`
 - [x] **API generation MEASURED: SPIKE 3** — no `spike` module, so SPIKE 2 material is inapplicable — [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)

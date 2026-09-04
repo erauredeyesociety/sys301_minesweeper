@@ -1,7 +1,8 @@
 # SYS 301 Minesweeper — Todo (SSOT)
 
-> Last updated: 2026-09-03 · **mode: demo-readiness audit; hub is live, robot is built and drives,
-> but the no-laptop stored-program path and mission program are not ready to claim yet.**
+> Last updated: 2026-09-03 (evening) · **mode: `main.py` written + reviewed; drivetrain MEASURED; the
+> untethered stored-program path is PROVEN. What remains is hardware-gated — the first `main.py` run and a
+> real-mine detection test — plus the free units question.**
 
 > **2026-09-01 checkpoint: the robot drives.** Forward/back/turn confirmed, drive convention locked
 > ([findings/drive-checkpoint-2026-09-01.md](./findings/drive-checkpoint-2026-09-01.md)). docs-rag
@@ -9,16 +10,27 @@
 > real GATE 1 on the actual notes/tape/floor, a measured stored-program run, and the `src/hub_api.py`
 > port constants.
 
+> **2026-09-03 checkpoint: the pieces converged.** Robot drove a defined 1 ft square untethered —
+> **wheel Ø 63.5 mm and track width 95 mm MEASURED**, drives straight. `slot_upload.py --apply` proven +
+> hardened (auto-minify, multi-chunk); `deploy_deps.py` auto-resolves a program's `src/` imports.
+> **`src/main.py` WRITTEN** (irreducible core, reviewed — no motor-safety/crash bug). `floor_anomaly`
+> validated 0%-false on real floor data. Wheel-diameter and port-constant items above are now DONE.
+> Still owed: the units of 10×10 (professor), a real-mine detection test, and the first `main.py` run.
+> See [session_records/2026-09-03_square-fusion-main-py-and-hub-tooling.md](./session_records/2026-09-03_square-fusion-main-py-and-hub-tooling.md).
+
 ## ▶ NEXT SESSION — START HERE
 
 **[plans/next-session.md](./plans/next-session.md)** — the ordered plan, grouped by **what each item
 needs** (professor only · teammate only · hub over USB · a colour sensor without the robot · the robot
 built · a keyboard), so whatever is present at the start of class can be worked immediately.
 
-**The three real blockers, in order:** ① the **units of "10×10"** — one free question, gates the
-architecture · ② the **real GATE-1 optical burst** on actual notes/tape/floor — gates the detection
-rule · ③ the **stored-program/standalone path** — `/flash/main.py` does not autorun, and
-`slot_upload.py --apply` is still unmeasured on our hub.
+**The two real blockers now, in order:** ① the **units of "10×10"** — one free question, gates the
+architecture (KU-P1) · ② **real-mine detection** — `floor_anomaly` does not false-trigger on a real floor
+(0/238 MEASURED) but has never COUNTED a real mine (KU-M22/M32). The old ③ (stored-program path) is
+**SOLVED**: `slot_upload.py --apply` works and a slot program runs untethered on battery, proven
+2026-09-03. The next hardware step is the **first `main.py` run** —
+[plans/first-main-run](./runbooks/first-main-run.md), ranked at the top of
+[plans/next-session.md](./plans/next-session.md).
 
 **Do not re-investigate** the API generation, the deploy route, or whether Bluetooth works. All three
 are closed by measurement — [session_records/2026-08-27](./session_records/2026-08-27_hub-first-contact-usb-and-ble.md).

@@ -220,6 +220,45 @@ enc-deg/rev).
 
 ---
 
+## Opened and closed 2026-09-03 (square drive + `main.py` + hub tooling)
+
+**Closed / advanced this session** (MEASURED unless noted):
+
+- **KU-M21 — wheel diameter — CLOSED.** 63.5 mm (2.5 in), operator-measured and CONFIRMED by the 1 ft
+  square (~545 enc-deg → ~300 mm/side, all four sides). Propagated: `config.WHEEL_DIAMETER_MM = 63.5`.
+  [../findings/square-drive-fusion-2026-09-03.md](../findings/square-drive-fusion-2026-09-03.md).
+- **KU-M25 — slot upload works — CLOSED.** `slot_upload.py --apply` uploads + starts on our hub
+  (`motor_poc`, `standalone_log` both ran). Hardened this session: auto-minify + safe 512 B multi-chunk,
+  so any-size program uploads. Fix that unblocked it: the slot entry MUST be named `program.py`.
+- **KU-M27 — track width — CLOSED** (slip/stuck fault thresholds still partial). EFFECTIVE track width
+  **95 mm** from the square's 4 in-place turns (`2·arc/θ`, gyro heading vs encoder arc); was `[ASSUMED]`
+  176. Propagated: `config.TRACK_WIDTH_MM = 95`. The slip case (wheels spin, body does not rotate) is
+  detected by `scripts/decode_telemetry.py`.
+- **KU-M24 — telemetry in a slot — CLOSED.** A slot program drives motors AND `print()`s to the console,
+  AND logs to `/flash` and keeps running **UNPLUGGED** (`standalone_log`: 412 rows over 45 s on battery,
+  retrieved after replug). The record→unplug→run→retrieve fallback is proven end to end.
+- **KU-M28 — driving yaw drift — PARTIAL → good.** The square measured per-side heading drift **< 1°/ft**
+  and ~±1.5° repeatability across 4 gyro-closed turns; the robot drives straight. Full driving-drift
+  characterisation over a long run still owed.
+- **KU-M16 — `/flash/main.py` autorun — role MOOTED.** It does not autorun (closed 2026-09-01), but Demo
+  Day no longer needs it: the **slot route runs untethered** (proven above). No longer a Demo-Day gate.
+
+**Still open from the 2026-09-01 set:** **KU-M22** (real GATE-1 optics on actual notes/tape — white paper
+only so far), **KU-M23** (sensor standoff — ~50 mm height and a ~25 mm wobble circle now documented in
+[../findings/colour-sensor-mounting-wobble-2026-09-03.md](../findings/colour-sensor-mounting-wobble-2026-09-03.md);
+height/range sweep still owed), **KU-M26** (coast/stopping distance).
+
+**Newly open, ranked into [next-session.md](./next-session.md):**
+
+| ID | Unknown | How it resolves |
+|---|---|---|
+| **KU-M29** | **`main.py`'s hub call sites are all `[UNVERIFIED]`** — the whole `hub_motors`/`hub_ui`/`hub_imu`/`hub_color` call path in the competition program has never run on the robot. Its LOGIC is reviewed (no motor-safety/crash bug); only the hardware calls are unrun. | The first `main.py` run — [../runbooks/first-main-run.md](../runbooks/first-main-run.md). |
+| **KU-M30** | **`deploy_deps.py --apply` is host-proven, hardware-`[UNVERIFIED]`** — the AST resolver is correct (15 modules for `main.py`), but the multi-module deploy-to-`/flash/lib` orchestration is unrun. | Runs on the first `main.py` deploy. |
+| **KU-M31** | **Track width 95 mm is a slight over-estimate** — one run, and the gyro delta read ~5° short because the turn loop broke *after* the last logged sample. | Re-measure with the segment-boundary log row (already added to `examples/motor_poc.py`). |
+| **KU-M32** | **True-positive detection unproven** — `floor_anomaly` does NOT false-trigger on a real floor (0/238, MEASURED while moving), but a real mine crossing a real floor has never been counted. | GATE-1 with a real note (folds into KU-M22). |
+
+---
+
 ## What to close first
 
 Ranked by *consequence × cost to close*, not by how interesting they are.
@@ -250,6 +289,7 @@ Ranked by *consequence × cost to close*, not by how interesting they are.
 
 | Date | Change | By |
 |---|---|---|
+| 2026-09-03 | Square drive + `main.py` session. Closed **KU-M21** (wheel Ø 63.5 mm, confirmed by the square), **KU-M25** (slot upload works; `program.py` name fix + auto-minify + multi-chunk), **KU-M27** (track width MEASURED 95 mm), **KU-M24** (slot telemetry + untethered logging proven). **KU-M16** Demo-Day role mooted by the proven slot route. Opened **KU-M29** (`main.py` hub call sites unrun), **KU-M30** (`deploy_deps.py --apply`), **KU-M31** (track-width re-measure), **KU-M32** (true-positive detection). `src/main.py` written + reviewed; `floor_anomaly` validated 0%-false on real floor data. | Claude |
 | 2026-09-01 | Drive checkpoint: robot drives, port map + mirror sign locked. Closed KU-M15/M16/M20/T3/T4. Opened KU-M21–M28 (wheel diameter, real GATE-1 optics, telemetry G4, slot upload, coast distance, fault thresholds, driving drift). Telemetry architecture decided (log-and-retrieve). Colour method characterised on substitute surfaces. | Claude |
 | 2026-08-25 | Created. 12 professor unknowns, 13 measurement unknowns, 8 teammate unknowns, 8 decisions — mined from `scope.md`, `questions-for-the-professor.md`, the three research documents' open-question sections, the runbooks' UNVERIFIED markers, and `config.py`'s `[ASSUMED]` values. | Claude |
 | 2026-08-27 | Mission answers relayed by a teammate: **KU-P3 CLOSED** (no walls, floor tape), **KU-P5 PARTIAL** (mines yellow, hedged — decoys still open), **KU-P0 PARTIAL, not closed** — the autonomy answer contradicts itself, and the simplification it promised is retracted regardless of how it resolves. Added KU-P13 (which tape), KU-P14 (tape width / is crossing scored), KU-P15 (what a blind operator may use, and does it cost points). Re-ranked what to close first: KU-P1 is now the single biggest free win. | Claude |

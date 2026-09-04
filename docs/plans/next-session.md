@@ -11,37 +11,45 @@
 
 ---
 
-## Read this first — the 60-second state (updated 2026-09-01)
+## Read this first — the 60-second state (updated 2026-09-03)
 
 **Closed, do NOT re-investigate:** SPIKE 3 API; deploy over USB proven; firmware provably untouched;
-Bluetooth works and our hub is identified by UUID; IMU units measured; **the robot is BUILT and
-DRIVES** — forward/back/turn confirmed, port map locked (A=left, B=right, forward `A:-v B:+v`, direct
-drive 360 enc-deg/rev); two colour sensors, matched, re-mountable low; docs-rag `/api/ask` works
-(needs the ERAU VPN up for skytracker).
+Bluetooth works and our hub is identified by UUID; IMU units measured; **the robot DRIVES STRAIGHT** —
+1 ft square proven, **wheel Ø 63.5 mm and track width 95 mm both MEASURED**, port map locked (A=left,
+B=right, forward `A:-v B:+v`); two colour sensors (loose mount, ~25 mm wobble); docs-rag `/api/ask`
+works (needs the ERAU VPN up for skytracker).
+
+**NEW 2026-09-03 — the toolchain and the program are built:** the **slot route runs untethered** (upload
+as `program.py` → unplug → runs on battery → replug → retrieve — PROVEN), so Demo Day does NOT need
+`/flash/main.py` autorun. **`src/main.py` is WRITTEN** — the irreducible-core competition program,
+reviewed (no motor-safety/crash bug), every hub call site still `[UNVERIFIED]`. Deploy is one command:
+`./hub_programmer/deploy_deps.py src/main.py --apply` (resolves + deploys all 15 `src/` deps, then uploads
++ starts).
 
 **Telemetry architecture decided** ([telemetry-while-driving.md](../research/telemetry-while-driving.md)):
 a **slot program** drives motors AND emits telemetry (print → ConsoleNotification) under the live Hub
 OS — so "BLE while driving" is solved in principle. Recommendation: **log on hub, retrieve after**, not
 live streaming. Deeper workaround research is in flight.
 
-**The top of next session, in order (each unblocks the most for its cost):**
+**WHEN THE HUB IS PLUGGED BACK IN — do these, in order (each unblocks the most for its cost):**
 
-1. **LOWER THE COLOUR SENSORS to ~16 mm**, then run the **real GATE-1 optical burst** — `rgbi()` +
-   `reflection()` on matte yellow notes, both real tapes, floor, and air. It unblocks **three of four**
-   design areas (colour fusion, boundary detection, matched-sensor coverage) and needs **neither** the
-   wheel diameter **nor** the units answer. *The single highest-value bench task.* (Group E)
-2. **Measure the wheel diameter with a ruler** (mm) — the one number that turns every encoder degree
-   into real distance. Then the calibration drive (below) recovers track width and turn-scale. (Group F)
-3. **Ask the professor the units of "10×10"** — still THE architecture blocker; free. (Group A)
-4. **The G4 telemetry test** — from a clean Hub OS state, prove the slot route first, then run the
-   motor+`print()` BLE test and the `DeviceNotification` companion in the order in Group D. Expected:
-   REPL-run motor code kills BLE/CONNECT; slot-run motor code keeps Hub OS alive, so `print()` should
-   surface as `ConsoleNotification 0x21` and the firmware should push hardware snapshots as
-   `DeviceNotification 0x3C` after `DeviceNotificationRequest 0x28`. Passing G4/G4b/G5 converts
-   "BLE while driving" from inferred to measured. (Group D)
-5. **The calibration drive** (once diameter is known) — a gyro-vs-encoder square/straight run that sets
-   track width, the caster turn-scale, and the fault-detection thresholds (slip / lifted). Design in
-   [odometry-fusion-and-health-2026-09-01.md](../research/odometry-fusion-and-health-2026-09-01.md). (Group F)
+1. **First run of `src/main.py`** — the competition program now EXISTS and is reviewed; this run turns
+   its `[UNVERIFIED]` hub call sites into MEASURED. Power-cycle, then
+   `./hub_programmer/deploy_deps.py src/main.py --apply`, set a SMALL arena + short timebox, and walk the
+   states with a hand on the robot — full procedure in
+   [../runbooks/first-main-run.md](../runbooks/first-main-run.md). Closes **KU-M29** (hub call sites) and
+   **KU-M30** (`deploy_deps --apply`). ⭐ the highest-value hardware task now.
+2. **Real GATE-1 detection** — present a real **yellow note**, and a **yellow note + blue sticker**, under
+   a colour sensor; log `rgbi()`+`reflection()`; confirm `floor_anomaly` + the detector actually COUNT a
+   real mine. (They do not false-trigger on a real floor — 0/238 MEASURED — but a true positive is
+   unproven.) Closes **KU-M22** and **KU-M32**. Needs a note and tape; no units answer, no wheel number.
+3. **Ask the professor the units of "10×10"** — still THE architecture blocker, and free. (Group A, KU-P1)
+4. **Re-measure track width** with the segment-boundary log fix (KU-M31) — rides along on any drive; drops
+   the ~5° gyro under-read in the 95 mm figure. (Wheel Ø and the basic calibration drive are now DONE.)
+
+The old telemetry (G4) ladder in Group D is largely CLOSED — a slot program drives motors and its
+`print()` streams, and it logs untethered; keep Group D only for the live-BLE-while-driving nicety, which
+is secondary (the log-and-retrieve fallback is proven).
 
 ---
 
@@ -185,7 +193,7 @@ Nothing here is possible before the Builder mounts parts. Ordered by what unbloc
 |---|---|---|
 | **CSER `.docx` LibreOffice round-trip** | 15 minutes now, or discover it the night before the report is due | **KU-M12** |
 | Confirm the report format with the professor | The instructions name a **due date and nothing else** — no format, no file type. The Word template is an **inference** | — |
-| Write `src/main.py`? | **NO — still deliberately unwritten.** It is where every open unknown converges. Writing it before Group A is answered means writing it twice | — |
+| ~~Write `src/main.py`?~~ | **DONE 2026-09-03** — written as the irreducible-core switchboard, parameterised so the units answer moves a config VALUE, not a box (minimalism-contract). Reviewed; hub call sites `[UNVERIFIED]` until the first run (item 1 up top) | — |
 
 ---
 
@@ -212,7 +220,8 @@ because something louder is always in front of them. Recorded here so they are n
 
 - **Do not re-investigate the API generation, the deploy route, or whether Bluetooth works.** All three
   are closed by measurement. Re-deriving them is the most likely way to waste the session.
-- **Do not write `src/main.py`** until Group A is answered.
+- **`src/main.py` is written** (2026-09-03) — do not rewrite it. Its logic is reviewed; only the hub call
+  sites need hardware, and a professor answer moves a config VALUE or disables a stage, never the state machine.
 - **Do not build the BLE upload path.** [ADR-0007](../decisions/0007-deploy-by-writing-modules-to-flash-lib.md)
   already deploys over USB and it is proven. BLE upload is not on the critical path.
 - **Do not press-and-hold CONNECT while plugging in USB** — that is the DFU gesture.

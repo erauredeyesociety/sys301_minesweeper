@@ -112,6 +112,7 @@ async def drive_square():
             guard()
             sample("side%d" % side)
             await runloop.sleep_ms(TICK_MS)
+        sample("side%d" % side)          # capture the segment's TRUE end (loop broke on the condition)
         motor.stop(PL)
         motor.stop(PR)
 
@@ -126,6 +127,7 @@ async def drive_square():
             guard()
             sample("turn%d" % side)
             await runloop.sleep_ms(TICK_MS)
+        sample("turn%d" % side)          # capture the TRUE end angle (~90 deg), not the last pre-break
         motor.stop(PL)
         motor.stop(PR)
 

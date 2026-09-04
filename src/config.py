@@ -31,6 +31,19 @@ TARGET_SIZE_MM = 76.0          # [ASSUMED] standard 3in sticky note; MEASURE the
 # classification, a higher speed ceiling. Professor Q5 (are there decoy colours?) settles it.
 CLASSES = ("target",)          # [ASSUMED] narrowest defensible reading of the briefing.
 
+# DETECT_MODE picks the detection FRONT-END that feeds detector.EdgeCounter (both feed it unchanged):
+#   "anomaly" -- floor_anomaly.py: learn the floor at run start, flag anything unlike it. NO target
+#                sample, NO known colour. The IRREDUCIBLE-CORE default (minimalism-contract 2026-09-03).
+#   "target"  -- calibration.py: a known target exemplar. The OPTIONAL bolt-on; needs CALIBRATE_TARGET
+#                plus a professor "a sample may be placed" (OC-9). Not wired in the core build.
+DETECT_MODE = "anomaly"        # [ASSUMED] default; the day may switch to "target"
+COUNTDOWN_S = 10               # [ASSUMED] operator "clear the arena" window before SWEEP starts
+
+# LOG_EVENTS writes the on-hub significant-event CSV (pose + each detection) to /flash during SWEEP.
+# SKIPPABLE (minimalism-contract 2026-09-03 sec.1/4.5): the autonomous COUNT never depends on it -- it
+# is the after-the-run map/telemetry the operator wanted. Set False to drop it entirely.
+LOG_EVENTS = True              # [ASSUMED] on by default; output-only, does not affect the count
+
 # --- Sweep geometry ----------------------------------------------------------
 # Lane pitch must stay under the target size minus twice the cross-track error, or a note
 # can fall between two lanes. CROSS_TRACK_ERROR_MM must be MEASURED (UMBmark square-path run).
@@ -97,7 +110,14 @@ WHEEL_DIAMETER_MM = 63.5       # OPERATOR-REPORTED 2026-09-03: 2.5 in wheel diam
                                # Still MEASURE the EFFECTIVE rolling diameter under load, not just
                                # the moulded number -- they differ, and the difference is
                                # surface-dependent.
-TRACK_WIDTH_MM = 176.0         # [ASSUMED] placeholder. Distance between the wheel contact patches.
+TRACK_WIDTH_MM = 95.0          # EFFECTIVE track width, MEASURED 2026-09-03 from the 1 ft square run
+                               # (examples/motor_poc.py): 4 in-place turns each gave 94-95 mm via
+                               # track = 2*arc/theta (encoder arc vs gyro heading). Was [ASSUMED] 176.
+                               # CAVEATS: one run; the gyro delta is read ~5 deg short because the
+                               # turn loop breaks AFTER the last logged sample, which OVERestimates
+                               # track a little (true <= 95). It is EFFECTIVE -- it folds in the rear
+                               # caster's drag, which is what odometry actually wants. Re-measure with
+                               # a segment-boundary log row (KU: log the turn's true end angle).
                                # Derive it from a spin-turn test, not a ruler: the effective value
                                # is what makes a commanded 360 deg turn actually close.
 ENCODER_COUNTS_PER_REV = 360.0 # LEGO fact sheets, all three motor types. The one figure here that

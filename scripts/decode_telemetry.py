@@ -62,6 +62,74 @@ def span(vals):
     return (min(vals), max(vals)) if vals else (0.0, 0.0)
 
 
+def phase_groups(rows):
+    """Split rows into consecutive runs of the same 'phase' value. [(phase, [rows]), ...]."""
+    groups = []
+    for r in rows:
+        ph = r.get("phase", "")
+        if not groups or groups[-1][0] != ph:
+            groups.append((ph, []))
+        groups[-1][1].append(r)
+    return groups
+
+
+def phase_report(rows):
+    """When a log carries a 'phase' column with side*/turn* labels (a square-drive run), report
+    motors-vs-IMU PER SEGMENT: forward distance and heading drift on each straight side, and gyro
+    degrees plus the MEASURED track width on each turn. Returns True if it ran.
+
+    Track width from an in-place spin: each wheel travels arc = (track/2)*theta, so
+    track = 2*arc/theta -- gyro gives the true heading (theta), encoders the wheel travel (arc).
+    This closes the [ASSUMED] TRACK_WIDTH_MM against real hardware, one turn at a time.
+    """
+    if not rows or "phase" not in rows[0]:
+        return False
+    labels = set(r.get("phase", "") for r in rows)
+    if not any(l.startswith("side") or l.startswith("turn") for l in labels):
+        return False
+
+    ls, rs = hub_api.LEFT_MOTOR_FORWARD_SIGN, hub_api.RIGHT_MOTOR_FORWARD_SIGN
+    d = config.WHEEL_DIAMETER_MM
+
+    def num(row, name):
+        v = row.get(name, "")
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return None
+
+    print("  PHASE BREAKDOWN (motors vs IMU, per segment)")
+    track_estimates = []
+    for ph, grp in phase_groups(rows):
+        if ph.startswith("stop") or not ph:
+            continue
+        a0, a1 = num(grp[0], "relA_deg"), num(grp[-1], "relA_deg")
+        b0, b1 = num(grp[0], "relB_deg"), num(grp[-1], "relB_deg")
+        y0, y1 = num(grp[0], "yaw_ddeg"), num(grp[-1], "yaw_ddeg")
+        if None in (a0, a1, b0, b1):
+            continue
+        d_a, d_b = a1 - a0, b1 - b0
+        gyro = normalize_angle((y1 - y0) / 10.0) if (y0 is not None and y1 is not None) else None
+        if ph.startswith("side"):
+            fwd = (degrees_to_mm(ls * d_a, d) + degrees_to_mm(rs * d_b, d)) / 2.0
+            drift = "%+5.1f" % gyro if gyro is not None else "  n/a"
+            print("    %-6s fwd %+6.0f mm   heading drift %s deg" % (ph, fwd, drift))
+        elif ph.startswith("turn"):
+            arc = (degrees_to_mm(abs(d_a), d) + degrees_to_mm(abs(d_b), d)) / 2.0
+            theta = math.radians(abs(gyro)) if gyro else 0.0
+            tw = 2.0 * arc / theta if theta > 0.01 else None
+            if tw:
+                track_estimates.append(tw)
+            g = "%+6.1f" % gyro if gyro is not None else "   n/a"
+            print("    %-6s gyro %s deg   arc %5.0f mm  -> track %s mm"
+                  % (ph, g, arc, ("%.0f" % tw) if tw else "n/a"))
+    if track_estimates:
+        mean_tw = sum(track_estimates) / len(track_estimates)
+        print("    >> MEASURED track width (mean of %d turns): %.0f mm   [config TRACK_WIDTH_MM = %.0f]"
+              % (len(track_estimates), mean_tw, config.TRACK_WIDTH_MM))
+    return True
+
+
 def decode(path, verbose):
     header, rows = load(path)
     if not rows:
@@ -73,6 +141,9 @@ def decode(path, verbose):
     dur_s = (t[-1] - t[0]) / 1000.0 if len(t) > 1 else 0.0
     hz = (len(t) - 1) / dur_s if dur_s > 0 else 0.0
     print("  samples: %d over %.1f s  =>  %.1f Hz" % (len(rows), dur_s, hz))
+
+    # A phase-labelled run (the square drive) gets a per-segment breakdown; it is the primary view.
+    phase_report(rows)
 
     # --- MOTION -------------------------------------------------------------
     ra = col(rows, "relA_deg")

@@ -20,3 +20,5 @@ The deploy route was chosen by demonstration, not by reading: REPL + base64 chun
 on-hub SHA-256 verify → import check, first run 2026-08-27. It is written up in
 [deploy-to-hub.md](./deploy-to-hub.md); the background study that preceded it is
 [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md).
+- [first-main-run.md](./first-main-run.md) — safe, bounded FIRST hardware run of src/main.py: deploy all src deps to /flash/lib, small arena + short timebox, walk each state glyph, abort = LEFT/RIGHT tap.
+- [deploy-with-deps.md](./deploy-with-deps.md) — one command (`hub_programmer/deploy_deps.py ENTRY.py --apply`) that resolves a slot program's transitive local `src/` imports with `ast` and deploys each dependency to `/flash/lib` via the proven `upload.py`, then uploads+starts the entry via `slot_upload.py`. Resolver PROVEN on the host (main.py → 15 modules); the `--apply` orchestration is **[UNVERIFIED]** on hardware.

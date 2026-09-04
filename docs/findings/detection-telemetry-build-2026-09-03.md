@@ -40,6 +40,13 @@ turned inside out, and its scalar feeds `detector.py`'s four-state counter **unc
   the bench recording (log a floor sweep + a note on each band, check ≥6-SD separation) is **required**,
   not optional. Irreducible blind spot: a note whose chromaticity matches a floor band → deviation ≈ 0
   (a professor question, not a knob).
+- **REAL-DATA validation (2026-09-03, MEASURED):** re-run against the 238 real colour samples from the
+  square drive (`tmp/telemetry/20260903T123528-motorpoc-0000609431.csv`), sensors moving over a real
+  floor. Both C and D: **0 / 238 floor samples would false-trigger** (max deviation 7.6 vs on-threshold
+  8.4). So the FLOOR-BASELINE side works on real sensor noise, not just synthetic streams. The floor read
+  neutral/white (chroma ≈ 0.33, 0.33) and **intensity saturated (~1020)** — confirming the design's use of
+  chromaticity over brightness. **NOT yet tested: true-positive detection** — there was no mine in this
+  run, so a real mine crossing a real floor is still the outstanding bench test.
 
 ## 3. `examples/competition_start.py` — the START/STOP operational shell (⚠ untested on hardware)
 
