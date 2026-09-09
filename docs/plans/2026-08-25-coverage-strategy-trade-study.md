@@ -117,7 +117,7 @@ only `N` and `v`.** Nothing else in the build moves the answer.
 | `f` sample rate | 100 Hz hardware | Official spec. **The rate a Python loop actually achieves is UNVERIFIED for one sensor and unknown for three** — this is O4's principal risk |
 | `D_spot` sensor spot | ≈12 mm at 16 mm height | Single independent source ([color-discrimination § 5.1](../research/color-discrimination.md)); re-measure |
 | Colour sensor price | **UNKNOWN** | No price list exists and prices may change ([RR-5](../scope.md)). Motors cost 10 SB each, wheels 7 SB each. Costing below is **parametric in `P`** |
-| Budget | **56 SB** | `./inventory.py --verbose`, 2026-08-25 |
+| Budget | **56 SB** | [budget ledger](../course/budget.md), 2026-08-25 |
 
 Nothing in this document is a measurement. It is arithmetic over the parameters above, and every
 conclusion inherits their status — [../directives/honest-instrumentation.md](../directives/honest-instrumentation.md).
@@ -527,7 +527,7 @@ base we already own, and #6 and #7 need no hardware at all.
 - **Supplier.** Bring back the **actual store prices** for the Colour Sensor 45605, the Distance Sensor
   45604, and mounting blocks/axles — [§8.2](#82-schrute-bucks) cannot be closed without them. Buy **one**
   colour sensor now; hold the 2nd and 3rd until Q1 + Q2 land. Record the price paid per line in
-  [`inventory.py`](../../inventory.py), never a price list.
+  [the budget ledger](../course/budget.md), never a price list.
 - **Designer.** Draw the sensor mount so that **a second and third sensor can be added without a
   rebuild** — a rigid, short, braced cross-member at 16 mm nominal height, with the option to stagger
   fore-and-aft. That single decision keeps O3 and O4 alive at zero cost. Design is the Designer's, not the
@@ -563,5 +563,5 @@ base we already own, and #6 and #7 need no hardware at all.
 [../research/detection-and-sweep-techniques.md](../research/detection-and-sweep-techniques.md) ·
 [../research/color-discrimination.md](../research/color-discrimination.md) ·
 [../scope.md](../scope.md) · [./questions-for-the-professor.md](./questions-for-the-professor.md) ·
-[`inventory.py`](../../inventory.py) (56 SB, 2026-08-25). All arithmetic in this document is reproducible
+[../course/budget.md](../course/budget.md) (56 SB, 2026-08-25). All arithmetic in this document is reproducible
 from the parameters in [§3](#3-parameters-and-what-each-one-actually-is) with the formulas shown inline.

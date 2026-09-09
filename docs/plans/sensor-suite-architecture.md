@@ -29,7 +29,7 @@ answer, cited.
 
 Specs are quoted from [../research/detection-and-sweep-techniques.md § Verified hardware facts](../research/detection-and-sweep-techniques.md#verified-hardware-facts),
 which cites the LEGO techspec PDFs. Nothing here is measured on our hardware — **we own no sensors**
-([`inventory.py`](../../inventory.py): 56 SB, 2 motors + 2 wheels).
+([budget ledger](../course/budget.md): 56 SB, 2 motors + 2 wheels).
 
 ### 1.1 Colour Sensor 45605 — the only target detector, and there is no substitute
 
@@ -226,7 +226,7 @@ flowchart LR
 ## 3. The port budget — 6 ports, 2 spent, 4 left
 
 Prices are **UNKNOWN and change day to day**; the Supplier checks them in class on the day, and records
-what was *paid* per line in [`inventory.py`](../../inventory.py) ([KU-T5](./known-unknowns.md)). Costs
+what was *paid* per line in the [budget ledger](../course/budget.md) ([KU-T5](./known-unknowns.md)). Costs
 below are parametric: `Pc` colour, `Pd` distance, `Pf` force.
 
 The reserve floor is **14 SB**, derived from named liabilities in
@@ -256,7 +256,7 @@ band). 1–3 SB in absolute terms either way, which is why buying early is cheap
 
 **Affordability screen.** Spendable today = 56 − 14 = **42 SB**. Per-sensor band `[ASSUMED]` 10–25 SB —
 the only prices this project has ever observed are **10 SB for a motor and 7 SB for a wheel, both on
-25 AUG** ([`inventory.py`](../../inventory.py)); no sensor price has ever been collected. Cells are SB left
+25 AUG** ([budget ledger](../course/budget.md)); no sensor price has ever been collected. Cells are SB left
 above the reserve floor:
 
 | If a sensor costs… | 2 sensors | 3 sensors | 4 sensors |
@@ -562,7 +562,7 @@ see the border material at the same time Q1/Q2/Q3 are asked — that is one requ
 
 - **Supplier.** Buy **one Colour Sensor 45605** at the first class opportunity. Bring back three prices —
   Colour 45605, Distance 45604, **and Force 45606 (never collected)**. Record what was *paid* per line in
-  [`inventory.py`](../../inventory.py); do not create a price list. **Buy nothing else until Q3 is
+  the [budget ledger](../course/budget.md); do not create a price list. **Buy nothing else until Q3 is
   answered** — §6(b) tells you which branch you are on.
 - **Designer.** Two zero-cost decisions that keep four configurations alive: the sensor cross-member must
   take a 2nd and 3rd colour sensor at pitch `L` without a rebuild, and **the front face must be reserved

@@ -147,6 +147,12 @@ def main(argv):
         except Exception:
             pass
 
+    # The Ctrl-C that got us the prompt also stopped the Hub OS. Say so, or the next tool that
+    # needs Bluetooth or slot_upload.py looks broken for no visible reason.
+    print("\nNOTE: this path sent Ctrl-C, so the Hub OS is now STOPPED -- no Bluetooth, no CONNECT")
+    print("      button, no slot upload -- until it is restarted:")
+    print("        ./scripts/restore-hub-os.py    (or power-cycle: single press off, then on)")
+
     out = "".join(collected)
     if save_to:
         # Paste mode echoes every line of the source back prefixed with '=== '.

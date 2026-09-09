@@ -92,11 +92,11 @@ flowchart TD
 | **TR-3** | Runs standalone from the hub, not tethered | `OP` · Demo Day risk · CONOPS **OC-2** | **DERIVED** | Download-mode deploy route — **route not yet chosen**, [../research/spike-prime-linux-toolchain.md](../research/spike-prime-linux-toolchain.md) | D | VC-TR-3 | Blocked on Sprint 1 item 10 — [2026-08-25-sprint-1-walking-skeleton.md](./2026-08-25-sprint-1-walking-skeleton.md) |
 | **TR-4** | Thresholds calibrated at run start, never hard-coded | `DIR` honest-instrumentation · floor/lighting variability (research) | **DERIVED** | `calibration.py calibrate()`; `config.py` bounds only (`MIN_CONTRAST`, `HYSTERESIS_FRACTION`) | I, T, D | VC-TR-4a–d | Implemented in pure logic; never exercised against a real sensor |
 | **TR-5** | Port assignments in ONE place, referenced by code | `DIR` honest-instrumentation ("one accountable path per concern") | **DERIVED** | [../hardware/port-map.md](../hardware/port-map.md) — **currently unfilled**; no code reads it | I | VC-TR-5 | Not satisfied. Blocked on the build existing |
-| **RR-1** | Build within the 100 SB budget; no real money | `COURSE` p.1 | **DERIVED** | [`inventory.py`](../../inventory.py) ledger — 44 SB spent, **56 SB remaining** | I | VC-RR-1 | Satisfied to date |
+| **RR-1** | Build within the 100 SB budget; no real money | `COURSE` p.1 | **DERIVED** | [budget ledger](../course/budget.md) — 44 SB spent, **56 SB remaining** | I | VC-RR-1 | Satisfied to date |
 | **RR-2** | Host is native Ubuntu 22.04; free/open tooling only | `OP` (operator's machine) | **DERIVED** | [../findings/host-environment.md](../findings/host-environment.md) | I | VC-RR-2 | Audited; ModemManager remediation outstanding |
-| **RR-3** | Sensors limited to the course store list | `COURSE` (store) | **DERIVED** | Purchase decisions; BOM in `inventory.py` | I | VC-RR-3 | Trivially satisfied — **no sensor has been bought at all** |
+| **RR-3** | Sensors limited to the course store list | `COURSE` (store) | **DERIVED** | Purchase decisions; BOM in the [budget ledger](../course/budget.md) | I | VC-RR-3 | Trivially satisfied — **no sensor has been bought at all** |
 | **RR-4** | Motors limited to 45602 / 45607 | `COURSE` (store) | **DERIVED** | The two motors already owned | I | VC-RR-4 | ⚠ **Cannot be verified today: which two motors we own is UNKNOWN.** Ask the Supplier/Builder |
-| **RR-5** | Ledger records the price actually paid, never a price list | `COURSE` (prices change) · `OP` | **DERIVED** | `inventory.py` `ENTRIES` — per-line unit price | I | VC-RR-5 | Satisfied |
+| **RR-5** | Ledger records the price actually paid, never a price list | `COURSE` (prices change) · `OP` | **DERIVED** | [budget ledger](../course/budget.md) — per-line unit price | I | VC-RR-5 | Satisfied |
 
 ---
 

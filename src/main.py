@@ -279,6 +279,20 @@ async def do_sweep(ctx):
             break
         if cmd.kind == sweep.CMD_DRIVE:
             reached = await drive_distance_mm(cmd.value, ctx, cmd.detect)
+            # CLOSE ANY EVENT STILL OPEN AT THE LANE END. Found by inspection 2026-09-09: finish()
+            # was never called from here, so a mine still under the sensor when a lane ended stayed
+            # open, was concatenated with the FIRST mine of the next lane, and the merged event was
+            # then rejected as too_wide -- losing BOTH mines, silently. The detector has always had
+            # finish() for exactly this; nothing was calling it.
+            if cmd.detect and ctx.counter is not None:
+                event = ctx.counter.finish()
+                if event is not None:
+                    if event.accepted:
+                        ctx.mission.add_detection(color=None)
+                        hub_ui.beep(880, 80)
+                        ctx._log("MINE")
+                    else:
+                        ctx.mission.add_rejected()
             if cmd.detect and reached:                 # count only a lane actually finished
                 ctx.mission.lanes_completed += 1
         elif cmd.kind == sweep.CMD_TURN:

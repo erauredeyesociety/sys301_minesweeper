@@ -76,6 +76,14 @@ Three corrections the harvest forces, each of which touches a design decision:
 |---|---|---|
 | **One** downward colour sensor | **TWO** colour sensors, ports C and D, both id 61 | The sweep runs a two-sensor bar. Pass pitch multiplies by **2.59×**, not 2× — [coverage-time-budget.md](./coverage-time-budget.md). Every colour path in `src/` is now *two* channels, and a reading is `(port, value)`. |
 | Motor ceiling **~660 deg/s** | **930 deg/s** (`motor.info().max_speed`, both motors) | Any velocity argument capped at 660 was leaving ~29 % of the motor on the table; the coverage-time budget is recomputed against 930. Still **deg/s, not mm/s** — the wheel diameter is UNMEASURED, so no conversion exists yet. |
+
+> ⚠ **CORRECTED 2026-09-09 — `velocity()` IS NOT deg/s.** This row was read on a
+> **stationary** hub, where the call returns 0, so the unit was never actually observed.
+> MEASURED across 12 logs / 5049 tick-pairs by differencing `relative_position`: with a
+> commanded and achieved **150.02 deg/s**, `velocity()` reads **12.90** — a ratio of 11.6–12.6
+> that varies by program. Truncation-corrected, 150.02/13.40 = **11.20**, within 0.9% of
+> 1110/100, i.e. **percent of the Medium 45603's rated speed**. 
+> **Take speed only from `delta(relative_position)/delta(t)`, never from `velocity()`.**
 | Distance / force sensors part of the sensing plan | Their **modules are present** but **no device is owned** | `distance_sensor` and `force_sensor` are importable and will never read anything until a sensor is bought and plugged in. Do not write mission logic that assumes a bumper or a wall-ranger; there is none. |
 
 Also newly pinned this window, resolving open unknowns:

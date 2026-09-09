@@ -4,6 +4,13 @@
 This uses the REPL over USB, so it is for AFTER an untethered run has stopped. It sends Ctrl-C to get
 the prompt and therefore is intentionally separate from the BLE/slot tools that keep Hub OS alive.
 
+⚠ That Ctrl-C STOPS the Hub OS, and LEGO's control protocol has no file-read message to avoid it with
+(the message table is upload-only: StartFileUpload 0x0C / TransferChunk 0x10, host->hub, no download
+counterpart). So this tool cannot be re-plumbed the way scripts/scan-surface.py was. After using it,
+restart the Hub OS before expecting Bluetooth or slot_upload.py:
+    ./scripts/restore-hub-os.py        (or power-cycle: single press off, then on)
+Background: docs/findings/hub-os-vs-repl-2026-09-08.md
+
     python3 hub_programmer/download.py --list
     python3 hub_programmer/download.py --all
     python3 hub_programmer/download.py /flash/tmp/telemetry/run-0000012345.csv

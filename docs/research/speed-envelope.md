@@ -38,7 +38,7 @@ sweep speed: **MEDIUM**.
   See [§ Impact on the trade study](#impact-on-the-trade-study) — this is not academic; **v ≥ 300 mm/s
   moves the 3-sensor option from "5.77 min, still over" to exactly the 5-minute gate.**
 - **Three motors are candidates, not two — probably.** The brief lists Large 45602 and Small 45607, and
-  [`inventory.py`](../../inventory.py) records the line only as **Motors** (qty 2, 10 SB each) — no
+  the [budget ledger](../course/budget.md) records the line only as **Motors** (qty 2, 10 SB each) — no
   part number.
   The Medium is a **hypothesis, not a sighting**: the SPIKE Prime set 45678 ships
   **two Medium Angular Motors 45603 and one Large** — and the SPIKE 3 API exposes
@@ -136,7 +136,7 @@ Lessons (community) gives both standard sizes: *"Small SPIKE Prime Wheels = 5.6c
 rotation"* and *"Large SPIKE Prime Wheels = 8.8 cm in diameter … 27.6 cm per rotation."*
 
 **But confirming the wheel exists is not confirming it is ours.** [KU-M3](../plans/known-unknowns.md) stays
-open. Two wheels were bought at 7 SB each ([`inventory.py`](../../inventory.py)) and nobody has looked at
+open. Two wheels were bought at 7 SB each ([budget ledger](../course/budget.md)) and nobody has looked at
 them.
 
 **The geometric circumference is not the rolling circumference.** The same Prime Lessons deck that gives
@@ -365,7 +365,7 @@ before any drift.
   the motor's **internal** gearbox only. Each external mesh adds its own slack, multiplied by the ratio at
   the wheel. Magnitude for LEGO bevel meshes: **UNVERIFIED**, no fetched source. Direction is not in doubt.
 - **We may own no gears at all** — the ledger shows motors and wheels only
-  ([`inventory.py`](../../inventory.py)); [KU-T4](../plans/known-unknowns.md) is open. Gears would be a
+  ([budget ledger](../course/budget.md)); [KU-T4](../plans/known-unknowns.md) is open. Gears would be a
   purchase at an unknown price against 56 SB.
 
 **Verdict: gearing up is a trap for a two-week project.** It solves a problem we do not have — the
@@ -667,4 +667,4 @@ All URLs fetched **2026-08-25**. PDFs were downloaded and text-extracted locally
 [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md) ·
 [../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md) ·
 [../plans/known-unknowns.md](../plans/known-unknowns.md) (KU-M3, KU-T3, KU-T4, KU-D7) ·
-[`inventory.py`](../../inventory.py)
+[../course/budget.md](../course/budget.md)

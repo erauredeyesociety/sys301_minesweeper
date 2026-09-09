@@ -206,6 +206,11 @@ roughly 0.50–0.81, and `RAG_MIN_SIMILARITY=0.6` is the floor. **The citation i
 the path and the line span and open the file. Do not quote the chunk text into a doc as if it were a
 source; **cite the path** ([../directives/knowledge-retrieval.md](../directives/knowledge-retrieval.md)).
 
+**Asking about CODE instead of prose.** Since 2026-09-08 this same stack also indexes our own
+source as a second knowledge base — `./scripts/rag-code.py "question"`, or `POST /api/v2/search`
+with `{"kb":"code"}` / `"docs"` / `"all"`. The v1 `/api/search` used above is **not** scopable and
+always answers from the docs corpus. See [docs-rag-code-kb.md](./docs-rag-code-kb.md).
+
 Other endpoints: `GET /api/health`, `GET /api/status` (document/chunk counts), Swagger at
 <http://127.0.0.1:10060/api/docs>, and the web UI at <http://127.0.0.1:10060>.
 

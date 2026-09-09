@@ -40,7 +40,7 @@ flowchart TD
     F["docs/findings/<br/>measurements"]
     D["docs/decisions/<br/>ADRs, the why"]
     S["docs/session_records/<br/>narrative"]
-    I["inventory.py<br/>budget"]
+    I["docs/course/budget.md<br/>budget"]
     MD["docs/course/report/*.md<br/><i>draft prose, section by section</i>"]
     DOCX["CSER_&lt;lastname&gt;.docx<br/><b>THE SUBMISSION</b>"]
 

@@ -203,7 +203,16 @@ Five atomic actions. Memorise these; the table below maps each symptom to **exac
 **`UNVERIFIED` — every Demo Day button behaviour above.** The hub has been connected and driven, but
 this runbook still has no measured transcript for single-press-stops, single-press-relaunches-the-slot,
 or hold-to-power-off in the stored-program path. Confirm all three on the first dry run and rewrite this
-table with what the hub actually did.
+table with what the hub actually did — the three-minute procedure that closes all of them is
+[competition-start-stop.md](./competition-start-stop.md) § 6.
+
+**Two things to say out loud before the first attempt**, from
+[competition-start-stop.md](./competition-start-stop.md):
+**A1 STOP is ONE crisp CENTER press, never a hold** (a hold restarts or powers off the hub, costing the
+run), and the *in-program* abort is **HOLD LEFT or RIGHT until the robot stops** — `button.pressed()` is
+sampled once per loop tick, so a tap can fall between two polls and be silently lost.
+And the number that keeps the drill calm: the robot moves at **~55 mm/s** with a **~3 mm** coast (both
+MEASURED) — **a walking operator outruns it**, so nobody needs to lunge.
 
 | Observable symptom | Action | Why this one |
 |---|---|---|

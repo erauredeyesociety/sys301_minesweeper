@@ -205,11 +205,11 @@ operator, and can be run today. VC-RR-4 is blocked on which two motors we own, n
 | **VC-PR-1** | (PR-1) | **A** | Compute predicted sweep duration from the **measured** traverse speed and the arena size once **Q1** lands — `sweep.py estimated_seconds()`. Strategy options if it does not fit: [2026-08-25-coverage-strategy-trade-study.md](./2026-08-25-coverage-strategy-trade-study.md) | Predicted duration ≤ the demo time limit (**Q2**). If it is not, this is a **design** change, not a tuning one — [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md), risk **R-01** | `docs/findings/` timing entry |
 | **VC-FR-6a** | FR-6 | **A** | Error-budget analysis: measured cross-track error (UMBmark square-path run) × lane count vs arena size — [../research/detection-and-sweep-techniques.md](../research/detection-and-sweep-techniques.md) | Predicted worst-case lateral excursion at the last lane is **less than** the distance from the last lane to the boundary. Requires a **measured** cross-track error, not the `[ASSUMED]` 15 mm in `config.py` | `docs/findings/` odometry entry |
 | **VC-FR-6b** | FR-6 | **D** | Full-arena run, observed | The robot does not cross the boundary in ≥3 consecutive runs. ⚠ **Weak evidence** — it verifies the arena it ran on and nothing more, because there is no boundary-sensing design element (gap **G-1**) | Run record |
-| **VC-RR-1** | RR-1 | **I** | `./inventory.py --verbose` | Balance ≥ 0 and every line has a price actually paid | Report §6 table |
+| **VC-RR-1** | RR-1 | **I** | Ledger review — [../course/budget.md](../course/budget.md) | Balance ≥ 0 and every line has a price actually paid | Report §6 table |
 | **VC-RR-2** | RR-2 | **I** | Host audit | Toolchain is free/open and runs natively on Ubuntu 22.04 | [../findings/host-environment.md](../findings/host-environment.md) |
-| **VC-RR-3** | RR-3 | **I** | BOM review | Every sensor is on the store list | `inventory.py` |
+| **VC-RR-3** | RR-3 | **I** | BOM review | Every sensor is on the store list | [../course/budget.md](../course/budget.md) |
 | **VC-RR-4** | RR-4 | **I** | Identify the two motors already owned | Each is a 45602 or 45607, named in the build record. ⚠ **Cannot run today — which two we own is UNKNOWN.** Ask the Supplier/Builder | [../hardware/build-record.md](../hardware/build-record.md) |
-| **VC-RR-5** | RR-5 | **I** | Ledger review | Each entry's unit price is the price paid on that date; no price list is hard-coded anywhere | `inventory.py` |
+| **VC-RR-5** | RR-5 | **I** | Ledger review | Each entry's unit price is the price paid on that date; no price list is hard-coded anywhere | [../course/budget.md](../course/budget.md) |
 
 ## 6. Evidence ledger
 

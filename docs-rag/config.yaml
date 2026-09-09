@@ -46,3 +46,76 @@ llm:
   temperature: 0.3
   timeout: 300
   base_url: http://172.17.0.1:11435
+
+# ══════════════════════════════════════════════════════════════════════════════
+# knowledge_bases — the multi-KB gateway (added 2026-09-08)
+# ══════════════════════════════════════════════════════════════════════════════
+# UNLIKE everything above, this stanza IS read by the API container: the
+# docker-compose.override.yml in this directory mounts this file at
+# /src/config/config.yaml (the path app/config_manager.default_config_path()
+# resolves to). A non-empty knowledge_bases stanza is the ONLY thing that
+# activates /api/v2/* (app/main.py `_init_multi_kb_gateway`); without it every
+# v2 endpoint answers 503 "multi-KB not configured".
+#
+# One postgres INSTANCE, one logical DATABASE per KB. `primary` is the existing
+# docs corpus (ragdb) exactly as it already is — declaring it here only lets the
+# gateway route to it, it changes nothing about how it is ingested (the v1
+# `rag ingest` flow still owns it, and both scripts/ingest_kb.py and the
+# reconcile scheduler refuse to per-KB ingest a KB named `primary`).
+#
+# Query scoping this buys:  kb:"docs" -> primary · kb:"code" -> code · kb:"all"
+# ══════════════════════════════════════════════════════════════════════════════
+# Shared connection defaults for every KB below. The password is NEVER written
+# here (this file is committed) — `password_env` names the environment variable
+# the api container already carries, and ConfigManager reads it at connect time.
+# WITHOUT this stanza the api ABORTS AT STARTUP with
+#   ValueError: KB 'primary' has no resolvable password
+# and docs-rag never comes back up. Verified the hard way, 2026-09-08.
+kb_defaults:
+  host: postgres             # the compose service name, on the internal network
+  port: 5432
+  user: raguser
+  password_env: POSTGRES_PASSWORD
+
+knowledge_bases:
+
+  primary:
+    type: postgres
+    database: ragdb            # the EXISTING docs index — do not change
+    category: docs             # authoritative: never treated as code
+
+  code:
+    type: postgres
+    database: ragdb_code       # its own logical DB; created at api startup
+    category: code             # makes kb:"code" resolve to this KB
+    # Absolute HOST paths. They are read INSIDE the container, so each one must
+    # also be bind-mounted same-path by docker-compose.override.yml — the two
+    # lists are kept equal by hand. `docs-rag/` (vendored) and `.git/` are
+    # deliberately absent, and the repo root is NOT listed so nothing sweeps
+    # them up. (find_spike_prime.py sits at the root and is therefore not
+    # indexed; move it into scripts/ if it should be.)
+    ingest_dirs:
+      - /home/devel/sys301_minesweeper/src
+      - /home/devel/sys301_minesweeper/probes
+      - /home/devel/sys301_minesweeper/hub_programmer
+      - /home/devel/sys301_minesweeper/examples
+      - /home/devel/sys301_minesweeper/scripts
+    # File-type ISOLATION, not just a different tree: a stray .md under these
+    # dirs is skipped, so docs stay in the docs KB and only source lands here.
+    extensions:
+      - py
+      - sh
+    exclude:
+      - "**/__pycache__/**"
+      - "**/.venv/**"
+    # Code chunks are cut on symbol boundaries (RAG_CODE_AWARE_CHUNKING in
+    # .env), budgeted in NON-whitespace characters — NOT the 256-token prose
+    # CHUNK_SIZE above. 3000 is the upstream default; our files carry long
+    # measurement-bearing header comments, so a generous budget is what keeps a
+    # header and the function it explains inside ONE chunk.
+    code_chunk_chars: 3000
+    # Query-time prior that demotes docstring/class-header chunks so the body
+    # out-ranks its own docstring. Upstream measured +9.3 pts exact-function@1
+    # at 0.05 on their own Python corpus; it over-demotes past 0.10.
+    # [ASSUMED for OUR corpus — not measured here.]
+    descriptive_penalty: 0.05

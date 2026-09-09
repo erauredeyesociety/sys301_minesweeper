@@ -30,7 +30,8 @@ a stub README). Read the operative guides — `PROJECT_SETUP`, `SESSION_CONDUCT`
   [split mission logic from hub I/O](../decisions/0002-split-mission-logic-from-hub-io.md) ·
   [repo holds all team work](../decisions/0003-repo-holds-all-team-work.md)
 - `CLAUDE.md`, `MEMORY.md`, a real `README.md`, `.gitignore`
-- `inventory.py` — the Schrute Buck ledger (see below)
+- `inventory.py` — the Schrute Buck ledger (see below). *Deleted 2026-09-08; the ledger is now
+  [../course/budget.md](../course/budget.md).*
 
 **Delegated in parallel** (disjoint write zones): two background research agents on
 `docs/research/spike-prime-linux-toolchain.md` and `docs/research/detection-and-sweep-techniques.md`;
@@ -47,7 +48,7 @@ one workflow fanning out four authors + four independent auditors across `docs/c
 | Stock LEGO firmware, Pybricks blacklisted | Shared equipment; operator constraint — [ADR-0001](../decisions/0001-stock-lego-firmware-only.md) |
 | Hub OS treated as frozen until identified **read-only** | Opening the LEGO app can prompt an update; identify before acting — [ADR-0001](../decisions/0001-stock-lego-firmware-only.md) |
 | `src/` pure logic, `src/` thin adapter | The hub is only available in class. This is the one decision that makes a test floor possible — [ADR-0002](../decisions/0002-split-mission-logic-from-hub-io.md) |
-| Budget as an editable Python script, not a spreadsheet | Operator's call: live calculation, no Excel, teammates edit a list. `./inventory.py` / `--verbose` |
+| Budget as an editable Python script, not a spreadsheet | Operator's call: live calculation, no Excel, teammates edit a list. `./inventory.py` / `--verbose`. **Superseded 2026-09-08** — the script was deleted and the ledger is now the markdown table in [../course/budget.md](../course/budget.md) |
 | Mechanical design **recorded**, not designed here | Operator deprioritized it; it belongs to the Designer and Builder |
 | No code written this session | The mission is unknown and the hub's API generation is unidentified. Writing against a guess would be waste at best |
 

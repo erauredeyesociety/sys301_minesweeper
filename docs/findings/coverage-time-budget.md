@@ -66,7 +66,7 @@ three-sensor option of the trade study and it does not apply here.
 1. [../hardware/port-map.md](../hardware/port-map.md) currently records **all six ports EMPTY on
    2026-08-27**. The new reading is from the same date. Both cannot stand as written; whoever records
    the populated map must **supersede** that row rather than leave two contradictory entries.
-2. [`inventory.py`](../../inventory.py) shows **no colour sensor bought** and a 56 SB balance. Two
+2. The [budget ledger](../course/budget.md) shows **no colour sensor bought** and a 56 SB balance. Two
    sensors are physically on the hub. Either they came out of the yellow box (which answers **KU-T4**
    *yes*, they cost 0 SB, and the trade study's whole purchasing argument is moot) or they were bought
    and the ledger is stale. **The Supplier answers this; it is not guessable and no price is invented

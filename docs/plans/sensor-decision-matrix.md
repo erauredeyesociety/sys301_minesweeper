@@ -37,7 +37,7 @@ project's research most consistently contradicts.
 
 Ports: **6 total, 2 spent on motors, 4 free.** Prices are **UNKNOWN and change daily** — `Pc` = colour,
 `Pd` = distance, `Pf` = force; the Supplier checks on the day and records what was *paid* in
-[`inventory.py`](../../inventory.py). Reserve is **14 SB**, so **42 SB is spendable**
+the [budget ledger](../course/budget.md). Reserve is **14 SB**, so **42 SB is spendable**
 ([purchasing-strategy.md § 6.2](./purchasing-strategy.md)).
 
 | Config | Sensors | Ports used / free | Cost | Orientation required | Build difficulty | What it unlocks | Gated on |
@@ -133,4 +133,4 @@ the ask list behind Q1 and Q2. That ordering is right — Q1 and Q2 decide wheth
 sensors, which is the larger commitment — but Q3 should be asked in the same conversation.
 
 No sensor price has ever been observed. The only prices this project has recorded are 10 SB (motor) and
-7 SB (wheel), both on 25 AUG ([`inventory.py`](../../inventory.py)).
+7 SB (wheel), both on 25 AUG ([budget ledger](../course/budget.md)).

@@ -39,11 +39,21 @@ live streaming. Deeper workaround research is in flight.
    states with a hand on the robot — full procedure in
    [../runbooks/first-main-run.md](../runbooks/first-main-run.md). Closes **KU-M29** (hub call sites) and
    **KU-M30** (`deploy_deps --apply`). ⭐ the highest-value hardware task now.
-2. **Real GATE-1 detection** — present a real **yellow note**, and a **yellow note + blue sticker**, under
-   a colour sensor; log `rgbi()`+`reflection()`; confirm `floor_anomaly` + the detector actually COUNT a
-   real mine. (They do not false-trigger on a real floor — 0/238 MEASURED — but a true positive is
-   unproven.) Closes **KU-M22** and **KU-M32**. Needs a note and tape; no units answer, no wheel number.
-3. **Ask the professor the units of "10×10"** — still THE architecture blocker, and free. (Group A, KU-P1)
+2. ~~**Real GATE-1 detection**~~ — ✅ **DONE 2026-09-08. KU-M22 and KU-M32 are CLOSED.** A real note was
+   found **while moving, untethered on battery, twice**, and both colours were named correctly
+   (`PINK refl=99`, `YELLOW refl=62`).
+   ⚠ **But `floor_anomaly` is NOT what did it, and it FAILED** on the real carpet — yellow INVISIBLE
+   (0 % above threshold), blue tape a 100 % false positive, cause = quantisation. **Detection is now
+   `reflection() >= 30`** (carpet 3–9 · tape 7–9 · yellow 51–73 · pink 97+). The 0/238 figure was a
+   different floor and is not evidence for this one.
+   [../findings/colour-survey-and-first-detection-2026-09-08.md](../findings/colour-survey-and-first-detection-2026-09-08.md)
+2b. **NEW, and it outranks everything but the `main.py` run:** measure **`SENSOR_SPACING_MM`** and the
+   **fore-aft sensor offset** with a ruler (KU-M33, 60 s, no hub), then make **`src/hub_color.py` read
+   `SECOND_COLOR_PORT`** — it is read nowhere in `src/`, so the mission code is a **one-sensor robot**
+   (KU-D11). At 10 ft that is 75 lanes versus 38.
+3. **Ask the professor the TIME LIMIT and SCORING RULE (Q2 + Q8)** — the units are **provisionally
+   answered** (10 FOOT square, operator 2026-09-08, "not set in stone", KU-P1); what is still free and
+   still unasked is what actually scores. (Group A, KU-P2)
 4. **Re-measure track width** with the segment-boundary log fix (KU-M31) — rides along on any drive; drops
    the ~5° gyro under-read in the 95 mm figure. (Wheel Ø and the basic calibration drive are now DONE.)
 

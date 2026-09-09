@@ -49,7 +49,7 @@ Prove the pipe first. The mission logic is then written on the host, in parallel
 | Class sessions in Sprint 1: **25 AUG, 27 AUG** (2 sessions) | Every item below must fit in a class period or be host-side work that needs no hub |
 | Class sessions before Demo Day: **25, 27 AUG · 1, 3, 8 SEP** (5), demo on **10 SEP** | Burning one on a false start is 20% of the remaining project |
 | **"You MAY NOT work on the project outside of class"** ([scope.md § Critical Notes](../scope.md#critical-notes)) | Out-of-class effort is preparation/reference only until the operator rules (Q4). Items **5–10** need the hub and the yellow box and item **11** needs that day's posted QOD, so those are **in class by nature** and cannot be moved; only items 1–4 and 12 are host- or paper-side |
-| Budget: **56 SB** remaining (`./inventory.py --verbose`) | Sprint 1 should cost **0 SB**. Every question goes in writing; a 10-minute four-person huddle beyond the standup costs 40 SB — most of what is left |
+| Budget: **56 SB** remaining ([budget ledger](../course/budget.md)) | Sprint 1 should cost **0 SB**. Every question goes in writing; a 10-minute four-person huddle beyond the standup costs 40 SB — most of what is left |
 | Hub is **shared course equipment**, stock firmware, returned in factory state ([ADR-0001](../decisions/0001-stock-lego-firmware-only.md)) | No item here writes firmware, no item accepts an update prompt |
 
 ### Role choreography for every hub-touching step
@@ -126,7 +126,7 @@ alongside everything.
 - **Who:** **Builder** reports what is physically plugged where (only the Builder may plug things in); **Programmer/Scrum Master** writes it down.
 - **Artifact:** [../hardware/port-map.md](../hardware/port-map.md) — the file exists; **all six rows currently read `UNASSIGNED`**, and this item is what fills them.
 - **Observable:** For each occupied port: the port letter, the exact part (Motor / Color Sensor 45605 / Distance Sensor 45604 / Force Sensor 45606), for motors which side of the robot it drives and which rotation direction moves the robot forward, and a **date in the "Physically confirmed" column** — which means someone looked at the plug, not at a diagram. A port map that does not state motor polarity will send the robot backwards on its first drive test, and the team will debug it as a code bug.
-- **Blocker:** The devices must actually be mounted. The ledger holds **two motors and two wheels and no sensor** (`./inventory.py --verbose`, 56 SB remaining; [scope.md § Requirements](../scope.md#requirements) "Not yet owned: sensors, mounting blocks, axles"), so the motor rows can be filled this sprint and a sensor row cannot until Q3 is answered.
+- **Blocker:** The devices must actually be mounted. The ledger holds **two motors and two wheels and no sensor** ([budget ledger](../course/budget.md), 56 SB remaining; [scope.md § Requirements](../scope.md#requirements) "Not yet owned: sensors, mounting blocks, axles"), so the motor rows can be filled this sprint and a sensor row cannot until Q3 is answered.
 - **Note:** TR-5 requires the code to reference this file's assignments, not scatter port literals. There is ONE port map ([honest-instrumentation.md](../directives/honest-instrumentation.md), "one accountable path per concern").
 
 ### 7. Deploy the hello skeleton — first file from Ubuntu onto the hub
@@ -258,4 +258,4 @@ Q4–Q7 are the operator's.
 *Sources: `../course/source-material/Introduction Project Student Instructions.pdf` (course rules, calendar, grading);
 [../scope.md](../scope.md); [ADR-0001](../decisions/0001-stock-lego-firmware-only.md), [ADR-0002](../decisions/0002-split-mission-logic-from-hub-io.md);
 `../archives/operator-notes/2026-08-25_spike-platform-notes.md` / `../archives/operator-notes/2026-08-25_available-sensors.md` (operator's platform notes — hardware claims there are third-party and **UNVERIFIED** against our own hub);
-`./inventory.py --verbose` (budget, 56 SB as of 2026-08-25).*
+`../course/budget.md` (budget, 56 SB as of 2026-08-25).*

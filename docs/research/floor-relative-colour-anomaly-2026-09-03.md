@@ -4,6 +4,36 @@
 > every constant below is a *shape*, not a tuning. Marked `[UNVERIFIED]` throughout, with the one
 > bench test that closes it in the last section.
 
+> # ⚠ SUPERSEDED 2026-09-08 — THE BENCH TEST WAS RUN AND THIS DESIGN FAILED ON THE REAL FLOOR
+>
+> **Do not build on this document.** The venue floor has now been sampled, and the shipped
+> implementation ([`src/floor_anomaly.py`](../../src/floor_anomaly.py)) was replayed over the real
+> capture unmodified:
+>
+> | Surface | median deviation | % clearing the derived threshold | verdict |
+> |---|---|---|---|
+> | Carpet (baseline) | 1.35 | 0 % | — |
+> | **Yellow note** | **5.99** | **0 %** (port D: 53–66 %, a coin flip) | **INVISIBLE** |
+> | Pink note | 20.37 | 98.8 % | detected |
+> | **Blue tape** | **11.30** | **100 %** | **FALSE POSITIVE** |
+>
+> As shipped, on this floor, the robot would arm cleanly, sweep, **miss every yellow mine and count the
+> boundary tape as mines.**
+>
+> **The mechanism matters, because it is not the failure this document anticipated.** It is
+> **quantisation, not hue collision**: carpet median `r+g+b` = **79 ADC counts**, so one count is 0.0127
+> chromaticity units and the fitted band sigma is **0.00953 — less than a single ADC count**. That
+> sub-count noise is exactly what the sigma-normalised rule divides by. Yellow sits 0.0546 from the
+> carpet centroid = **5.73 sigma** where the rule demands 8.90. So it is **not** the "note hue matches a
+> floor band" blind spot the module's own docstring warns about, and **raising `K_MAX` or capping band
+> sigma would not have helped** — `K_MAX` never overflowed (2–5 bands on real carpet).
+>
+> **Replaced by a brightness rule, `reflection() >= 30`** — carpet 3–9 · blue tape 7–9 · yellow 51–73 ·
+> pink 97+, zero overlap, a 43-point gap, colour-agnostic, and the tape ignored for free.
+> Evidence: [../findings/colour-survey-and-first-detection-2026-09-08.md § 4](../findings/colour-survey-and-first-detection-2026-09-08.md).
+> **Kept in place, not deleted:** the reasoning is a good worked example of a design that is sound in
+> principle and defeated by the sensor's word length, and it belongs in the Intro Report as exactly that.
+
 ## Why this exists
 
 Two competition-day facts break any hard-coded colour threshold, and both are outside our control:

@@ -11,6 +11,20 @@ Raw capture: [runs/color-surfaces-2026-09-01.txt](./runs/color-surfaces-2026-09-
 > GATE 1 needs first — it does **not** yet answer the mission's yellow-note / blue-tape / silver-tape
 > question. `[ASSUMED]` nothing about the real surfaces from this.
 
+> ## ⚠ SUPERSEDED FOR THE MISSION'S SURFACES, 2026-09-08 — real measurements now exist
+>
+> The question this document deliberately did **not** answer has been answered on the real carpet, with
+> the real notes and the real blue tape:
+> [colour-survey-and-first-detection-2026-09-08.md](./colour-survey-and-first-detection-2026-09-08.md).
+> **Quote that document, not this one, for any surface number.** Carpet `reflection()` 3–9 · blue tape
+> 7–9 · yellow 51–73 · pink 97+; blue fraction carpet ≤ 0.408 vs tape 0.476–0.496.
+>
+> **What survives here, and it survives well:** the *method* and the sensor's failure modes — in
+> particular that **gloss and proximity both saturate the channels and destroy the ratios that carry
+> colour**. 2026-09-08 measured the same collapse on **matte paper**, purely from proximity, which
+> confirms and generalises § 3 rather than replacing it. The mission surfaces are also **not** the
+> silver/grey duct tape this document worried about: the boundary is **blue painters tape**, MEASURED.
+
 ## What was measured (sensor C, 380 samples over 95 s)
 
 | Surface (operator-labelled) | `color()` | mean r/g/b | r% / g% / b% | `reflection()` |

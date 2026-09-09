@@ -73,7 +73,7 @@ programming and design work is not restricted to class time.
 
 - Hub: SPIKE Prime Technic Large Hub 45601. **Never connected yet.** Hub OS / API generation UNKNOWN.
 - Store offers: motors **45602 large angular** / **45607 small angular**; sensors **45605 color**,
-  **45604 distance**, **45606 force**. Prices can change — `inventory.py` records what was actually paid.
+  **45604 distance**, **45606 force**. Prices can change — the ledger records what was actually paid.
 - **Owned:** 2 motors, 2 wheels (differential drive, team decision). **Not owned:** any sensor, mounting
   blocks, axles. Sensor mounting height/angle are still free variables — decide them from the research
   *before* buying.
@@ -182,7 +182,9 @@ stale forward by making a real request, not by checking a PID, and repairs it. I
 - **Source material from the course:** `docs/course/source-material/` — student instructions PDF, journal rubric HTML,
   example handwritten journal entry, CSER 2022 report template (`.docx` + `.pdf`).
 - **Operator's raw platform notes:** `docs/archives/operator-notes/2026-08-25_spike-platform-notes.md`, `docs/archives/operator-notes/2026-08-25_available-sensors.md` (superseded by `docs/research/`).
-- **Budget:** `./inventory.py` — live ledger, single source of truth. `--verbose` for a statement.
+- **Budget:** [docs/course/budget.md](docs/course/budget.md) — live Schrute Buck ledger, single source
+  of truth, a plain markdown table. (It was the script `./inventory.py` until 2026-09-08; deleted, and
+  recoverable from git history.)
 - **Everything else:** [docs/README.md](docs/README.md) is the map.
 
 ## Open questions held for the operator

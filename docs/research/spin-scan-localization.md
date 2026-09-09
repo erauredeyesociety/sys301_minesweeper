@@ -66,7 +66,7 @@ Two mechanizations, and they are not close.
 | | **A. Spin-in-place** (both wheels opposite) | **B. Sensor on a third motor** |
 |---|---|---|
 | **Ports** | Sensor only → **1 of 4 free ports** | Sensor + motor → **2 of 4** |
-| **Schrute Bucks** | Sensor price **UNKNOWN** ([KU-T5](../plans/known-unknowns.md)) | Sensor + a motor (the two we own were recorded at **10 SB each**, [`inventory.py`](../../inventory.py)) + mounting blocks and axles **we do not own** ([KU-D3](../plans/known-unknowns.md)) |
+| **Schrute Bucks** | Sensor price **UNKNOWN** ([KU-T5](../plans/known-unknowns.md)) | Sensor + a motor (the two we own were recorded at **10 SB each**, [budget ledger](../course/budget.md)) + mounting blocks and axles **we do not own** ([KU-D3](../plans/known-unknowns.md)) |
 | **Builder work** | **None.** The robot already spins; § Motion control has the code | A mast, a rotating joint that stays square under load, and a raised centre of gravity on a base whose track we have not even measured (BM-4) |
 | **Cable** | **No winding.** The 250 mm lead is fixed to the sensor at one end and to the hub at the other, and the hub turns with it — the whole assembly rotates as one rigid body | **Winds, one turn per revolution.** LEGO ships no slip ring. This is close to fatal for *continuous* rotation and forces the design down to an oscillating arc |
 | **Angular accuracy of the tag** | Gyro + wheel encoders, through a contact patch that is **skidding by design** | Motor encoder **direct**: 1 count = 1°, ≤ ±3° including gearbox slack ([45602 fact sheet](https://assets.education.lego.com/v3/assets/blt293eea581807678a/bltb9abb42596a7f1b3/5f8801b5f4c5ce0e93db1587/le_spike-prime_tech-fact-sheet_45602_1hy19.pdf?locale=en-us)), no slip |

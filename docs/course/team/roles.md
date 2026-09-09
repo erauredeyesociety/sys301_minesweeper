@@ -75,7 +75,8 @@ something the Programmer decides alone.
 
 **Consequence for us:** every purchase is a written request to the Supplier. Sell-back at 90% rounded
 down means a wrong purchase costs ~10% permanently, so **decide before buying** — e.g. sensor mounting
-geometry before mounting blocks. `inventory.py` is the ledger; `sellback(price)` computes the rounding.
+geometry before mounting blocks. [../budget.md](../budget.md) is the ledger, and every purchase,
+sell-back, meeting charge and role fine is a row in it.
 If a meeting bill cannot be paid, **materials must be returned to cover the difference** (p.2 item 7).
 
 ### Programmer 🔴

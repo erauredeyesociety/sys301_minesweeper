@@ -38,7 +38,7 @@ Copy this file to `YYYY-MM-DD.md` and fill it in. Fields mirror the printed hand
 <!-- Not part of the handwritten page — repo-only scratch, delete or keep as you like. -->
 **Sentence check:** QOD ___ / 4 · Summary ___ / 4 · Total ___ / 8
 **Handwritten page done:** [ ]
-**Budget at end of day:** ___ SB (`./inventory.py`)
+**Budget at end of day:** ___ SB (from docs/course/budget.md)
 **Feeds the report:** <!-- e.g. "measurement for §4 Results", "decision for §3 Method" -->
 ```
 
@@ -49,6 +49,6 @@ Copy this file to `YYYY-MM-DD.md` and fill it in. Fields mirror the printed hand
 1. **Count the sentences.** Four and four. A sentence has a subject and a verb and ends in a period.
 2. **Reread the QOD.** Does your first sentence make it obvious which question you are answering?
 3. **Point at something real.** A part, a number, a port letter, a teammate's name, a Schrute Buck
-   amount. `./inventory.py --verbose` gives you the budget line in one command.
+   amount. [../budget.md](../budget.md) has the current balance and every entry behind it.
 4. **Grammar and legibility are 10 points.** Complete sentences; someone else has to read your handwriting.
 5. Then tick the box in [INDEX.md](./INDEX.md)'s tracker.

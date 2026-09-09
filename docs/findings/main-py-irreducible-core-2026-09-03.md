@@ -4,6 +4,23 @@
 passes (purity boundary + host-import). **Every hub call site is [UNVERIFIED] — the program has never
 run on the robot.** Do not read "written" as "works".
 
+> ## ⚠ STILL TRUE ON 2026-09-08, AND THAT IS THE PROBLEM — plus two defects found since
+>
+> **`src/main.py` has STILL never run on hardware**, five days later and two days from Demo Day. It is
+> the largest single risk in the project ([../plans/risk-register.md § R-18](../plans/risk-register.md),
+> KU-M29). Two failure modes have since been demonstrated on this hub that are invisible until run time:
+> **(a)** `import config` is **shadowed** — it resolves to something in the LEGO firmware, not
+> `/flash/lib/config.py`, and the program dies at import **even though the upload hash-verifies**
+> (KU-M38); **(b)** any REPL or probe tool sends **Ctrl-C, which kills the Hub OS**, so the subsequent
+> slot upload aborts at its identity check — **power-cycle first** (KU-M37).
+>
+> **Two defects in what this document describes, both still present:**
+> 1. `src/hub_color.py` reads only `hub_api.COLOR_PORT`; **`SECOND_COLOR_PORT` is read nowhere in
+>    `src/`** — the program is a **one-sensor robot** (KU-D11, R-19).
+> 2. `config.DETECT_MODE` still defaults to `"anomaly"` and `main.py` early-returns for anything else —
+>    but the anomaly front-end was **refuted on the real carpet** on 2026-09-08. The brightness rule is
+>    ~12–15 lines because `src/calibration.py` is already written, pure and host-runnable.
+
 `src/main.py` — deliberately unwritten until now ("where every open unknown converges") — is written as
 the **switchboard** the [minimalism contract](../plans/minimalism-contract-2026-09-03.md) specifies: the
 smallest state machine that still competes, with every optional feature a knob-toggled bolt-on.

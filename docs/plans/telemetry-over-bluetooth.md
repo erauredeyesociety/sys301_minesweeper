@@ -510,7 +510,7 @@ calibration values are the difference between "threshold 45" and a result; `code
 
 ## 6. Analysis tools — specifications, not implementations
 
-Plain Python in the spirit of [../../inventory.py](../../inventory.py): **a script anyone can open and
+Plain Python in the operator's house style: **a script anyone can open and
 edit, one output, at most one flag, constants at the top.** Verified on this host today: `numpy` 2.2.6 and
 `matplotlib` 3.10.3 are installed; `pandas` is **not** and is not needed. `analyse_run.py` should use the
 standard library only — `csv`, `statistics`, `math` — so it runs on a teammate's Windows machine with a

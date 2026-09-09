@@ -5,9 +5,15 @@
 [requirements-traceability.md](./requirements-traceability.md) · [verification-plan.md](./verification-plan.md) ·
 [2026-08-25-coverage-strategy-trade-study.md](./2026-08-25-coverage-strategy-trade-study.md)
 
-Risks specific to **this** project — a four-person SYS 301 team, five remaining class sessions with the
-hardware, 56 Schrute Bucks, a hub that has never been connected, and a one-sentence verbal mission. No
-generic "requirements may change" entries; every row below is traceable to something in this repo.
+Risks specific to **this** project — a four-person SYS 301 team, **two days to Demo Day**, 56 Schrute
+Bucks, a robot that drives and detects, and a one-sentence verbal mission. No generic "requirements may
+change" entries; every row below is traceable to something in this repo.
+
+> **Updated 2026-09-08 (evening).** The heavy hardware day **retired five risks** (R-04, R-06, R-07,
+> R-09, R-12 — all `CLOSED`, kept in place with their reason), **re-scored three** (R-01 up, R-05 down,
+> R-17 up) and **opened two** (**R-18** the first `main.py` run, **R-19** the one-sensor swath). The
+> shape of the project's risk has moved wholesale from *"can we detect anything"* — now answered, GATE 1
+> closed twice on the real carpet — to *"can the graded program run at all, and can it finish in time."*
 
 **Relationship to the other registers.** [known-unknowns.md](./known-unknowns.md) is what we *do not
 know*; many of those unknowns are the **cause** of a risk here, and are cited by ID rather than
@@ -53,30 +59,63 @@ team's first robot. They exist to force ranking, and the ranking is the useful o
 
 | Rank | ID | Risk | L | I | Exp | Threatens | Owner | Status |
 |---:|---|---|:-:|:-:|:-:|---|---|---|
-| 1 | **R-02** | Lane drift makes the sweep miss mines a working detector would have seen | 4 | 4 | **16** | Demo Day | Programmer + Designer | `OPEN` |
-| 2 | **R-03** | Only ~5 hardware sessions; one lost is 20 % of the schedule | 4 | 4 | **16** | M1, M2, Demo Day | Whole team | `WATCHING` |
-| 3 | **R-01** | Exhaustive coverage does not fit the demo slot | 3 | 5 | **15** | Demo Day | Programmer → professor | `WATCHING` — trigger FIRED 1 SEP |
-| 4 | **R-04** | No deploy route from Ubuntu to the hub ever works | 3 | 5 | **15** | M1 and everything after | Programmer | `OPEN` |
-| 5 | **R-05** | 56 SB does not cover the sensors the design needs | 3 | 4 | **12** | M2, M3 | Supplier | `OPEN` |
-| 6 | **R-06** | Hub is SPIKE 2 generation; most online material is for the wrong API | 3 | 4 | **12** | M1, M2 | Programmer | `OPEN` |
-| 7 | **R-07** | ModemManager corrupts first hub contact and it is misdiagnosed | 4 | 3 | **12** | M1 | Programmer | `WATCHING` |
-| 8 | **R-08** | Role separation makes every physical iteration slow and expensive | 4 | 3 | **12** | M2, M3 | Whole team | `WATCHING` |
-| 9 | **R-09** | The CSER `.docx` does not survive LibreOffice | 3 | 4 | **12** | Intro Report, 18 SEP | Programmer | `OPEN` |
-| 10 | **R-10** | We built to the wrong reading of the verbal mission | 2 | 5 | **10** | Demo Day | Programmer → professor | `OPEN` |
-| 11 | **R-11** | Hub firmware is changed — accepted update, or worse | 2 | 5 | **10** | The whole project | Programmer (plug/unplug), Builder | `WATCHING` |
-| 12 | **R-12** | Sticky-note colours are not separable; FR-2b is unachievable | 3 | 3 | **9** | M2 | Programmer | `OPEN` |
-| 13 | **R-13** | Journal days are missed — 80 points at −5/day | 3 | 3 | **9** | 15 SEP | Every member, individually | `WATCHING` |
-| 14 | **R-14** | Hub flat, or the robot is not in the yellow box at class start | 3 | 3 | **9** | Any session | Builder | `WATCHING` |
-| 15 | **R-15** | A teammate is absent and roles may not be reassigned | 2 | 4 | **8** | Any session | Whole team | `OPEN` |
-| 16 | **R-16** | Observations get remembered instead of written down | 2 | 4 | **8** | Intro Report | Whoever measures | `WATCHING` |
-| 17 | **R-17** | Adjacent notes are double-counted or merged; FR-3 fails | 2 | 3 | **6** | Demo Day | Programmer | `OPEN` |
+| 1 | **R-01** | Exhaustive coverage does not fit the demo slot | 5 | 5 | **25** | Demo Day | Programmer → professor | `REALIZED` — 2026-09-08, at 10 ft |
+| 2 | **R-18** | **`src/main.py` has never run; its first run would be on Demo Day** | 4 | 5 | **20** | Demo Day | Programmer | `OPEN` — new 2026-09-08 |
+| 3 | **R-02** | Lane drift makes the sweep miss mines a working detector would have seen | 4 | 4 | **16** | Demo Day | Programmer + Designer | `OPEN` |
+| 3 | **R-03** | Only ~2 days and ~1 hardware session remain; one lost is most of the schedule | 4 | 4 | **16** | Demo Day | Whole team | `WATCHING` |
+| 3 | **R-19** | **The mission code sweeps a ONE-sensor swath while two sensors are mounted** | 4 | 4 | **16** | Demo Day | Programmer | `OPEN` — new 2026-09-08 |
+| 6 | **R-08** | Role separation makes every physical iteration slow and expensive | 4 | 3 | **12** | Demo Day | Whole team | `WATCHING` |
+| 7 | **R-10** | We built to the wrong reading of the verbal mission | 2 | 5 | **10** | Demo Day | Programmer → professor | `OPEN` |
+| 7 | **R-11** | Hub firmware is changed — accepted update, or worse | 2 | 5 | **10** | The whole project | Programmer (plug/unplug), Builder | `WATCHING` |
+| 9 | **R-13** | Journal days are missed — 80 points at −5/day | 3 | 3 | **9** | 15 SEP | Every member, individually | `WATCHING` |
+| 9 | **R-14** | Hub flat, or the robot is not in the yellow box at class start | 3 | 3 | **9** | Any session | Builder | `WATCHING` |
+| 9 | **R-17** | Adjacent notes are double-counted or merged; FR-3 fails | 3 | 3 | **9** | Demo Day | Programmer | `OPEN` — re-scored up 2026-09-08 |
+| 12 | **R-15** | A teammate is absent and roles may not be reassigned | 2 | 4 | **8** | Any session | Whole team | `OPEN` |
+| 12 | **R-16** | Observations get remembered instead of written down | 2 | 4 | **8** | Intro Report | Whoever measures | `WATCHING` |
+| 14 | **R-05** | 56 SB does not cover the sensors the design needs | 2 | 3 | **6** | — | Supplier | `OPEN` — re-scored down 2026-09-08 |
+| — | ~~R-04~~ | ~~No deploy route from Ubuntu to the hub ever works~~ | — | — | — | — | — | **`CLOSED` 2026-08-27** |
+| — | ~~R-06~~ | ~~Hub is SPIKE 2 generation; most online material is for the wrong API~~ | — | — | — | — | — | **`CLOSED` 2026-08-27** |
+| — | ~~R-07~~ | ~~ModemManager corrupts first hub contact and it is misdiagnosed~~ | — | — | — | — | — | **`CLOSED` 2026-08-27** |
+| — | ~~R-09~~ | ~~The CSER `.docx` does not survive LibreOffice~~ | — | — | — | — | — | **`CLOSED` 2026-08-26** |
+| — | ~~R-12~~ | ~~Sticky-note colours are not separable; FR-2b is unachievable~~ | — | — | — | — | — | **`CLOSED` 2026-09-08** |
+
+**Closed rows are kept, never deleted** — the report's risk section needs the ones that did *not* happen
+and why (see § How this file lives).
 
 ---
 
 ## R-01 — Exhaustive coverage does not fit the demo slot
 
-**L 3 × I 5 = 15 · Threatens: Demo Day (10 SEP) · Owner: Programmer, via a question to the professor ·
-Status `WATCHING` — the 1 SEP trigger has FIRED**
+**L 5 × I 5 = 25 · Threatens: Demo Day (10 SEP) · Owner: Programmer, via a question to the professor ·
+Status `REALIZED` — 2026-09-08**
+
+> ### ⚠ RE-SCORED 2026-09-08, L 3 → 5, exposure 15 → 25, rank 3 → 1. This risk has REALIZED.
+>
+> **What changed it:** the operator stated the competition expectation is a **10 FOOT square (3048 mm)** —
+> the expensive end of the whole range, and it is now the planning value in
+> [`config.py`](../../src/config.py) (`PROVISIONAL`, "not set in stone", KU-P1). Against the speeds
+> actually MEASURED, [COMPUTED]:
+>
+> | Configuration | Lanes | Path | Time |
+> |---|---:|---:|---:|
+> | **One sensor at 55 mm/s** — *what the mission code does today* | 75 | 229 m | **~69 min** |
+> | Two sensors at 300 mm/s | 38 | 116 m | **~6.4 min** |
+>
+> **~69 minutes fits no plausible demo slot**, and every run to date has been driven at **80–100 dps
+> (44–55 mm/s)** against a MEASURED `max_speed` of **930 dps** — ~9× headroom that has never been used.
+> So the two things that used to be optimisations are now **requirements**: read **both** colour sensors
+> (**R-19**, KU-D11) and raise the traverse speed. The detector's own ceiling is not the obstacle —
+> `v ≤ W·f/N` allows **240 mm/s** at N=2 on 24 mm tape at 20 Hz.
+>
+> **Contingency, ranked, if the speed does not come:** (1) fix R-19 and take the 2× for free; (2) widen
+> the lane pitch — but **only after** both sensors are genuinely read every tick, because widening a
+> one-sensor swath silently loses mines; (3) accept probabilistic coverage deliberately and **report the
+> coverage fraction honestly** (KU-D5, KU-D9) — `MissionResult` already supports it
+> (`status`, `lanes_completed/lanes_planned`). A claimed completion we cannot substantiate is the one
+> outcome that damages the Intro Report.
+>
+> **This risk is no longer reducible by a question.** KU-P2 (the time limit and scoring rule) still
+> decides *how* it is absorbed, but the arithmetic problem exists whatever the answer.
 
 **Re-judged 2026-09-01, L 4 → 3. What changed it: we own TWO colour sensors, not one** (MEASURED on the
 hub, ports C and D), and two sensors on one bar multiply the pass pitch by **2.59×**, which brings the
@@ -152,6 +191,18 @@ flowchart TD
 
 ## R-02 — Lane drift makes the sweep miss mines a working detector would have seen
 
+> **Sharpened 2026-09-08, score unchanged (L 4 × I 4 = 16).** The robot demonstrably drives straight at
+> short range — left/right encoders within **0.4 %** and ~**2.6°** of total yaw wander over the 155 mm
+> `drive_to_tape` run [MEASURED] — but the 1 ft square misclosed **108.3 mm on 1277 mm (8.5 %)** with
+> **30°** of final heading error, and its four turns summed **−389.7°** against a commanded −360°.
+> **Those two datasets do not agree, and the disagreement is the risk:** if the wander is a *systematic
+> bias* it integrates to **85 mm of cross-track drift over 3048 mm** — wider than a 76 mm note, so mines
+> inside the lane are missed and no lane pitch saves it; if it is *zero-mean noise* it costs almost
+> nothing. **KU-M34 is exactly this question and it is open.** The mitigation that does not depend on the
+> answer: command every lane to an **absolute** gyro heading rather than a relative ±90°, so error
+> **cancels** instead of accumulating, and terminate each lane on the PROVEN perpendicular tape touch —
+> an absolute fix. [../findings/line-following-viability-2026-09-08.md § 6](../findings/line-following-viability-2026-09-08.md).
+
 **L 4 × I 4 = 16 · Threatens: Demo Day · Owner: Programmer (heading hold) + Designer (geometry)**
 
 - **Cause:** heading error integrates into lateral error — **1° over a 1.2 m lane is already 21 mm**
@@ -197,7 +248,15 @@ flowchart TD
 
 ## R-04 — No deploy route from Ubuntu to the hub ever works
 
-**L 3 × I 5 = 15 · Threatens: M1 and everything downstream · Owner: Programmer**
+**✅ `CLOSED` 2026-08-27 — the trigger did not fire.** A file reached the hub on the day this risk was
+scheduled to be failed fast: base64 chunks over the MicroPython REPL into `/flash/lib`, verified by a
+**SHA-256 the hub computes on itself** ([ADR-0007](../decisions/0007-deploy-by-writing-modules-to-flash-lib.md)),
+and since hardened into the Hub OS slot route, which runs a program **untethered on battery** (proven
+2026-09-03 and again 2026-09-08). No LEGO app, no `mpy-cross`, no GCC, no Windows, no Pybricks. Kept for
+the report: this was scored 15 and it cost nothing. *(A residual — deploy **tooling** now has an
+operational constraint, Ctrl-C kills the Hub OS — is tracked as KU-M37, not as this risk.)*
+
+~~**L 3 × I 5 = 15 · Threatens: M1 and everything downstream · Owner: Programmer**~~
 
 - **Cause:** LEGO publishes no Linux desktop app — Windows, macOS, iPad, Android, Chromebook only. Our
   only host is native Ubuntu 22.04. Every hardware result in the project sits behind this one step, and
@@ -217,10 +276,16 @@ flowchart TD
 
 ## R-05 — 56 Schrute Bucks does not cover the sensors the design needs
 
-**L 3 × I 4 = 12 · Threatens: M2, M3 · Owner: Supplier**
+**L 2 × I 3 = 6 · Threatens: nothing before Demo Day · Owner: Supplier · Re-scored down 2026-09-08**
+
+> **Re-scored 2026-09-08, L 3 → 2, I 4 → 3, exposure 12 → 6.** Two colour sensors are mounted and
+> working, the design needs no third, and **no purchase is planned before 10 SEP** — so the budget can
+> no longer take the demo down. The 56 SB is unspent. ⚠ **The ledger reconciliation below is still owed
+> and is now a *report* problem, not a *demo* problem:** [../course/budget.md](../course/budget.md)
+> records no sensor owned while two are on the hub.
 
 - **Cause:** the ledger shows **no sensor owned** — no colour sensor, no distance sensor, no mounting
-  blocks, no axles ([../../inventory.py](../../inventory.py)). Store prices may change (RR-5) and are
+  blocks, no axles ([../course/budget.md](../course/budget.md)). Store prices may change (RR-5) and are
   currently unknown to us ([KU-T5](./known-unknowns.md)). Meanwhile R-01's best contingency is *more
   sensors*, R-02 may want a boundary reference, and [KU-P3](./known-unknowns.md) may require a distance
   sensor. Sell-back returns 90 % rounded down, so a wrong purchase is a permanent ~10 % loss.
@@ -235,7 +300,7 @@ flowchart TD
   budget).
 - ⚠ **Unreconciled 2026-09-01 — the Supplier must answer this before the row can be re-scored.** The
   cause above says *"the ledger shows no sensor owned"*. That is still what
-  [../../inventory.py](../../inventory.py) says, and **two colour sensors are physically on the hub**
+  [../course/budget.md](../course/budget.md) says, and **two colour sensors are physically on the hub**
   (ports C and D, MEASURED). Either they came from the yellow box — which answers
   [KU-T4](./known-unknowns.md) *yes*, costs 0 SB, and drops this risk sharply — or they were bought and
   the ledger is stale. **No price is guessed here.** Note also that the coverage redo removes the *need*
@@ -244,7 +309,14 @@ flowchart TD
 
 ## R-06 — The hub is the SPIKE 2 generation and most online material is for the wrong API
 
-**L 3 × I 4 = 12 · Threatens: M1, M2 · Owner: Programmer**
+**✅ `CLOSED` 2026-08-27 — the trigger did not fire.** Read-only identification returned **SPIKE 3** /
+MicroPython 1.24.0, *"SPIKE Prime with STM32F413"*, with `motor` / `motor_pair` / `runloop` /
+`color_sensor` present and **no `spike` module**
+([../findings/hub-first-contact-2026-08-27.md](../findings/hub-first-contact-2026-08-27.md)). The
+*standing* discipline survives the risk closing: **most material online is SPIKE 2 and is inapplicable
+outright** — check what generation a source targets before believing it.
+
+~~**L 3 × I 4 = 12 · Threatens: M1, M2 · Owner: Programmer**~~
 
 - **Cause:** `from spike import PrimeHub` (SPIKE 2) and `import motor` / `from hub import port` /
   `import runloop` (SPIKE 3) are mutually incompatible, and the generation on our unit is
@@ -261,7 +333,14 @@ flowchart TD
 
 ## R-07 — ModemManager corrupts first hub contact and the team misdiagnoses it
 
-**L 4 × I 3 = 12 · Threatens: M1 · Owner: Programmer · Status `WATCHING`**
+**✅ `CLOSED` 2026-08-27 — mitigated before first contact, and the fault never materialised.**
+`scripts/setup-host.sh --apply` stopped and disabled ModemManager and wrote the udev rule that gives the
+stable `/dev/spike` symlink, **before the hub was ever plugged in**. ⚠ **Honest footnote:** with the hub
+attached, `mmcli -L` returned *"No modems were found"* — so ModemManager had **not** in fact grabbed the
+device. **The mitigation is a kept precaution, not a fixed fault**, and it must be re-applied on any new
+host ([../findings/host-environment.md](../findings/host-environment.md)).
+
+~~**L 4 × I 3 = 12 · Threatens: M1 · Owner: Programmer · Status `WATCHING`**~~
 
 - **Cause:** ModemManager is **`active` and `enabled` on this host — measured, not assumed**
   ([../findings/host-environment.md](../findings/host-environment.md)). It probes newly appearing
@@ -299,7 +378,13 @@ flowchart TD
 
 ## R-09 — The CSER `.docx` does not survive LibreOffice
 
-**L 3 × I 4 = 12 · Threatens: the Intro Report, 18 SEP · Owner: Programmer**
+**✅ `CLOSED` 2026-08-26 — it survives.** All 20 `Els-*` styles and the 192 × 262 mm trim intact; one
+sample image and the OLE equation object lost, both of which are replaced anyway
+([../findings/cser-template-libreoffice-roundtrip.md](../findings/cser-template-libreoffice-roundtrip.md),
+KU-M12). The `[ASSUMED]` pessimism was wrong, which is the cheapest way to be wrong — 15 minutes spent
+against an unrecoverable failure on the 17th.
+
+~~**L 3 × I 4 = 12 · Threatens: the Intro Report, 18 SEP · Owner: Programmer**~~
 
 - **Cause:** the required template carries 20 `Els-*` paragraph styles, a 192 × 262 mm trim, two WMF
   images and an OLE equation object — the objects most likely to be mangled by a non-Word editor — and
@@ -350,7 +435,22 @@ flowchart TD
 
 ## R-12 — The sticky-note colours are not separable; FR-2b is unachievable
 
-**L 3 × I 3 = 9 · Threatens: M2 · Owner: Programmer**
+**✅ `CLOSED` 2026-09-08 — measured on the real pack, on the real carpet, and it passed by ~6×.**
+`reflection()`: carpet **3–9** · blue tape **7–9** · yellow **51–73** · pink **97+** — **zero overlap, a
+43-point gap**, contrast-to-noise 51–57 MAD against the project's own 8.90-MAD arming rule. FR-2b is
+**kept and demonstrated**: the red-fraction rule (≥ 0.41 = PINK, below = YELLOW) named **both** real
+notes correctly *while the robot was moving, untethered on battery*
+([../findings/colour-survey-and-first-detection-2026-09-08.md § 6b](../findings/colour-survey-and-first-detection-2026-09-08.md)).
+
+⚠ **But the mitigation this row prescribed found a different failure than the one it was scored for, and
+that failure was real:** the *chromaticity* front-end [`src/floor_anomaly.py`](../../src/floor_anomaly.py)
+**FAILS on this carpet and fails silently** — yellow cleared its derived threshold on **0 %** of samples
+(INVISIBLE) while blue tape tripped it **100 %**, because the carpet totals only ~79 ADC counts and its
+fitted band sigma is **under one count**. As shipped, the robot would have armed cleanly, swept, missed
+every yellow mine and counted the boundary as mines. **The go/no-go bench test this row demanded is what
+caught it** — that is the row doing its job, and it belongs in the report's verification section.
+
+~~**L 3 × I 3 = 9 · Threatens: M2 · Owner: Programmer**~~
 
 - **Cause:** sticky notes are **matte and pastel** — the worst case for the sensor's built-in colour ID —
   and the classification margin depends on the floor's own chromaticity, the robot's moving shadow, and
@@ -423,7 +523,13 @@ flowchart TD
 
 ## R-17 — Adjacent notes are double-counted or merged; FR-3 fails
 
-**L 2 × I 3 = 6 · Threatens: Demo Day · Owner: Programmer**
+**L 3 × I 3 = 9 · Threatens: Demo Day · Owner: Programmer · Re-scored up 2026-09-08**
+
+> **Re-scored 2026-09-08, L 2 → 3.** Fixing **R-19** introduces a *second, new* double-count mechanism
+> the event-width gate was never designed for: **with both sensors read every tick, one note passing
+> under both C and D is two events, not one.** That is a different failure from two adjacent notes
+> merging, it appears the moment the swath change lands, and it has never been tested. Whatever
+> de-duplication is added must key on **position**, not on event order.
 
 - **Cause:** FR-3 requires each target counted **exactly once**. Two notes touching read as one wide
   event; one note clipped at a glancing chord across two lanes reads as two. Whether the layout even
@@ -438,13 +544,81 @@ flowchart TD
 
 ---
 
+## R-18 — `src/main.py` has never run, and its first run would be on Demo Day
+
+**L 4 × I 5 = 20 · Threatens: Demo Day (10 SEP) · Owner: Programmer · Status `OPEN` — new 2026-09-08**
+
+- **Cause:** [`src/main.py`](../../src/main.py) is written and its **logic** is reviewed (no motor-safety
+  or crash defect found, 2026-09-03) — but **its entire hub call path has never executed**:
+  `hub_motors`, `hub_ui`, `hub_imu`, `hub_color` are all `[UNVERIFIED]` at their call sites (KU-M29).
+  **Every behaviour this project has actually proven belongs to a program in `examples/`.** With two days
+  left, the realistic worst case is that the first execution of the graded program happens in front of
+  the instructor.
+- **Why the impact is 5 and not 4:** the failure mode is *not* a bad sweep, it is **no run at all**. Two
+  mechanisms are already demonstrated on this hub, and neither is visible before run time:
+  **(a) name shadowing** — `import config` resolves to something in the LEGO firmware, not
+  `/flash/lib/config.py`, and the program dies at import **even though the upload hash-verified on the
+  hub** (KU-M38); **(b) the Hub OS conflict** — any REPL or probe tool sends Ctrl-C, which kills the Hub
+  OS, so the subsequent slot upload aborts at its identity check (KU-M37).
+- **Mitigation:** run it, on the bench, before the day — [../runbooks/first-main-run.md](../runbooks/first-main-run.md).
+  **Power-cycle the hub between REPL work and the slot upload.** Deploy dependencies once (`/flash/lib`
+  persists across boots) and thereafter upload only the entry program with `slot_upload.py` **alone**,
+  which sends no Ctrl-C. Keep the `hub_drive.py` pattern for any new shared constants: declare locally,
+  assert against `config.py` on the **host**, where `./scripts/check-docs.py` catches drift loudly —
+  a hub import that can be hijacked cannot.
+- **Contingency, and it is a good one:** the `examples/` programs **already work untethered on battery**
+  and are the honest fallback demo — `find_note.py` found a real mine twice and named its colour, and
+  `drive_to_tape.py` drove and stopped on the boundary. **Demonstrating a proven `examples/` program is
+  a better outcome than a `main.py` that does not start**, and the Intro Report can say exactly that.
+- **Trigger:** 9 SEP ends with `main.py` still never having executed on the robot.
+
+## R-19 — The mission code sweeps a ONE-sensor swath while two sensors are mounted
+
+**L 4 × I 4 = 16 · Threatens: Demo Day (10 SEP) · Owner: Programmer · Status `OPEN` — new 2026-09-08**
+
+- **Cause — a known defect, not a hypothesis.** [`src/hub_color.py`](../../src/hub_color.py) reads only
+  `hub_api.COLOR_PORT`. **`SECOND_COLOR_PORT` is declared in [`src/hub_api.py`](../../src/hub_api.py)
+  (line 70, `_port.D`) and is read *nowhere* in `src/`.** Two colour sensors are physically mounted and
+  both are read correctly by the `examples/` programs — the shortfall is only in the reusable mission
+  layer, which is the one that gets graded (KU-D11).
+- **Why it matters at 10 ft:** [COMPUTED] one sensor is **75 lanes / 229 m / ~69 min**; two sensors are
+  **38 lanes / 116 m / ~6.4 min**. This defect is, on its own, the difference between a run that cannot
+  finish and one that can — which is why **R-01 cannot be reduced without fixing it first**.
+- **Mitigation:** make `hub_color.py` read both ports every tick, then **verify on hardware** before
+  changing anything else. It is ranked the single highest-value code change for the remaining two days
+  ([../findings/line-following-viability-2026-09-08.md § 7](../findings/line-following-viability-2026-09-08.md)),
+  ahead of any controller work.
+- ⚠ **The dangerous half-fix:** raising the lane pitch to claim the wider swath **before** both ports are
+  genuinely read every tick. That converts a slow-but-correct sweep into a fast one that **silently
+  misses mines** — the worst outcome available, because it looks like success. Pitch changes only after
+  a two-sensor run is observed. And see **R-17**: two sensors introduce a *new* double-count path when
+  one note passes under both.
+- **Contingency:** if the change cannot be verified in time, **run one sensor at the honest lane pitch**
+  and report the coverage fraction (KU-D5, KU-D9). Slow and correct beats fast and wrong.
+- **Trigger:** 9 SEP ends with `SECOND_COLOR_PORT` still unread in `src/`.
+
+---
+
 ## What I would spend the next hour on
 
-> **Stale in one respect, 2026-09-01:** R-01 is no longer the highest-exposure row (15, behind R-02 and
-> R-03 at 16), and the hub *has* since been reached. The recommendation below is still right about what
-> to do — Q1 is **still unasked and still free** — but the cheapest action in the project today is now
-> **the Builder putting a ruler across a wheel**, which needs no answer from anyone and collapses a 2.7×
-> spread in every coverage time ([../findings/coverage-time-budget.md](../findings/coverage-time-budget.md)).
+> ### ⚠ REWRITTEN 2026-09-08 — two days out, the answer has changed.
+>
+> **Spend the hour on R-19, then R-18. Not on a question, and not on a controller.**
+>
+> 1. **A ruler, sixty seconds, no hub, nobody's permission:** the **sensor spacing**, the **fore-aft
+>    sensor offset**, a **sticky note**, and the **tape width** (KU-M33 / KU-M7 / KU-P14). Four
+>    `[UNMEASURED]`s deleted, and it unblocks the corner-turn radius (KU-D10).
+> 2. **R-19 — make `src/hub_color.py` read both sensors**, and wire the brightness rule
+>    (`reflection() >= 30`) into `main.py`; `src/calibration.py` is already written, pure and
+>    host-runnable, so it is ~12–15 lines. **Do not touch the lane pitch yet.**
+> 3. **R-18 — run `src/main.py` on the robot, once, for real.** Power-cycle before the slot upload.
+>
+> **Why not the professor?** Q2 (time limit + scoring) is still worth sending and still free — but R-01
+> has already **realized**, and no answer to Q2 makes ~69 minutes fit a demo slot. The arithmetic problem
+> exists whatever comes back; only *how we absorb it* is still open (KU-D5, KU-D9).
+>
+> **Everything below this line is the SUPERSEDED 2026-08-25 reasoning**, kept because it is what we acted
+> on, and because it turned out to be right about the ordering at the time.
 
 **R-01 — and specifically, sending the professor Q1, Q2 and Q5 in one written message, then spending
 what is left of the hour on the fallback trade study before the answer arrives.**
@@ -492,7 +666,7 @@ file drifts from the other.
 | R6 shared-equipment firmware risk | **R-11** | Same |
 | R7 battery / yellow box | **R-14** | Same |
 | R8 observations not written down | **R-16** | Same |
-| — | **R-01, R-02, R-05, R-09, R-12, R-13, R-15, R-17** | New here: these are beyond Sprint 1's horizon |
+| — | **R-01, R-02, R-05, R-09, R-12, R-13, R-15, R-17, R-18, R-19** | New here: these are beyond Sprint 1's horizon. **R-18** (`main.py` has never run) and **R-19** (one-sensor swath) were opened 2026-09-08, long after Sprint 1 closed |
 
 When the Sprint 1 plan is archived, this file carries the whole set forward.
 
@@ -502,6 +676,7 @@ When the Sprint 1 plan is archived, this file carries the whole set forward.
 
 | Date | Change | By |
 |---|---|---|
+| 2026-09-08 | **Heavy hardware day.** **R-01 REALIZED and re-scored L 3 → 5, exposure 15 → 25, rank 1** — the arena is provisionally 10 ft and a one-sensor sweep at the MEASURED 55 mm/s is ~69 min [COMPUTED]; no question can reduce it any more. **Opened R-18** (`src/main.py` has never run; two demonstrated import-time failure modes) and **R-19** (`src/hub_color.py` reads one sensor; `SECOND_COLOR_PORT` unread in `src/` — 75 lanes vs 38). **Closed R-04** (deploy route proven, ADR-0007 + untethered slot route), **R-06** (SPIKE 3, measured), **R-07** (mitigated before first contact; honest footnote kept), **R-09** (template survives LibreOffice), **R-12** (separability measured, passed by ~6× — ⚠ and the same test refuted the chromaticity front-end, which is the row doing its job). **Re-scored R-05 down** 12 → 6 (no purchase before Demo Day) and **R-17 up** 6 → 9 (two sensors add a new double-count path). Dated note on **R-02**: the short-range and lap-scale drift datasets disagree, and KU-M34 is exactly that question. "What I would spend the next hour on" rewritten; the 2026-08-25 version kept as superseded. | Claude |
 | 2026-08-25 | Created. 17 risks scored and ranked; Sprint 1's R1–R8 mapped in rather than duplicated. All L/I values are `[JUDGED]` — no historical data exists for this team. | Claude |
 | 2026-09-01 | **R-01 re-judged L 4 → 3, exposure 20 → 15, rank 1 → 3, status `OPEN` → `WATCHING`.** What changed it: we own **two** colour sensors, MEASURED on ports C and D, and the redone budget shows two sensors on one bar multiply the pass pitch by 2.59× — bringing 10 feet under 5 minutes on Ø88 and to 5.5 min on Ø56, against an unreachable 2003 mm/s for one sensor. Impact stays 5. **R-01's 1 SEP trigger is recorded as FIRED** — Q1 is still unanswered, so the response is due today, not eventually. Cause updated: KU-M4 (cross-track error) largely drops out of the product and **KU-M3 (wheel diameter) enters it**, now the largest multiplier at 2.7×. Contingency ladder rewritten, diagram redrawn. Dated notes added to **R-02** (the time consequence softens; the silent-miss consequence does not) and **R-05** (two sensors are on the hub and the ledger records none — Supplier to reconcile; no price guessed). | Claude |
 | 2026-08-25 | Adversarial audit: R-03 status aligned with the summary table; R-04 contingency now flags the Hub OS update prompt on a teammate's machine; R-05 mitigation reconciled with the trade study's standing recommendation; R-07 no longer implies `scripts/setup-host.sh` exists; R-11's downgrade caution re-attributed; R-01 diagram range corrected to 120–204 m. | Claude (audit) |

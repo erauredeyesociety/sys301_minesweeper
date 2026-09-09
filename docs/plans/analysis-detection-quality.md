@@ -453,8 +453,8 @@ things are worth computing *from a log* that calibration cannot tell you:
 
 `./data_analysis/` — **one** module, `detection.py`, beside the motion companion's `motion.py`, sharing
 the single `main.py` that [analysis-motion-quality.md § What actually gets implemented](./analysis-motion-quality.md#what-actually-gets-implemented)
-already claims. Standard library only (`csv`, `statistics`, `math`), house style of
-[`inventory.py`](../../inventory.py): constants at the top, one output, at most one flag. Two plans, two
+already claims. Standard library only (`csv`, `statistics`, `math`), in the operator's house style:
+constants at the top, one output, at most one flag. Two plans, two
 modules, one script — not two scripts that each read the same CSV.
 
 **Ownership, so nobody writes the same thing twice.** Items 1, 2 and 4 below are the full-resolution

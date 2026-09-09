@@ -164,12 +164,20 @@ def show_in(frame, msg):
         print("     decode: (empty)")
 
 
-def note_notification(msg):
-    """Print an unsolicited console / program-flow message inline."""
+def note_notification(msg, on_console=None):
+    """Print an unsolicited console / program-flow message inline.
+
+    on_console, when given, RECEIVES the console text instead of it being printed --
+    the caller has taken responsibility for it. The text arrives in whatever pieces
+    the hub sent it in (one printed line can span several 0x21 messages), so a caller
+    that wants whole LINES must buffer and split on newline itself."""
     if not msg:
         return
     if msg[0] == CONSOLE_NOTIFICATION:
         text = msg[1:].rstrip(b"\x00").decode("utf8", errors="replace")
+        if on_console is not None:
+            on_console(text)
+            return
         print("     [console] %s" % text.rstrip("\n"))
     elif msg[0] == PROGRAM_FLOW_NOTIFICATION and len(msg) >= 2:
         print("     [program %s]" % ("STOPPED" if msg[1] else "STARTED"))
@@ -313,7 +321,7 @@ class BleTransport(object):
 
 
 # --- request/response over any transport ------------------------------------
-def request(tx, payload, want_id, deadline):
+def request(tx, payload, want_id, deadline, on_console=None):
     """Send one message, return the first reply whose id == want_id (or None).
     Prints every frame both ways; forwards unsolicited notifications to the log."""
     tx.send(payload)
@@ -334,11 +342,11 @@ def request(tx, payload, want_id, deadline):
         show_in(frame, msg)
         if msg and msg[0] == want_id:
             return msg
-        note_notification(msg)
+        note_notification(msg, on_console)
 
 
 # --- the upload+start sequence, run once against either transport -----------
-def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
+def run_sequence(tx, name, slot, data, listen_s, chunk_override=None, on_console=None):
     # 1. InfoRequest FIRST -- it OPENS the control session. MEASURED 2026-09-03:
     #    the hub does NOT answer DeviceUuidRequest over USB until an InfoRequest has
     #    been sent (usb_protocol.py sends Info first and gets a clean identity reply;
@@ -346,7 +354,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
     #    changes nothing about the safety guarantee: no WRITE happens until identity
     #    is proven in step 2 below.
     print("\n[1] InfoRequest 0x00 (opens session, learn sizes)")
-    info = request(tx, m_info_request(), INFO_RESPONSE, deadline=6.0)
+    info = request(tx, m_info_request(), INFO_RESPONSE, deadline=6.0, on_console=on_console)
     chunk_size = DEFAULT_CHUNK
     if info:
         fields = _cobs.parse_info_response(info)
@@ -366,7 +374,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
 
     # 2. PROVE IDENTITY before writing anything (still before the first WRITE below).
     print("\n[2] identity: DeviceUuidRequest 0x1A")
-    msg = request(tx, m_device_uuid_request(), DEVICE_UUID_RESPONSE, deadline=6.0)
+    msg = request(tx, m_device_uuid_request(), DEVICE_UUID_RESPONSE, deadline=6.0, on_console=on_console)
     if not msg or len(msg) < 17:
         print("    no DeviceUuidResponse -- cannot prove this is our hub. ABORT (write nothing).")
         return 2
@@ -379,7 +387,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
 
     # 3. ClearSlotRequest (NACK tolerated -- means the slot was already empty).
     print("\n[3] ClearSlotRequest 0x46 slot %d" % slot)
-    cs = request(tx, m_clear_slot(slot), CLEAR_SLOT_RESPONSE, deadline=6.0)
+    cs = request(tx, m_clear_slot(slot), CLEAR_SLOT_RESPONSE, deadline=6.0, on_console=on_console)
     if cs is None:
         print("    no ClearSlotResponse -- ABORT")
         return 1
@@ -388,7 +396,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
     # 4. StartFileUploadRequest with the WHOLE-file CRC.
     file_crc = crc(data)
     print("\n[4] StartFileUploadRequest 0x0C  name=%r slot=%d crc=0x%08X" % (name, slot, file_crc))
-    su = request(tx, m_start_file_upload(name, slot, file_crc), START_FILE_UPLOAD_RESPONSE, deadline=8.0)
+    su = request(tx, m_start_file_upload(name, slot, file_crc), START_FILE_UPLOAD_RESPONSE, deadline=8.0, on_console=on_console)
     if not su or not is_ack(su):
         print("    StartFileUpload not Acknowledged -- ABORT")
         return 1
@@ -401,7 +409,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
     for i in range(0, len(data), chunk_size):
         chunk = data[i:i + chunk_size]
         running = crc(chunk, running)
-        tc = request(tx, m_transfer_chunk(running, chunk), TRANSFER_CHUNK_RESPONSE, deadline=8.0)
+        tc = request(tx, m_transfer_chunk(running, chunk), TRANSFER_CHUNK_RESPONSE, deadline=8.0, on_console=on_console)
         if not tc or not is_ack(tc):
             print("    chunk at offset %d not Acknowledged -- ABORT" % i)
             return 1
@@ -412,7 +420,7 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
 
     # 6. ProgramFlowRequest(Start) -> launch the stored slot program.
     print("\n[6] ProgramFlowRequest 0x1E action=Start slot %d" % slot)
-    pf = request(tx, m_program_flow_start(slot), PROGRAM_FLOW_RESPONSE, deadline=6.0)
+    pf = request(tx, m_program_flow_start(slot), PROGRAM_FLOW_RESPONSE, deadline=6.0, on_console=on_console)
     if not pf or not is_ack(pf):
         print("    ProgramFlow(Start) not Acknowledged -- upload stored but not running")
         return 1
@@ -430,12 +438,50 @@ def run_sequence(tx, name, slot, data, listen_s, chunk_override=None):
         except Exception:
             print("  << raw %s (decode failed)" % frame.hex(" "))
             continue
-        note_notification(msg)
+        note_notification(msg, on_console)
         if msg and msg[0] == PROGRAM_FLOW_NOTIFICATION and len(msg) >= 2 and msg[1]:
             print("    program reported STOP -- done listening")
             break
     print("\ndone.")
     return 0
+
+
+# --- host-side convenience: run a program string, capture its console ------
+def upload_and_capture(source, slot, listen_s, on_console, name="program.py"):
+    """Run SOURCE (python text) on the hub over USB and stream its console output.
+
+    This is the slot+console path packaged for other host tools, so a script that only
+    wants to READ SENSORS does not have to drop to the REPL. It sends NO Ctrl-C, so the
+    Hub OS stays alive and slot_upload/BLE still work afterwards -- which is the whole
+    point (docs/findings/hub-os-vs-repl-2026-09-08.md).
+
+    on_console(text) is called with console text in whatever pieces the hub sent; buffer
+    and split on newline if you want lines. Returns run_sequence()'s exit code, or
+    3 no port / 4 busy / 5 no pyserial.
+
+    [UNVERIFIED -- no hardware 2026-09-08.] Assembled from parts that ARE measured:
+    the upload+start+console sequence ran on our hub 2026-09-03
+    (docs/findings/sensor-fusion-and-slot-wall-2026-09-03.md, UPDATE section).
+    """
+    try:
+        import serial
+    except ImportError:
+        print("NO_PYSERIAL: python3 -m pip install pyserial")
+        return 5
+    port = _hubio.find_port()
+    if port is None:
+        print("UNKNOWN: no /dev/spike or /dev/ttyACM0 -- hub not enumerated.")
+        return 3
+    try:
+        tx = UsbTransport(serial, port)
+    except Exception as exc:
+        print("BUSY_OR_DENIED: %s: %s" % (port, exc))
+        return 4
+    try:
+        return run_sequence(tx, name, slot, source.encode("utf-8"), listen_s,
+                            on_console=on_console)
+    finally:
+        tx.close()
 
 
 # --- dry run: compute and print every frame, touch no hardware --------------

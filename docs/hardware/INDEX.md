@@ -17,34 +17,30 @@ and what it cost. Written down so the code, the report, and the next class sessi
 | [design-description.md](./design-description.md) | **Start here.** The design in plain sentences — proposed vs resulting, side by side. No brick inventory: *"the colour sensor is mounted flat, facing down, near the front"* is the right altitude |
 | [build-record.md](./build-record.md) | Skeleton the operator fills in by describing the build: drive configuration, sensor mounting, wheel geometry, photos. |
 
-## Budget — the ledger is a script, not a document
+## Budget — the ledger lives in `docs/course/`, not here
 
-The live Schrute Buck ledger is **[`inventory.py`](../../inventory.py) in the repo root**, and it is the
-single source of truth for the budget.
+The live Schrute Buck ledger is **[../course/budget.md](../course/budget.md)**, and it is the single
+source of truth for the budget. Purchases, sell-backs, meeting charges, and role-violation fines are
+recorded by adding a row to its table and carrying the running balance down. Sell-backs pay 90 % of the
+listed price rounded down.
 
-```bash
-./inventory.py            # current balance, one line
-./inventory.py --verbose  # full statement: every entry, running balance, total spent
-```
+*(It was the script `./inventory.py` in the repo root until the operator deleted it on 2026-09-08. The
+script is recoverable from git history; do not resurrect it.)*
 
-Purchases, sell-backs, meeting charges, and role-violation fines are recorded by editing the `ENTRIES`
-list at the top of that file. Sell-backs pay 90 % of listed price rounded down — use the `sellback()`
-helper so the rounding is done the same way every time.
-
-**There is deliberately no markdown budget table in this folder.** Two ledgers disagree the moment one
-of them is edited alone, and the disagreement surfaces when the Supplier tries to buy something
+**There is deliberately no budget table in this folder.** Two ledgers disagree the moment one of them is
+edited alone, and the disagreement surfaces when the Supplier tries to buy something
 ([../directives/honest-instrumentation.md](../directives/honest-instrumentation.md): one accountable
-path per concern). If you need a budget table in the Intro Report, generate it from
-`./inventory.py --verbose` at the time of writing.
+path per concern). If you need a budget table in the Intro Report, take it from
+[../course/budget.md](../course/budget.md) at the time of writing.
 
 **Only the Supplier may buy, sell, or handle money** (course instructions, p.1). This repo records the
 outcome; it does not make the purchasing decisions.
 
 ## Parts owned as of 2026-08-25
 
-**2 x motor** and **2 x wheel**, plus a project budget reallocation paid to the professor. Run
-`./inventory.py --verbose` for the amounts and the running balance — per the rule above they are
-deliberately not copied into this folder. Exact part numbers, wheel diameter, and motor size are
+**2 x motor** and **2 x wheel**, plus a project budget reallocation paid to the professor. See
+[../course/budget.md](../course/budget.md) for the amounts and the running balance — per the rule above
+they are deliberately not copied into this folder. Exact part numbers, wheel diameter, and motor size are
 **NOT YET RECORDED** — the operator supplies them into [build-record.md](./build-record.md).
 
 No sensor has been purchased. The three the course offers are Color 45605, Distance 45604, and

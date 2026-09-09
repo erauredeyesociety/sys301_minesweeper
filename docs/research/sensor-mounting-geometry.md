@@ -597,7 +597,7 @@ composing every sub-part transform; 1 LDU = 0.4 mm.
 [../plans/bench-measurement-plan.md](../plans/bench-measurement-plan.md) ·
 [../plans/known-unknowns.md](../plans/known-unknowns.md) (KU-P7, KU-M6, KU-M10) ·
 [../hardware/build-record.md](../hardware/build-record.md) ·
-[`inventory.py`](../../inventory.py)
+[../course/budget.md](../course/budget.md)
 
 ---
 

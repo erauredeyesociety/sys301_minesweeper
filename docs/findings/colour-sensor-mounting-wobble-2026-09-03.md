@@ -11,6 +11,23 @@ sensor can **pivot about that peg**, so its sensing point is not fixed — the o
 centre of the footprint stays within about a **1 inch (~25 mm) diameter circle**. So the robot's own
 position is known far better than *where each colour sample was actually taken*.
 
+> ## ⚠ HEIGHT SUPERSEDED 2026-09-08 — the wobble is not
+>
+> **Superseded:** any **~50 mm sensor height** figure in this document. The sensors were lowered to the
+> **middle of the three Technic holes** (one hole step = 8 mm), ~16 mm working height, and the usable
+> range was then bracketed at **both** ends [MEASURED]: at contact every channel **pins at 1018–1024**
+> and chromaticity collapses to 33/33/33 (**any channel ≥ 1000 must be discarded, not classified**); at
+> the old ~51 mm height the signal is dark neutral and carries nothing. Chromaticity itself is
+> height-independent — yellow held 35.5 / 35.0 / 29.4 while raw brightness swung **6×** — but the
+> **brightness rule is height-dependent**, which is why the surface table is measured at one matched
+> height.
+>
+> **NOT superseded, and now load-bearing:** the **±12.5 mm wobble** itself. It is still
+> OPERATOR-REPORTED and bench test BM-9 has still never been run, and it is the number that killed
+> proportional line following — a 4.6 mm usable linear region against ±12.5 mm of mechanical uncertainty,
+> a 2.7× mismatch ([line-following-viability-2026-09-08.md § 3](./line-following-viability-2026-09-08.md)).
+> If BM-9 came back at ±3 mm, edge following would deserve a second look — *after* Demo Day.
+
 **Do not chase the datasheet for a tighter number.** The uncertainty is MECHANICAL (peg slop), not
 optical (sensor-body size), so the LEGO Color Sensor 45605 dimensions would not improve the estimate —
 the ~1 inch figure is dominated by how freely the peg lets the sensor swing, which only a bench

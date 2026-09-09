@@ -1,9 +1,11 @@
 # SYS 301 Minesweeper — Scope
 
-> Last updated: 2026-08-27
-> Status: **Active** — mission captured from the verbal briefing 2026-08-25; **three partial answers relayed
-> 2026-08-27** (mine colour, boundary type, autonomy — the last one self-contradictory). **The units of
-> "10×10" are still unanswered and still gate the architecture.** See § Mission.
+> Last updated: **2026-09-08**
+> Status: **Active** — mission captured from the verbal briefing 2026-08-25; three partial answers relayed
+> 2026-08-27 (mine colour, boundary type, autonomy — the last one self-contradictory); **four mission
+> facts corrected by the operator 2026-09-08** (arena size, arena completeness, floor, mine colours).
+> **The units of "10×10" are PROVISIONALLY answered — a 10 FOOT square, operator-stated, and explicitly
+> "not set in stone".** See § Mission.
 > Directives that govern work here: [docs/directives/INDEX.md](./directives/INDEX.md)
 
 ---
@@ -50,7 +52,22 @@ already hedged. **Full provenance record, with what is QUOTED vs RELAYED vs INFE
 | **Boundary** | **No walls.** The boundary is tape on the floor — **either blue painters tape or silver/grey duct tape.** Both were mentioned; **which one was not pinned down** | Clear on "no walls". Silent on which tape, how wide, and whether crossing it is scored |
 | **Autonomy** | *"you can't have a human operator... if you do have a human operator, they cannot be looking at the arena."* | ⚠ **INTERNALLY CONTRADICTORY — NOT recorded as answered.** The first clause forbids what the second permits. We build to the narrowest reading: **assume autonomy is required**, treat blind teleoperation as an unconfirmed relaxation, and ask again |
 
-**What these answers do NOT do.** They do not touch the units of "10×10", the time limit, the scoring
+### ⚠ Corrections from the operator, 2026-09-08 — these supersede parts of the table above
+
+Recorded on the day the robot first ran on the real surfaces. **Source: the operator, directly** — one
+relay hop *closer* to us than the 2026-08-27 answers, and the arena facts are what the team is expected
+to build to. Evidence and measurements:
+[findings/colour-survey-and-first-detection-2026-09-08.md](./findings/colour-survey-and-first-detection-2026-09-08.md).
+
+| | Correction | Confidence |
+|---|---|---|
+| **Arena size** | **A 10 FOOT square — 3048 mm** is the competition expectation and standard | **PROVISIONAL.** Operator-stated and explicitly **"not set in stone"**; it may change on the day. Carried as `ARENA_WIDTH_MM = ARENA_LENGTH_MM = 3048.0` in [`src/config.py`](../src/config.py), the **planning value**, not a closed answer (KU-P1) |
+| **Arena completeness** | ⚠ **The graded arena is a COMPLETE CLOSED BOX outlined in blue painters tape on the floor.** The practice area's tape is deliberately **incomplete** only so teams do not overlap — **that is not the graded arena.** There is a real wall near **one** side of the demo area, and other objects around it | Operator-stated. **Supersedes** any design that assumed the practice area's open tape was representative |
+| **Floor** | **Multicolour classroom carpet** | **MEASURED** — `reflection()` 3–9, `r+g+b` 49–107 (median 79), chromaticity 30.5 / 33.6 / 35.8. Closes KU-P7 |
+| **Boundary tape** | **Blue painters tape**, and **1 inch (25.4 mm) wide in the test area** | Tape identity **MEASURED** (blue fraction 0.476–0.496 vs a carpet ceiling of 0.408; built-in `color()` returned `BLUE` on 149/149 samples). Width is **operator-stated and may differ on demo day** — so it is a config value, never a literal. Closes KU-P13; KU-P14's width half only |
+| **Mine colours** | **Yellow *and* pink** matte sticky notes; the colour **may change on demo day**; the standing guarantee is that **mines are NEVER BLUE** | Both colours **MEASURED** on the real pack and both correctly classified in motion. ⚠ **Blue tape and a blue sticky note are different things** and must not be conflated by any rule we write |
+
+**What these answers do NOT do.** They do not touch the time limit, the scoring
 rule, whether decoy colours exist, or what "finds" means. And a permitted-but-blind operator would
 refund **no** navigation work — an operator who may not look at the arena cannot cover it by eye, cannot
 see the tape, and cannot read the hub's 5×5 matrix. Analysis:
@@ -61,18 +78,19 @@ see the tape, and cannot read the hub's 5×5 matrix. Analysis:
 | | |
 |---|---|
 | **Task** | Find **all** the mines — coverage is the success criterion, not a sample |
-| **Target** | Sticky notes, **yellow** — hedged twice: *"I think"* (2026-08-25) and *"we expect yellow"* (2026-08-27). Carried as a configured value |
-| **Arena** | A **10×10** area, **with no walls**; the boundary is floor tape (2026-08-27) |
+| **Target** | Sticky notes — **yellow *and* pink** (operator, 2026-09-08, both MEASURED on the real pack), hedged twice before that: *"I think"* (2026-08-25) and *"we expect yellow"* (2026-08-27). **The colour may change on the day; mines are never blue.** Carried as a configured value, and the count rule underneath is **colour-agnostic** (`reflection() >= 30`) so a colour change costs nothing |
+| **Arena** | A **10×10** area, **with no walls**; the boundary is floor tape (2026-08-27) — **provisionally a 10 FOOT square (3048 mm) of blue painters tape forming a COMPLETE CLOSED BOX** (operator, 2026-09-08, "not set in stone") |
+| **Floor** | **Multicolour classroom carpet — MEASURED 2026-09-08.** Supersedes the earlier `[ASSUMED]` "carpet or tile" range |
 | ~~**Autonomy**~~ | ~~"Robot… finds" — implies an autonomous run~~ **SUPERSEDED 2026-08-27.** The relayed answer is self-contradictory (above). Autonomy is our **choice**, not an established requirement — see FR-1 |
 
 ### What it does NOT establish — must be asked
 
 | Open question | Why it changes the build |
 |---|---|
-| **10×10 in what units?** Feet, tiles, grid cells, inches? | Directly sets sweep-leg length, run time, and how much odometry drift accumulates. 10 ft and 10 floor tiles are very different problems. |
+| ~~**10×10 in what units?**~~ | ⚠ **PROVISIONALLY ANSWERED 2026-09-08 by the operator: a 10 FOOT square (3048 mm) — "not set in stone".** It is the **expensive** end of the range and it converts two optimisations into requirements: [COMPUTED at the speeds actually MEASURED] a **one-sensor** sweep at 55 mm/s is **75 lanes / 229 m / ~69 min** and fits no plausible demo slot; a **two-sensor** sweep at 300 mm/s is **38 lanes / 116 m / ~6.4 min**. Still worth confirming, and a Builder with a tape measure closes it outright ([plans/known-unknowns.md](./plans/known-unknowns.md) KU-P1, [plans/risk-register.md](./plans/risk-register.md) R-01). |
 | ~~**What bounds the area?**~~ | **ANSWERED 2026-08-27: no walls, floor tape.** ⚠ Anything in this repo that assumes **walls** is superseded — the Distance Sensor 45604 has no boundary role left, and the Force Sensor 45606 has nothing to bump. *(Neither is permanently excluded: an obstacle-stop role, and a team-supplied reference beam, would revive them. Nobody has asked.)* |
-| **Which tape — blue painters or silver/grey duct?** How wide? | Not equivalent to a colour sensor. Our hub has **no `GREY` and no `SILVER` colour constant** ([findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md)), so silver needs `rgbi()` rather than the built-in colour ID. **The separation that matters is tape against the FLOOR, and the floor has never been observed** — so this cannot be sized yet, only measured. |
-| **Are decoy notes of other colors present?** | Still open. The mine colour is answered; what *else* is on the floor is not. Decoys force real classification (FR-2b) — materially harder on matte pastel paper. *(Note the boundary tape already puts a second non-floor colour on the floor with certainty.)* |
+| ~~**Which tape — blue painters or silver/grey duct?**~~ | ✅ **ANSWERED AND MEASURED 2026-09-08: blue painters tape.** Rule of record `b/(r+g+b) >= 0.44` (carpet ceiling 0.408, tape 0.476–0.496), **PROVEN in motion** — `drive_to_tape.py` stopped on the tape correctly, untethered on battery. **Width 1 inch / 25.4 mm in the test area, and it may differ on demo day** — carried as a config value. ⚠ **Whether crossing the tape is a scored failure is still open** (KU-P14). |
+| **Are decoy notes of other colors present?** | Still open — but **de-fanged 2026-09-08**. The count rule is now brightness (`reflection() >= 30`) and is **colour-agnostic**, and classification is **report-only and never gates the count** — so a decoy changes the reported *class*, not the *count*. Two mine colours (yellow and pink) are confirmed present; blue is guaranteed *not* to be a mine. |
 | **Is a human operator allowed at all?** | The relayed answer says both yes-with-a-condition and no. Until confirmed, autonomy is assumed. If a blind operator is permitted, it changes **who reads the result** (FR-4) and **who holds the keyboard** (course role rule), and refunds no navigation work. |
 | **What does "finds" mean as a deliverable?** A count? Locations? Stopping on each one? Physically retrieving them? | A count is a two-day build. A location map needs reliable odometry and is a different project. |
 | **How many mines, and how are they placed?** Fixed count? Spread out, or possibly adjacent? | Adjacent notes are the classic double-count/merge failure. |
@@ -113,13 +131,21 @@ clarified answer changes a value, not the architecture. Anything still guessed s
 - [ ] **FR-5** The robot shall stop cleanly at end-of-run or on operator stop.
 - [ ] **FR-6** The robot shall remain inside the arena boundary.
   **Boundary type answered 2026-08-27: tape on the floor, no walls.** This gives FR-6 its first possible
-  design element — a boundary the colour sensor might see — but **it is not yet a capability**: no colour
-  sensor is owned, the tape has never been seen, and the floor has never been observed. Two consequences
-  to design against: (a) **with no walls there is no physical backstop** — a boundary miss is unbounded;
-  (b) to a presence-only detector **tape and a mine are the same event** ("not floor"), which is
-  mitigated by classifying the tape as its own calibrated class, by a guard band, or — cheapest — by the
-  **event-width gate already in [`src/detector.py`](../src/detector.py)**, since a tape line crossed
-  during a lane gives a long event and a note gives a bounded chord.
+  design element — a boundary the colour sensor might see — and **as of 2026-09-08 it IS a capability**:
+  two colour sensors are mounted, the tape rule `b/(r+g+b) >= 0.44` is MEASURED and was PROVEN in motion
+  (`drive_to_tape.py` stopped on the tape, untethered on battery), and the arena is a complete closed box
+  of blue tape. Consequence (a) still stands: **with no walls there is no physical backstop** — a
+  boundary miss is unbounded, though the MEASURED **~3 mm coast** after a stop trigger means very little
+  margin has to be bought.
+  ⚠ **SUPERSEDED 2026-09-08 — consequence (b) as written is no longer true.** It said *"to a
+  presence-only detector, tape and a mine are the same event"*. **On the real carpet they are not:**
+  blue tape reads `reflection()` **7–9**, which sits **inside** the carpet band of **3–9**, while mines
+  read **51–73** (yellow) and **97+** (pink). The mine rule is a brightness threshold of **30**, so the
+  **mine detector cannot see the tape at all** — the tape-vs-mine ambiguity dissolves rather than being
+  mitigated. No guard band, no blue veto and no tape colour class is needed for FR-6, and the
+  event-width gate in [`src/detector.py`](../src/detector.py) is retained for *other* reasons (adjacent
+  notes, bright carpet flecks), not for this one.
+  [findings/colour-survey-and-first-detection-2026-09-08.md](./findings/colour-survey-and-first-detection-2026-09-08.md).
 
 ### Technical (TR)
 
@@ -135,12 +161,12 @@ clarified answer changes a value, not the architecture. Anything still guessed s
 - [ ] **RR-2** Development host: native Ubuntu 22.04, free/open-source tooling only.
 - [ ] **RR-3** Sensors limited to what the course store offers: Color 45605, Distance 45604, Force 45606, plus the hub gyro and motor encoders.
 - [ ] **RR-4** Motors limited to the Technic **Large Angular 45602**, **Medium Angular 45603**, and **Small Angular 45607**. *(Corrected 2026-08-25 — there are three, not two; the Medium is the fastest at 1110 deg/s.)* **Which two we own: both are Medium Angular 45603 — reported by the operator 2026-08-27.** RELAYED, not inspected by anyone in this repo; the definitive close is the motor device type ID read at bring-up.
-- [ ] **RR-5** Store prices may change during the project. The budget ledger records the price actually paid per entry ([../inventory.py](../inventory.py)); never hard-code a price list.
+- [ ] **RR-5** Store prices may change during the project. The budget ledger records the price actually paid per entry ([course/budget.md](./course/budget.md)); never hard-code a price list.
 
 **Parts owned as of 2026-08-27:** 2 motors and 2 wheels. **The motors are both Medium Angular 45603**
 (operator, 2026-08-27). **Wheel type and diameter are still UNKNOWN and unmeasured** — several sizes are
 on hand, and every odometry figure in the repo depends on the effective rolling diameter. Balance 56 SB
-(`./inventory.py --verbose`).
+([course/budget.md](./course/budget.md)).
 **Not yet owned:** sensors, mounting blocks, axles. Sensor mounting height and angle are therefore still
 free variables — which is why the mounting geometry is researched *now*, before the purchase.
 
@@ -173,9 +199,11 @@ cross-track error are unmeasured and stay as config variables until the bench se
 - `[ASSUMED]` The operator's role on the team is **Programmer** — inferred from "don't worry about the physical design specifications" and from [archives/operator-notes/2026-08-25_spike-platform-notes.md](archives/operator-notes/2026-08-25_spike-platform-notes.md). Confirm.
 - `[ASSUMED]` The hub is a SPIKE Prime Technic Large Hub 45601 — supported by the operator's report of 6 ports (A–F) across two sides; SPIKE Essential has only 2.
 - `[MEASURED 2026-08-27]` Hub OS generation is **SPIKE 3 / current API** — MicroPython 1.24.0, `motor` / `motor_pair` / `runloop` / `color_sensor` present, **no `spike` module**. Read off our own hub over USB, read-only: [findings/hub-first-contact-2026-08-27.md](./findings/hub-first-contact-2026-08-27.md). Legacy SPIKE 2 material will not run on this hub at all.
-- `[ASSUMED]` Arena floor is classroom carpet or tile — materially affects odometry accuracy and reflected-light thresholds.
+- `[MEASURED 2026-09-08]` Arena floor is **multicolour classroom carpet** — `reflection()` 3–9, `r+g+b` 49–107 (median 79). ⚠ **Supersedes the earlier `[ASSUMED]` "carpet or tile" range.** Carpet slip proved *not* to be the problem feared: left/right encoders tracked within **0.4 %** over a 155 mm drive. [findings/colour-survey-and-first-detection-2026-09-08.md](./findings/colour-survey-and-first-detection-2026-09-08.md)
+- `[PROVISIONAL 2026-09-08, operator]` Arena is a **10 FOOT square (3048 mm)**, a complete closed box outlined in **blue painters tape** — explicitly **"not set in stone"**. Carried as the planning value in [`src/config.py`](../src/config.py); a change on the day edits two numbers and nothing else.
 - `[DECIDED 2026-08-25 by the team]` Initial drive design is **2 motors + 2 wheels** (differential drive). Recorded, not designed, here.
-- `[UNKNOWN]` Wheel diameter and track width — both are required for any odometry arithmetic. Measure and record in [hardware/build-record.md](./hardware/build-record.md).
+- `[MEASURED 2026-09-03]` Wheel diameter **63.5 mm** (2.5 in) and effective track width **95 mm** — confirmed by a driven 1 ft square. ⚠ **Supersedes the earlier `[UNKNOWN]`.** Propagated to [`src/config.py`](../src/config.py).
+- `[UNMEASURED]` **Colour-sensor spacing (`SENSOR_SPACING_MM`) and fore-aft offset** — known only to be **wider than a 76 mm sticky note** (MEASURED lower bound: one note cannot cover both sensors). It blocks the corner-turn radius and the effective swath, and it is the **highest-priority measurement in the project** — a ruler, sixty seconds ([plans/known-unknowns.md](./plans/known-unknowns.md) KU-M33).
 
 ---
 
@@ -268,6 +296,7 @@ When we take a contract, record that hub's IDs in the job's own note, never over
 
 | Date | Changes | By |
 |---|---|---|
+| 2026-09-08 | **Four mission facts corrected by the operator, and the first real-surface measurements.** § Mission gains a dated corrections block: the arena is **provisionally a 10 FOOT square (3048 mm)**, "not set in stone"; the graded arena is a **COMPLETE CLOSED BOX** of blue painters tape and **the practice area's incomplete tape is not it**; the floor is **multicolour classroom carpet [MEASURED]**; the mines are **yellow *and* pink**, may change on the day, and are **never blue**. Closed the "which tape" question (**blue painters, MEASURED**) and struck two `[ASSUMED]`/`[UNKNOWN]` assumptions (floor; wheel diameter + track width). ⚠ **SUPERSEDED FR-6 consequence (b)** — *"to a presence-only detector, tape and a mine are the same event"* is **false on this carpet**: tape reads `reflection()` 7–9, *inside* the carpet band 3–9, against mines at 51–73 and 97+, so the brightness rule (threshold 30) cannot see the tape at all and no blue veto is needed. Added the `[UNMEASURED]` colour-sensor spacing as an explicit assumption. | Claude |
 | 2026-08-25 | Initial draft from course instructions + operator answers. Mission left PENDING. | Claude |
 | 2026-08-25 | Added FR-2b (color classification), RR-4/RR-5 (motors, changing prices), the 2-motor/2-wheel design decision, and the parts-owned status. | Claude |
 | 2026-08-25 | Captured the verbal design briefing (§ Mission): find all mines, yellow sticky notes, 10×10 area. Resolved the out-of-class-work constraint — not a blocker. Status Draft → Active. | Claude |

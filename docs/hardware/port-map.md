@@ -23,10 +23,22 @@ that is the bug.
 |---|---|---|---|
 | **A** | Motor (`device.id` 48) | **LEFT drive wheel.** Forward = NEGATIVE velocity (`LEFT_FWD = -1`). | 2026-09-01 (drive test) |
 | **B** | Motor (`device.id` 48) | **RIGHT drive wheel.** Forward = POSITIVE velocity (`RIGHT_FWD = +1`). | 2026-09-01 (drive test) |
-| **C** | Colour sensor (`device.id` 61) | Target/boundary detection. Mounted low, underneath. | 2026-09-01 |
-| **D** | Colour sensor (`device.id` 61) | Second detector, straddling robot width. | 2026-09-01 |
+| **C** | Colour sensor (`device.id` 61) | **RIGHT-hand floor sensor.** Target/boundary detection, mounted low, facing down. | side confirmed 2026-09-08 |
+| **D** | Colour sensor (`device.id` 61) | **LEFT-hand floor sensor.** Second detector, straddling robot width. | side confirmed 2026-09-08 |
 | **E** | *empty* | — | 2026-09-01 (OSError) |
 | **F** | *empty* | — | 2026-09-01 (OSError) |
+
+**Colour-sensor sides, confirmed 2026-09-08** by `./scripts/sensor-sides.py` / a live reflection
+trace while the operator covered one sensor: covering with a finger makes a sensor **brighter** (the
+finger reflects the sensor's own LED), and in two independent runs **port D spiked to 42 and 47** while
+port C stayed flat, when the **LEFT** sensor was covered. So **D = LEFT, C = RIGHT**. This matters most
+for line following, where the steering rule is "turn toward the sensor that sees the line" — swapping
+the sides makes the robot steer *away* from the tape. **Re-run `./scripts/sensor-sides.py` after any
+reassembly, including on demo day**, because a swapped cable inverts this silently.
+
+⚠ Sensor spacing is **wider than one 76 mm sticky note** (MEASURED 2026-09-08: a single note could
+never be made to cover both sensors at once). The exact spacing is still **[UNMEASURED]** and is needed
+for lane pitch and for line-following geometry.
 
 **Drive convention, confirmed by watching the robot** (`examples/drive_moves.py`, encoder deltas
 symmetric to ±1°): direct drive, 1 wheel rev = 360 encoder-deg. Forward drove left −366 / right +366;
@@ -42,7 +54,7 @@ A blank in that last column means the row is a **plan, not a fact**, and the cod
 
 ## Parts owned — what can actually be plugged in today
 
-Per `./inventory.py --verbose` (run it; do not trust a copy of it):
+Per the [budget ledger](../course/budget.md) (read it there; do not keep a copy of it here):
 
 | Part | Qty owned | Takes a port? | Notes |
 |---|---|---|---|

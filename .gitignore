@@ -32,3 +32,7 @@ tmp/telemetry/*
 # Runtime tunnel caches (not source)
 scripts/.sky-ollama-port
 scripts/.rh-tunnel.pid
+
+# Feedback ABOUT the upstream ~/llm-project-bootstrap/ doctrine, not part of this
+# project engineering record. Local scratch for the operator to apply upstream.
+llm-project-bootstrap_feedback/

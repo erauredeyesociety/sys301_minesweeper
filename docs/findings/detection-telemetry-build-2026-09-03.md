@@ -4,6 +4,25 @@
 from `python3` runs against synthetic streams, not from the robot. Each carries a bench test before it
 is trusted on the floor.
 
+> ## ⚠ PARTLY SUPERSEDED 2026-09-08 — the detection FRONT-END this work feeds was refuted
+>
+> **What is superseded:** anything here that rests on the **chromaticity anomaly** front-end
+> (`src/floor_anomaly.py`). Measured on the **real classroom carpet** with the **real notes and tape**:
+> yellow cleared the derived threshold on **0 % of samples — INVISIBLE** — while blue tape tripped it
+> **100 %**. As shipped, the robot would have armed cleanly, swept, missed every yellow mine and counted
+> the boundary as mines. The mechanism is **quantisation** (carpet totals ~79 ADC counts; the fitted band
+> sigma is under one count), which is why raising `K_MAX` would not have helped.
+>
+> ⚠ **The "0/238 false-triggers" result recorded on 2026-09-03 is NOT retracted and NOT contradicted —
+> it was a DIFFERENT FLOOR.** It remains a true statement about that capture. It is simply no longer
+> evidence that the front-end works on the arena floor, because on the arena floor it does not.
+>
+> **What survives unchanged:** `event_filter`, `detector.EdgeCounter`, `calibration`, `classify`,
+> `sweep`, `result` — the whole downstream chain. Only the scalar feeding it changed, to
+> **`reflection() >= 30`** (carpet 3–9 · blue tape 7–9 · yellow 51–73 · pink 97+ — zero overlap, a
+> 43-point gap, colour-agnostic). Evidence:
+> [colour-survey-and-first-detection-2026-09-08.md § 4–5](./colour-survey-and-first-detection-2026-09-08.md).
+
 Three pieces the competition program needs were written and checked on the host today. All are pure
 `src/` modules (no hub imports) except the slot program, and all follow the "reuse, don't re-derive"
 rule — each leans on the existing `calibration` / `classify` / `detector` machinery.

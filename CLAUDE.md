@@ -20,8 +20,12 @@ undefined, and whether other colors are present is unknown. Full breakdown and h
 [docs/scope.md § Mission](docs/scope.md#mission--partial-verbal-briefing-captured-2026-08-25).
 Open questions to put to the professor: [docs/plans/questions-for-the-professor.md](docs/plans/questions-for-the-professor.md).
 
-**⚠ The units question is not academic.** If "10×10" means feet, a single downward color sensor needs
-125–204 m of sweeping — 8 to 23 minutes — and the design has to change, not the tuning.
+**⚠ The units question is not academic, and 2026-09-08 answered it the expensive way.** The operator
+states the competition expectation is a **10 FOOT square (3048 mm)** — **PROVISIONAL, "not set in stone"**,
+so KU-P1 is not closed. [COMPUTED at the speeds actually MEASURED] a **one-sensor** sweep at 55 mm/s is
+**75 lanes / 229 m / ~69 min** and fits no plausible demo slot; a **two-sensor** sweep at 300 mm/s is
+**38 lanes / 116 m / ~6.4 min**. **Both sensors and a higher traverse speed are now REQUIREMENTS, not
+optimisations.** *(Supersedes the earlier "125–204 m / 8 to 23 minutes" figures.)*
 [docs/findings/coverage-time-budget.md](docs/findings/coverage-time-budget.md).
 
 **Never invent mission details.** Everything still guessed is marked `[ASSUMED]`. Build to the narrowest
@@ -56,18 +60,41 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   USB + Bluetooth. Sensors available: Color 45605, Distance 45604, Force 45606. Motors available: Technic
   Large Angular 45602, **Medium Angular 45603**, Small Angular 45607. Plus the hub gyro and the motors' rotary encoders.
   **Connected over USB 2026-08-27 on `/dev/spike`** (stable symlink from `scripts/setup-host.sh`; VID:PID
-  `0694:0009`). **All six ports A–F read EMPTY** — `device.id()` raises `OSError` and `motor.status()`
-  returns `5` on every one; an `OSError` there means *empty plug*, not *broken hub*. Device UUID
+  `0694:0009`). **Ports as built and MEASURED: A = LEFT motor · B = RIGHT motor · C = RIGHT colour
+  sensor · D = LEFT colour sensor · E, F empty.** *(Superseded 2026-08-27's "all six ports read EMPTY" —
+  that was the bare hub.)* On an **empty** port `device.id()` still raises `OSError` and `motor.status()`
+  returns `5`; an `OSError` there means *empty plug*, not *broken hub*. Device UUID
   `03970000-3600-1B00-1450-30514B323320`.
-- **Owned so far:** 2 motors, 2 wheels — differential drive, decided by the team 2026-08-25. **Types of
-  BOTH are unknown**, and several wheel sizes are on hand. **No sensors, no mounting blocks, no axles yet.**
-  Store prices can change; `inventory.py` records the price actually paid per line, not a price list.
-- **Hodge-podge hardware: measure, don't model.** Wheel diameter, track width, top speed, loop rate and
-  cross-track error are all unmeasured. Carry them as config variables and close them on the bench —
+- **Owned and BUILT:** 2 motors, 2 wheels — differential drive, decided by the team 2026-08-25 — plus
+  **TWO colour sensors, mounted on ports C and D** (device id 61, MEASURED 2026-09-01; they were not on
+  the ledger, which the Supplier still has to reconcile). Both motors are **Medium Angular 45603**
+  (device id 48). *(Supersedes "types of both are unknown" and "no sensors, no mounting blocks".)*
+  The sensors sit at the **middle of the three Technic holes**, ~16 mm working height. ⚠ Their
+  **centre-to-centre spacing and fore-aft offset are still `[UNMEASURED]`** — known only to be wider
+  than a 76 mm sticky note — and that is the **highest-priority measurement in the project** (KU-M33).
+  Store prices can change; the ledger records the price actually paid per line, not a price list.
+- **Hodge-podge hardware: measure, don't model.** Closed on the bench since: wheel Ø **63.5 mm**,
+  effective track width **95 mm** (both MEASURED 2026-09-03 from a driven 1 ft square), loop rate
+  **20 Hz** sustained while driving *and* logging *and* reading both colour sensors, coast after a stop
+  trigger **~3 mm**, motor `max_speed` **930 deg/s** (runs to date have used only 80–100 dps). **Still
+  unmeasured:** sensor spacing, cross-track error, and whether the heading wander is a systematic bias or
+  zero-mean noise — the last one is load-bearing, because a *bias* costs 85 mm of drift over 3048 mm and
+  noise costs almost nothing. Carry the rest as config variables and close them on the bench —
   [docs/lessons_learned/model-only-to-the-next-decision.md](docs/lessons_learned/model-only-to-the-next-decision.md).
 - **The team wants color *classification*, not just presence detection** (scope FR-2b). Sticky notes are
   matte and pastel — the worst case for the sensor's built-in color ID. An unclassifiable reading is
-  reported as UNKNOWN, never forced into a class.
+  reported as UNKNOWN, never forced into a class. **MEASURED 2026-09-08 on the real carpet, and the rule
+  CHANGED:** the shipped chromaticity anomaly detector (`src/floor_anomaly.py`) **FAILS** — yellow was
+  **INVISIBLE** (0 % of samples cleared threshold) while blue tape tripped it **100 %**, because carpet
+  totals only ~79 ADC counts and its chromatic sigma is under one count. **Detection is now a brightness
+  rule, `reflection() >= 30`:** carpet 3–9 · blue tape 7–9 · yellow 51–73 · pink 97+ — zero overlap, a
+  43-point gap, **colour-agnostic** (so it survives the mine colour changing), and the **tape sits inside
+  the carpet band so the mine detector cannot see it at all — no blue veto is needed.** The boundary rule
+  is separate: `b/(r+g+b) >= 0.44`. Classification is **report-only and never gates the count**, and it
+  works: **GATE 1 closed 2026-09-08** — a real note found while moving, untethered on battery, **twice**,
+  `PINK refl=99` and `YELLOW refl=62`, both named correctly. **The mines are yellow AND pink, the colour
+  may change on the day, and mines are never blue** — blue tape and a blue sticky note are different
+  things. [docs/findings/colour-survey-and-first-detection-2026-09-08.md](docs/findings/colour-survey-and-first-detection-2026-09-08.md)
 - **ModemManager is stopped and disabled on this host** (`scripts/setup-host.sh --apply`, 2026-08-27,
   run before the hub was ever plugged in). Honest footnote: `mmcli -L` returned *"No modems were found"*
   with the hub attached, so it had **not** in fact grabbed the device — the mitigation is a kept
@@ -92,8 +119,25 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   REPL into `/flash/lib`, verified by a **SHA-256 the hub computes on itself**
   ([ADR-0007](docs/decisions/0007-deploy-by-writing-modules-to-flash-lib.md),
   [docs/runbooks/deploy-to-hub.md](docs/runbooks/deploy-to-hub.md)). No LEGO app, no `mpy-cross`, no GCC.
-  ⚠ **Only half the deploy story:** a *module* imports; whether a *program* autoruns from
-  `/flash/main.py` is **untested** (KU-M16). The **firmware** is the MicroPython binary in the
+  ✅ **The other half is now closed:** `/flash/main.py` does **not** autorun (MEASURED 2026-09-01) — and it
+  does not need to. `hub_programmer/slot_upload.py --apply` uploads to a **Hub OS slot and starts it**,
+  and a slot program **drives, prints, logs to `/flash` and keeps running with the laptop unplugged**
+  (PROVEN 2026-09-03 and again 2026-09-08). The slot entry MUST be named `program.py`.
+  ⚠ **Two operational traps, both MEASURED 2026-09-08. Read these before touching the deploy tooling:**
+  **(a) `run.py`, `probes/` and `download.py` send Ctrl-C, which KILLS the Hub OS** — and `slot_upload.py`
+  needs it alive, so it then aborts at its identity check (that abort is the guard working correctly:
+  **nothing is written**). **A hub power-cycle is required between REPL work and a slot upload.** A Ctrl-D
+  soft reset was properly tested — protocol verification, 25 s of retries — and does **NOT** work. Batch
+  every `download.py` retrieve into one call at end of session. `scripts/scan-surface.py` was re-plumbed
+  through the slot/console path and no longer kills it. **The CENTER button stops a running program**, and
+  a running program blocks a new one from starting.
+  **(b) The module name `config` is SHADOWED on the hub** — `import config` in an on-hub program resolves
+  to something in the LEGO firmware, not `/flash/lib/config.py`, and the program dies at import **even
+  though the upload hash-verifies**. `src/hub_drive.py` works around it by mirroring the geometry locally
+  and asserting it against `config.py` on the **host**, where `./scripts/check-docs.py` catches drift —
+  a check cannot fail silently the way a hijacked hub import can. Assume any short generic module name
+  may collide.
+  The **firmware** is the MicroPython binary in the
   STM32F413's internal program flash; **`/flash` is the FAT filesystem that firmware exposes** — writing
   a `.py` there is saving a document and cannot modify the firmware image, which was *proved* by
   re-capturing the baseline and diffing
@@ -105,6 +149,12 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   unresolved timing anomaly (KU-M14): the same three calls timed individually sum to 0.328 ms, 4× less.
   Plan with 1.350 ms and never quote the per-call figures as read rates**
   ([docs/findings/imu-characterisation-2026-08-27.md](docs/findings/imu-characterisation-2026-08-27.md)).
+- **Direction is MEASURED BY WATCHING, and `src/hub_drive.py` owns it — do not re-derive it.** Forward is
+  **A negative / B positive**; **POSITIVE YAW = PHYSICALLY LEFT**; colour sensor **C = RIGHT, D = LEFT**.
+  Three separate direction bugs happened on 2026-09-08 from *inferring* a sign out of another program's
+  convention. **Encoder signs and yaw signs are conventions, not directions** — nothing in the telemetry
+  says which way the robot physically moves, and only a human watching it can settle that. Import the
+  primitives from `hub_drive`; never re-derive a sign from a log.
 - **Host:** native Ubuntu 22.04, Python 3.10.12, user in `dialout`, google-chrome present. LEGO does not
   officially support Linux desktop.
 - **Architecture:** **flat `src/`**, no packages ([ADR-0004](docs/decisions/0004-flat-src-supersedes-package-split.md),
@@ -120,9 +170,19 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   `hub_imu` · `hub_ui` · `hub_selfcheck`, **one file per device**. Every reader returns `None`, never `0`,
   when it cannot read. **`./scripts/check-docs.py` enforces the boundary** — there is no test suite
   ([ADR-0005](docs/decisions/0005-no-test-suite-verify-on-hardware.md)), so that check is its only guard.
-  `src/main.py` is deliberately unwritten: it is where every open unknown converges.
-- **Budget:** `./inventory.py` (`--verbose` for a statement) is the live Schrute Buck ledger and the single
-  source of truth. Edit the `ENTRIES` list; don't build a parallel markdown table.
+  **`src/main.py` is WRITTEN and reviewed** (2026-09-03, irreducible core — no motor-safety or crash
+  defect found) — ⚠ **and it has STILL NEVER RUN on hardware.** Every behaviour this project has actually
+  proven belongs to a program in `examples/`, not to `main.py`; do not report it as working, ready or
+  verified. *(Supersedes "deliberately unwritten".)*
+  ⚠ **KNOWN BUG, still present:** `src/hub_color.py` reads only `hub_api.COLOR_PORT`. **`SECOND_COLOR_PORT`
+  is declared in `hub_api.py` and read NOWHERE in `src/`** — so the mission code has a **one-sensor
+  swath** while two sensors are mounted and both are read fine by `examples/`. At 10 ft that is the
+  difference between 75 lanes and 38. ⚠ **Do not raise the lane pitch until both ports are genuinely read
+  every tick** — that is the one change that silently loses mines.
+- **Budget:** [docs/course/budget.md](docs/course/budget.md) is the live Schrute Buck ledger and the single
+  source of truth — a plain markdown table. Add a row and carry the running balance down; don't build a
+  parallel copy anywhere else. It was the script `./inventory.py` until the operator deleted it 2026-09-08;
+  **do not resurrect it** — the script is in git history if a figure ever needs its derivation.
 
 ## Course rules that override engineering preference
 

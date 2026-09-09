@@ -47,7 +47,7 @@ whether BT is reachable from a user program — all unknown until the hub is con
 
 ## The analysis side
 
-Small, plain Python on the laptop, in the spirit of `inventory.py` — a script anyone can edit, not a
+Small, plain Python on the laptop, in the operator's house style — a script anyone can edit, not a
 framework:
 
 - **`analyse-run.py`** — read a run CSV and report: actual loop rate, gyro-vs-encoder heading divergence

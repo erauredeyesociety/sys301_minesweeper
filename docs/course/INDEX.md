@@ -27,6 +27,7 @@ the artifacts that are *submitted*.
 | [lego-reference/](./lego-reference/) | **LEGO's own spec sheets** — the combined element specifications and a printable LEGO ruler, with `.txt` sidecars for grep and the docs-rag. Confirms the 5×5 matrix, the 16 mm colour standoff, and the 250 mm fixed wires |
 | [source-material/](./source-material/) | **The course's own files, verbatim** — instructions PDF, journal rubric, example entry, CSER report template. Read-only originals; the authority any claim is checked against |
 | [deliverables.md](./deliverables.md) | **The authoritative one.** Full calendar, every deliverable, every rubric broken out, what full credit concretely requires, and how not to lose easy points. |
+| [budget.md](./budget.md) | **The Schrute Buck ledger** — every entry, the running balance, and the rules that move money. Single source of truth for the budget; feeds Intro Report §6. |
 | [journal/](./journal/) | 80 points. The per-day template, the six-entry tracker, and the transcribed entries. The **handwritten page in class is the submission**; the files here are the durable record. |
 | [report/](./report/) | The Intro Report due 18 SEP: the CSER 2022 Word template's constraints, the markdown-draft → Word-deliverable workflow, and a section-by-section outline saying which repo artifact feeds each section. |
 | [team/](./team/) | The four roles with their exact permissions and prohibitions, the peer-evaluation formula, and the communications policy plus how to actually export the record. |

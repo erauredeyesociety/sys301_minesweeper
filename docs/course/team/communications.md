@@ -155,7 +155,7 @@ The instructions' own example: three team members meeting for 3:55 → 3 people 
 
 ### Do the arithmetic before asking for a meeting
 
-Current balance: **56 SB** (`./inventory.py`, 2026-08-25).
+Current balance: **56 SB** ([../budget.md](../budget.md), 2026-08-25).
 
 | Meeting | Cost | As a fraction of 56 SB |
 |---|---:|---|

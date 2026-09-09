@@ -29,11 +29,11 @@ open questions still to ask ([../../scope.md § Mission](../../scope.md#mission-
 | 3 | Systems Engineering Approach | ″ | [../team/roles.md](../team/roles.md) · [../team/communications.md](../team/communications.md) · `docs/plans/2026-08-25-sprint-1-walking-skeleton.md` · `docs/session_records/` | writable now |
 | 4 | Design & Implementation | ″ | `docs/decisions/` (ADR 0001–0003) · `docs/hardware/port-map.md` · `docs/hardware/build-record.md` · `src/` | 🔒 partial |
 | 5 | Verification & Results | ″ | `docs/findings/` · `tests/persistent/` · Demo Day observations | ⏳ 🔒 |
-| 6 | Budget & Resource Management | ″ | `inventory.py` · `docs/hardware/build-record.md` | writable now |
+| 6 | Budget & Resource Management | ″ | [../budget.md](../budget.md) · `docs/hardware/build-record.md` | writable now |
 | 7 | Discussion — what did not work | ″ | `docs/findings/` (failed approaches) · `docs/lessons_learned/` · journal entries | ⏳ |
 | 8 | Lessons Learned & Conclusions | ″ | `docs/lessons_learned/` · `docs/course/journal/*.md` | ⏳ |
 | — | Acknowledgements | `Els-acknowledgement` | Manual. Unnumbered, bold heading. | ready |
-| — | Appendix A… | `Els-appendixhead` | `docs/hardware/port-map.md` · `inventory.py --verbose` · `src/` listings | ⏳ |
+| — | Appendix A… | `Els-appendixhead` | `docs/hardware/port-map.md` · [../budget.md](../budget.md) ledger table · `src/` listings | ⏳ |
 | — | References | `Els-reference-head` | `docs/research/*.md` `Sources:` lines | writable now |
 
 ---
@@ -133,7 +133,7 @@ successes, run time, failures and their causes. It is unrepeatable.
 
 ### 6. Budget and Resource Management — writable now
 
-**Fed by:** `inventory.py` (run `./inventory.py --verbose` and paste the statement as Table N) ·
+**Fed by:** [../budget.md](../budget.md) (paste its ledger table as Table N) ·
 `docs/hardware/build-record.md`.
 
 As of 2026-08-25: 100 SB start, motors ×2 @10 = 20, wheels ×2 @7 = 14, project budget reallocation 10 →
@@ -173,7 +173,7 @@ Every in-text citation must appear in the list and vice versa (§1.3).
 
 ### Appendix A…
 
-Candidates: full port map · full `./inventory.py --verbose` statement · key source listings from
+Candidates: full port map · the full ledger table from [../budget.md](../budget.md) · key source listings from
 `src/` · the Designer's sketches if not already figures.
 
 ⚠ **The template contradicts itself on placement.** Its §1.1 ordering sentence lists the Appendix
@@ -187,7 +187,7 @@ note the discrepancy if asked.
 ## Writing order (does not match reading order)
 
 1. **§3 Systems Engineering Approach** — no hardware, no mission needed. Start here.
-2. **§6 Budget** — `inventory.py` already has the data.
+2. **§6 Budget** — [../budget.md](../budget.md) already has the data.
 3. **§1 Introduction** minus the challenge statement.
 4. **§4 Design** — architecture rationale from the ADRs.
 5. *(the open mission questions are answered)* → **§2 Requirements**, then §4's algorithm content.

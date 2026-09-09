@@ -16,3 +16,4 @@ differently" section.
 | [probe-with-scripts-not-commands.md](./probe-with-scripts-not-commands.md) | 2026-08-27 | Interrogate hardware from a **script with a deadline**, never a typed command — a script that hangs is disposable, a hung session is not. Bash *inside* Python is fine; the rule is about who holds the thing that can block |
 
 The two are siblings: **bound the inputs your conclusion rests on, then stop refining them and go measure.**
+| [guard-every-feedback-loop.md](./guard-every-feedback-loop.md) | 2026-09-08 | **A feedback loop ships with a divergence guard, or it does not ship.** An `[UNVERIFIED]` sign on a heading hold was wrong, turning correction into positive feedback: the robot circled for a whole 40 s run at a fixed 2.55:1 wheel ratio. Derive the sign from a measurement, not from another program's convention — and detect a correction stuck at its clamp, disable the loop, and record it in the run trailer |

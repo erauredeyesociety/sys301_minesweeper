@@ -16,6 +16,10 @@ Counting happens on the FALLING edge, once the event's width is known, so a too-
 
 import config
 
+# How many recent events to keep for diagnostics. The count is authoritative and is never affected
+# by this -- it is incremented in _close() independently of the list.
+MAX_KEPT_EVENTS = 64
+
 OFF = "off"
 MAYBE_ON = "maybe_on"
 ON = "on"
@@ -65,7 +69,14 @@ class EdgeCounter(object):
         self.state = OFF
         self.index = -1
         self.count = 0
+        # BOUNDED RING, not an unbounded list. Found by inspection 2026-09-09: this list is appended
+        # for EVERY event including REJECTED ones, from inside the mission loop, with no cap. On noisy
+        # carpet with a marginal threshold that is hundreds-to-thousands of Event objects at ~100 B
+        # each -- a plausible MemoryError mid-run on a hub whose whole heap is under 252 KiB.
+        # `count` is the deliverable; this list is diagnostics, so keeping only the most recent is a
+        # free fix. Anything that needs every event replays the CSV on the host instead.
         self.events = []
+        self.max_events = MAX_KEPT_EVENTS
 
         self._pending = 0          # samples the candidate state has persisted
         self._start_index = None   # index where the current ON run began
@@ -153,6 +164,8 @@ class EdgeCounter(object):
             event = Event(self._start_index, end_index, self._peak, True)
             self.count += 1
         self.events.append(event)
+        if len(self.events) > self.max_events:
+            del self.events[0]          # drop the oldest; the COUNT is unaffected
         self._start_index = None
         self._peak = None
         return event

@@ -7,10 +7,19 @@ marked with how it must be replaced. Calibration overrides the detection values 
 """
 
 # --- Arena -------------------------------------------------------------------
-# UNKNOWN: "a 10x10 area" has no units. See docs/findings/coverage-time-budget.md --
-# at 10 feet an exhaustive single-sensor sweep is 125-204 m of driving.
-ARENA_WIDTH_MM = 1000.0        # [ASSUMED] placeholder. MUST come from professor Q1.
-ARENA_LENGTH_MM = 1000.0       # [ASSUMED] placeholder. MUST come from professor Q1.
+# KU-P1 -- the units of "10x10" -- ANSWERED PROVISIONALLY, NOT CLOSED. Operator 2026-09-08: the
+# expectation and standard for the competition is a 10 FOOT square arena, but it is "not set in
+# stone" and may change on the day. So this is the PLANNING VALUE, not a measurement, and the whole
+# point of it living here is that a change on demo day edits these two numbers and nothing else.
+# It is the expensive answer: docs/findings/coverage-time-budget.md warned that feet, not metres,
+# meant 125-204 m of driving. 10 ft = 3048 mm.
+ARENA_WIDTH_MM = 3048.0        # 10 ft [OPERATOR-STATED 2026-09-08, may change on the day]
+ARENA_LENGTH_MM = 3048.0       # 10 ft [OPERATOR-STATED 2026-09-08, may change on the day]
+# COMPUTED consequence, at 3048 mm square:
+#   swath ~41 mm (ONE sensor)   -> 75 lanes, 229 m   -> 69 min at 55 mm/s, 12.7 min at 300 mm/s
+#   swath ~82 mm (TWO sensors)  -> 38 lanes, 116 m   -> 35 min at 55 mm/s,  6.4 min at 300 mm/s
+# A single-sensor sweep at today's speed DOES NOT FIT any plausible demo slot. Using BOTH colour
+# sensors and raising the traverse speed are therefore REQUIREMENTS, not optimisations.
 
 # BOUNDARY_MODE selects what ends a lane: "odometry" (dead reckoning only), "distance"
 # (ultrasonic sees the wall), or "wall" (drive until stalled). Only "odometry" needs no
@@ -127,7 +136,37 @@ ENCODER_COUNTS_PER_REV = 360.0 # LEGO fact sheets, all three motor types. The on
 # UNVERIFIED: classification needs several pure samples inside a note, which caps speed
 # (~160 mm/s at a 20 mm chord vs ~360 mm/s at 30 mm) -- docs/research/color-discrimination.md.
 # Presence-only detection tolerates more. Start slow; speed is an optimisation, not a default.
-TRAVERSE_SPEED_MMS = 150.0     # [ASSUMED] starting point
+# ⚠ SPEED IS CAPPED BY SAMPLING, NOT BY THE MOTORS. Established 2026-09-09.
+# The motors were never the limit: motor.run() takes deg/s and DELIVERS it -- commanded 150 dps
+# measured 150.02 dps by differencing relative_position over 27 s. The slow speeds everywhere are a
+# copy-pasted bench-safety constant, not a hardware ceiling (max_speed is 930 deg/s = ~512 mm/s).
+#
+# What actually caps speed is how many samples the sensor gets while crossing a note:
+#     samples = (chord_mm / speed_mms) * tick_rate_hz
+# and TWO corrections make that far tighter than it looks:
+#   1. THE WORST-CASE CHORD IS 36.48 mm, NOT 76 mm. COMPUTED: with pitch = size - 2*XTE - overlap,
+#      the nearest lane passes a note centre at (76-5)/2 = 35.5 mm regardless of cross-track error;
+#      minimising the chord of a 76 mm square at that offset over all rotations gives 36.48 mm, at
+#      45 degrees. Design against 36.48. Using 76 overstates the sample count by 2x.
+#   2. THE REAL TICK RATES ARE LOWER THAN "20 Hz", AND THE JITTER HAS A KNOWN CAUSE. MEASURED across
+#      16 logs / 3668 inter-tick gaps: median 54 ms (18.5 Hz) but MEAN 75 ms = 13.3 Hz, p75 103 ms,
+#      p95 116 ms, p99 164 ms. src/main.py sets TICK_MS = 100, so the MISSION program is slower still.
+#      ⚠ THE CAUSE IS ISOLATED: binning gaps by row-index-mod-10 gives 105.5 ms on mod 1 and ~54 ms
+#      on the other nine -- the CSV flush (hub_telemetry_log.CsvLog flush_every=10) costs a
+#      DETERMINISTIC +51 ms on one tick in ten. Raising flush_every trades crash-durability of the
+#      last few rows for a materially faster, more even loop.
+#      ⚠ USE THE TAIL, NOT THE MEDIAN, for any guarantee. A speed that gives 2 samples at the median
+#      gap gives ZERO on the p95 gap, and the robot skips the target on that tick.
+#
+# Consequence, COMPUTED: at 300 mm/s and 9.18 Hz a worst-case crossing yields 1.12 samples -- BELOW
+# ONE, so the robot steps over an off-centre note between ticks. It is also below MIN_DWELL_SAMPLES,
+# so EdgeCounter never latches, AND event_width_gates() rejects the 1-sample event as too_narrow.
+# Two silent failures stacked: the count reads low with nothing on the matrix to say why.
+WORST_CASE_CHORD_MM = 36.48    # COMPUTED, see above. NOT the 76 mm note size.
+MIN_SAMPLES_PER_NOTE = 3       # [ASSUMED] one more than MIN_DWELL_SAMPLES, for margin
+TRAVERSE_SPEED_MMS = 150.0     # [ASSUMED] starting point. CHECK IT WITH max_safe_speed_mms() against
+                               # the rate the loop ACTUALLY achieves -- at 9.18 Hz the ceiling is
+                               # 112 mm/s, so this value is ALREADY TOO FAST for main.py as written.
 SAMPLE_RATE_HZ = 100.0         # UNVERIFIED as a LOOP rate -- it is the LEGO spec figure for the
                                # colour sensor DEVICE. Value unchanged 2026-08-27.
                                # What the 2026-08-27 hub session added: a full IMU tick (tilt +
@@ -192,6 +231,28 @@ def sweep_path_mm(width_mm=None, length_mm=None):
     if length_mm is None:
         length_mm = ARENA_LENGTH_MM
     return lane_count(width_mm) * length_mm
+
+
+def max_safe_speed_mms(rate_hz, chord_mm=None, min_samples=None):
+    """Fastest traverse that still guarantees `min_samples` across the worst-case chord.
+
+    This is a HARD GEOMETRIC CEILING, not a preference: above it the sensor can step clean over a
+    note between two ticks and the mine is never seen. Call it with the rate the loop MEASURED, not
+    the rate it was asked for -- they differ by ~17% in our logs.
+
+    COMPUTED reference points, worst-case chord 36.48 mm at 3 samples:
+        9.18 Hz  (src/main.py, TICK_MS=100)  ->  112 mm/s
+       16.58 Hz  (examples loop, TICK_MS=50) ->  202 mm/s
+    """
+    if chord_mm is None:
+        chord_mm = WORST_CASE_CHORD_MM
+    if min_samples is None:
+        min_samples = MIN_SAMPLES_PER_NOTE
+    if rate_hz <= 0.0:
+        raise ValueError("tick rate must be positive, got {0}".format(rate_hz))
+    if min_samples <= 0:
+        raise ValueError("min_samples must be positive, got {0}".format(min_samples))
+    return chord_mm * rate_hz / float(min_samples)
 
 
 def expected_width_samples(chord_mm=None, speed_mms=None, rate_hz=None):

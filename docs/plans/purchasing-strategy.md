@@ -9,7 +9,8 @@ sensor suite architecture (`docs/plans/sensor-suite-architecture.md`, being writ
 path rather than linked because it may not be on disk yet)
 **Mitigates:** **R-05** "56 SB does not cover the sensors the design needs" ([risk-register.md](./risk-register.md))
 
-Every figure below is checked against `./inventory.py --verbose` and the course instructions PDF
+Every figure below is checked against the budget ledger ([../course/budget.md](../course/budget.md))
+and the course instructions PDF
 (`../course/source-material/Introduction Project Student Instructions.pdf`, p.1–4). **No store price is invented anywhere in
 this document.** The only two prices we have ever observed are the ones the ledger recorded on 2026-08-25.
 
@@ -21,7 +22,7 @@ reasoning, for the Intro Report.
 ## 1. The card
 
 > **SUPPLIER'S STORE CARD — SYS 301 minesweeper**
-> Balance: run `./inventory.py` before you leave the table. On 2026-08-26 it is **56 SB**.
+> Balance: read [../course/budget.md](../course/budget.md) before you leave the table. On 2026-08-26 it is **56 SB**.
 > **RESERVE FLOOR: 14 SB.** Never let a purchase take the balance below it. (Drops to 10 SB on 8 SEP.)
 > **Spendable today = balance − 14.** On 2026-08-26 that is **42 SB**.
 >
@@ -67,7 +68,7 @@ Sourced from the course instructions p.1–2 and verified line by line against t
 
 ### 2.1 The ledger, verified
 
-`./inventory.py --verbose`, 2026-08-26:
+The ledger ([../course/budget.md](../course/budget.md)) as it read on 2026-08-26:
 
 ```
 DATE         DESCRIPTION                           QTY   UNIT   AMOUNT  BALANCE
@@ -141,9 +142,9 @@ loss(P) = P − floor(0.9 × P) = ceil(P / 10)
 ```
 
 That identity is exact — `floor(0.9P) = P − ceil(0.1P)` — and was re-checked on 2026-08-26 against the
-ledger's own `sellback()` for every integer price from 1 to 1000 — zero mismatches. (`sellback()` returns
-a **negative** number, because it is a ledger credit; compare against `-sellback(P)` or the loss comes out
-absurd.) It is worth stating in closed form because it makes
+ledger's own `sellback()` helper for every integer price from 1 to 1000 — zero mismatches. (The ledger was
+a Python script then and `sellback()` returned a **negative** number, because it is a ledger credit; the
+comparison was against `-sellback(P)`. The script was retired 2026-09-08; the identity is unaffected.) It is worth stating in closed form because it makes
 the whole question answerable in the Supplier's head at the store: **the round-trip cost of being wrong is
 one Schrute Buck per ten Schrute Bucks of price, rounded up.**
 
@@ -510,4 +511,4 @@ The reusable content here is the reasoning, not the balance:
 - [../hardware/port-map.md](../hardware/port-map.md) — the 4-sensor ceiling
 - [../course/team/communications.md](../course/team/communications.md) — the meeting tax from the communications side
 - [../directives/course-compliance.md](../directives/course-compliance.md) — the role rules the −2 SB penalty enforces
-- [../../inventory.py](../../inventory.py) — the ledger, and the single source of truth for every number above
+- [../course/budget.md](../course/budget.md) — the ledger, and the single source of truth for every number above

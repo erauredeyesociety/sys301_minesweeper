@@ -550,7 +550,7 @@ this decomposition, and it is the kind of quantitative result the Intro Report i
 `./data_analysis/main.py` plus **one** module, `motion.py`. Standard library only — `csv`, `math`,
 `statistics` — matching the constraint already established for `analyse_run.py`. One positional argument
 (the run CSV), at most one flag, one text block on stdout. Constants at the top of the file. In the
-spirit of [../../inventory.py](../../inventory.py): a script a teammate can open and edit, not a framework.
+operator's house style: a script a teammate can open and edit, not a framework.
 
 **Ownership, so nobody writes the same thing twice.** Items 2 and 5 below are the full-resolution versions
 of blocks **4** (heading divergence) and **5** (cross-track per lane) of `analyse_run.py`

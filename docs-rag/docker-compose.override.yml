@@ -1,0 +1,36 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# docker-compose.override.yml — CODE KNOWLEDGE BASE (ours, not vendored)
+# ══════════════════════════════════════════════════════════════════════════════
+# Docker Compose auto-merges this file with docker-compose.yml on every bare
+# `docker compose up/run` — which is exactly what `rag up` and `rag ingest-kb`
+# issue (scripts/lib/lifecycle.sh:994, scripts/lib/commands/ingest-kb.sh). The
+# vendored compose file is therefore NEVER edited.
+#
+# It adds exactly two things to the api service, both READ-ONLY:
+#
+#   1. config.yaml at /src/config/config.yaml — the path app/config_manager.py
+#      `default_config_path()` resolves to. The stock single-KB consumer mounts
+#      NO config (docker-compose.yml:16), which is why /api/v2/* answered
+#      "multi-KB not configured" and /api/admin/validate-config reported
+#      "/src/config/config.yaml: No such file or directory". Mounting it is what
+#      activates the multi-KB gateway (app/main.py `_init_multi_kb_gateway`).
+#
+#   2. The repo's code directories at their OWN absolute host paths, so a
+#      citation returned by search opens directly on the host — the same
+#      same-path :ro contract docs/ already uses. Only these five directories
+#      are exposed: no .git, no docs-rag/, no tmp/.
+#
+# ROLLBACK IS ONE COMMAND:  rm docker-compose.override.yml && ./rag up
+# That returns the stack to the exact single-KB configuration it had before.
+# The code KB's data (database ragdb_code) survives, inert, and is picked up
+# again the moment this file returns.
+# ══════════════════════════════════════════════════════════════════════════════
+services:
+  api:
+    volumes:
+      - /home/devel/sys301_minesweeper/docs-rag/config.yaml:/src/config/config.yaml:ro
+      - /home/devel/sys301_minesweeper/src:/home/devel/sys301_minesweeper/src:ro
+      - /home/devel/sys301_minesweeper/probes:/home/devel/sys301_minesweeper/probes:ro
+      - /home/devel/sys301_minesweeper/hub_programmer:/home/devel/sys301_minesweeper/hub_programmer:ro
+      - /home/devel/sys301_minesweeper/examples:/home/devel/sys301_minesweeper/examples:ro
+      - /home/devel/sys301_minesweeper/scripts:/home/devel/sys301_minesweeper/scripts:ro

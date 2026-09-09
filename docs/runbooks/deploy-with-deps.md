@@ -69,6 +69,33 @@ hub_motors   hub_runtime  hub_telemetry_log  hub_ui  odometry  result  sweep
 stdlib/hub-only: `color_sensor, distance_sensor, hub, math, motor, os, runloop, spike, time`. A leaf
 module resolves to nothing — `deploy_deps.py src/config.py` reports 0 dependencies.
 
+## ⚠ The Hub OS goes down in the middle of `--apply`, by construction
+
+**[COMPUTED, host — read off `deploy_deps.py:152-176`, 2026-09-08. Not observed on hardware.]**
+`--apply` runs *N* × `upload.py <dep> --apply`, and `upload.py` opens the port by writing **Ctrl-C**
+(`Session.wake()`) — which stops the Hub OS. It then runs `slot_upload.py <entry> --apply`, which asks
+the Hub OS to prove its identity over the control protocol that those Ctrl-Cs just killed. **That last
+step must abort at `[2] identity` with exit 2, every time, having written nothing.** The abort is the
+identity guard working correctly and must never be relaxed — a silent Hub OS and a stranger's hub are
+indistinguishable from the host.
+
+So a full `--apply` costs **one power cycle at a fixed point**: after the dependencies are in
+`/flash/lib`, before the entry can be uploaded.
+
+**Avoid it rather than recover from it:**
+
+- **`/flash/lib` persists across boots** (ADR-0007). When only the *entry program* changed and its
+  dependencies are already on the hub, **skip `deploy_deps.py` entirely** and run
+  `./hub_programmer/slot_upload.py <entry>.py --apply` alone — that path sends **no Ctrl-C** and leaves
+  the Hub OS, Bluetooth and the CONNECT button alive.
+- If you do need `--apply`: power-cycle **after** the dependency uploads finish, then re-run
+  `slot_upload.py <entry> --apply` by hand. The dependencies are already in place; nothing is lost.
+- Same rule for retrieving telemetry: `download.py` sends Ctrl-C too, so **batch the retrieves** —
+  all attempts, then one `download.py --all`.
+
+Recovery and the button map: [competition-start-stop.md](./competition-start-stop.md) §§ 4–5.
+Why it happens: [../findings/stopping-and-restarting-the-hub-2026-09-08.md](../findings/stopping-and-restarting-the-hub-2026-09-08.md).
+
 ## Manual fallback
 
 If `deploy_deps.py` is unavailable or you want to deploy one module at a time, the underlying tools are
