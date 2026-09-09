@@ -85,7 +85,7 @@ never build one. Cite it as *what we avoid needing*, never as our method.
 ### 3.1 The family is named and its O(1) claim is published
 
 Lin, Ma, Jiang, Hou & Wo, *Error Bounded Line Simplification Algorithms for Trajectory Compression: An
-Experimental Evaluation*, **ACM TODS 46(3), Article 11, Sept 2021**, §4.3 — verbatim, extracted here:
+Experimental Evaluation*, **ACM TODS 46(3), Art. 11, Sept 2021**, §4.3 — verbatim, extracted here:
 
 > "One-pass algorithms adopt local checking policies and run in O(n) time with an O(1) space complexity."
 
@@ -115,8 +115,8 @@ two. **Rename so `BORDER_EPS_MM` IS the guarantee (50) and the code uses `eps//2
 Douglas & Peucker 1973 (*The Canadian Cartographer* 10(2):112–122; independently Ramer 1972). Rejected
 because (a) it needs the whole path — the thing the operator wants freed; (b) it is O(n²), and the
 O(n log n) improvement buys speed with a dynamic convex-hull structure, i.e. *more* code and *more* heap
-`[UNVERIFIED]`; and (c) **it is recursive**, and MicroPython raises on deep recursion rather than
-degrading. Reason (c) is specific to our hardware and is written down nowhere else here.
+`[UNVERIFIED]`; and (c) **it is recursive**, and MicroPython raises on deep recursion rather than degrading
+— a reason specific to our hardware, written down nowhere else here.
 
 ### 3.4 What each does to an ARC versus a CORNER — the operator's actual question
 
@@ -137,13 +137,13 @@ on corner behaviour, and the plan's refutation of the fixed-heading rule stands 
 90° at R=12000" is exactly what I measure for RW). **RW is grossly over-conservative on arcs**: 24 vertices
 to deliver 7.0 mm when 50 mm was permitted — the survey's "poor compression ratio", quantified.
 
-**Reject the centred sleeve** (Zhao & Saalfeld, AutoCarto 13, 1997 `[UNVERIFIED]`, not read). It cuts the
+**Reject the centred sleeve** (Zhao & Saalfeld, AutoCarto 13, 1997 `[UNVERIFIED]`, not read): it cuts the
 R=12000 arc from 24 to 18 vertices, but its key vertex sits mid-window, so the provable bound against the
-emitted segment is **4τ**, not 2τ. A 25 % vertex saving is worth nothing at 4 B/vertex; a factor-two loss
-in a *stated* bound is worth a lot in a report whose thesis is the bound. **Keep RW — defended on code
-size and the absence of a `sqrt`, not on uniqueness.** The documented upgrade, with a measured trigger (a
-real trace overflowing the cap), is **SIPED**: same class, same O(1), same ε, ~half the vertices on a
-curve, ~25 extra lines. Do not build it speculatively.
+emitted segment is **4τ**, not 2τ — a 25 % vertex saving is worth nothing at 4 B/vertex, a factor-two loss
+in a *stated* bound is worth a lot in a report whose thesis is the bound. **Keep RW, defended on code size
+and the absence of a `sqrt`, not on uniqueness.** The documented upgrade, with a measured trigger (a real
+trace overflowing the cap), is **SIPED**: same class, same O(1), same ε, ~half the vertices on a curve,
+~25 extra lines. Do not build it speculatively.
 
 ### 3.5 Pseudocode, integer millimetres
 
@@ -191,8 +191,8 @@ def feed(self, x, y, hdg_ddeg):
    cap. (`DIRMIN` over 20–200 mm changed nothing: 5 vertices throughout — it is not the sensitive knob.)
 
 `MAX_VERTS = 64` is marginal, confirming the plan's R-8 independently. [COMPUTED] at the 50 mm guarantee:
-clean rectangle 5 · 12 m bow 24 · ±25 mm/600 mm 45 · ±50 mm/600 mm 49 · **±100 mm/600 mm overflows** ·
-±50 mm/300 mm overflows.
+clean rectangle 5 · 12 m bow 24 · ±25 mm/600 mm 45 · ±50 mm/600 mm 49 · **±100 mm/600 mm and
+±50 mm/300 mm both overflow** (SIPED holds three of those five inside the cap).
 
 ---
 
@@ -334,16 +334,16 @@ precisely and only the use the surveying literature still endorses.
 
 ## 6. Coverage planning — is first-traced-edge defensible?
 
-**Yes, and here is the stronger reason than the plan gives.** The number of lanes depends only on the
-perpendicular span of the covered point set in the sweep direction; **that quantity IS the axis-aligned
-bounding-box extent in a frame rotated to that heading, identically, by definition.** Verified to machine
-precision on the drifted quadrilateral: `span_dir(polygon, 0°) == AABB height` exactly [COMPUTED].
+**Yes, and for a stronger reason than the plan gives.** Lane count depends only on the perpendicular span
+of the covered point set in the sweep direction; **that quantity IS the axis-aligned bounding-box extent in
+a frame rotated to that heading, identically, by definition** — verified to machine precision on the
+drifted quadrilateral, `span_dir(polygon, 0°) == AABB height` exactly [COMPUTED].
 
 Huang's minimum-altitude result (ICRA 2001, pp. 27–32) is real, is O(n) by rotating calipers, and —
 pleasingly — originated in **demining**. `[UNVERIFIED]`: IEEE Xplore is paywalled and no open copy
-surfaced, so every Huang claim here is at **second hand** via Vasquez-Gomez et al. (ICMEAE 2017) and the
-Choset-lineage survey we hold on disk. **Do not quote Huang; pull the original through the ERAU library
-before the report leans on it.** On our drifted quadrilateral [COMPUTED]:
+surfaced, so every Huang claim here is **second hand** via Vasquez-Gomez et al. (ICMEAE 2017) and the
+Choset-lineage survey on disk. **Do not quote Huang; pull the original through the ERAU library before the
+report leans on it.** On our drifted quadrilateral [COMPUTED]:
 
 | axis choice | heading error | cross-track over a 3048 mm lane | lanes @ 41 / 58.5 / 106 mm pitch |
 |---|---|---|---|
@@ -351,39 +351,40 @@ before the report leans on it.** On our drifted quadrilateral [COMPUTED]:
 | min-altitude edge (edge 2, two corners of accumulated turn error) | −14.10° | **742 mm** | 29 / 52 / 74 |
 | AABB short side | — | — | 29 / 52 / 74 |
 
-**Identical in every cell.** Min-altitude is discarding nothing real here — it is buying a heading that is
-14° wrong for a benefit of zero lanes. So **delete the 64-dot-product search and `AXIS_GAIN_LANES`.**
+**Identical in every cell.** Min-altitude discards nothing real here — it buys a heading 14° wrong for zero
+lanes. **Delete the 64-dot-product search and `AXIS_GAIN_LANES`.** But state the condition the plan does
+not: first-edge is optimal *because the arena is assumed square*; for a 2:1 rectangle entered on a short
+edge it would double the lane count. The guard costs one comparison and no polygon — **the AABB already
+yields both extents; sweep along the longer one**, which for a rectangle *is* Huang's answer. ⚠ Fire it
+only when the extent difference exceeds the misclosure: at our drift a *perfectly square* arena produced
+extents differing by 292 mm from turn bias alone, more than a 106 mm pitch, so a naive one-pitch
+discriminant reads drift as aspect ratio.
 
-**But state the condition the plan does not:** first-edge is optimal *because the arena is assumed square*.
-For a 2:1 rectangle entered on a short edge it would double the lane count. The guard costs one comparison
-and needs no polygon: **the AABB already yields both extents; sweep along the longer one.** For a rectangle
-that *is* Huang's answer. ⚠ Fire it only when the extent difference exceeds the misclosure — at our drift
-a *perfectly square* arena produced extents differing by 292 mm from turn bias alone, larger than a 106 mm
-pitch, so a naive one-pitch discriminant reads drift as aspect ratio.
-
-**Two further results that outrank the map entirely.**
+**Three results that outrank the map entirely.**
 
 1. **A full lap is worse than two adjacent sides.** [COMPUTED] at our [MEASURED] +7.43°/turn and +2.5 %
-   leg scale, the AABB extents after n driven sides: 2 sides 3124×3103 mm (+2.50 %, +1.80 %); 3 sides
+   leg scale, AABB extents after n driven sides: 2 sides 3124×3103 mm (+2.50 %, +1.80 %); 3 sides
    3395×3103 (+11.4 %, +1.80 %); 4 sides 3395×3645 (+11.4 %, **+19.6 %**). Every extra turn injects bias
-   that pushes the extents outward. Two adjacent sides determine a rectangle's bounding box completely,
+   pushing the extents outward, and two adjacent sides determine a rectangle's bounding box completely —
    at one third of the turn error and half the driving. Trace the lap if the operator wants the polygon
-   for the report — **but do not plan from it.**
-2. **Inflate the span, and size the inflation from the span's own error band, not from `eps_final`.**
-   Over 20 000 draws from a distribution fitted to four turns of one lap (*not* 20 000 laps — the
-   distinction matters), the raw span-derived plan under-covers the true side in **71.3 %** of draws;
-   inflating by ~107 mm drops that to **3.6 %** for one extra lane (~+3.4 % of sweep time). An uncovered
-   47 mm strip 3048 mm long is 1.5 % of the arena, and a 76 mm note centred in it is a mine reported absent.
-3. ⚠ **The number that actually decides the mission is not on this page.** A boustrophedon sweep of N lanes
-   makes 2(N−1) 90° turns; at N=29 that is **56 turns and 416° of accumulated heading error** at our
-   measured bias, and a single uncorrected lane reversal throws the far end of the next 3048 mm lane
-   **782 mm** off [COMPUTED]. No map — polygon, box or config rectangle — survives that. This makes the
-   tape-based lane-end re-fix a **requirement**, and it is the correct reason to stop tuning the map: the
-   map contributes ~1 % of span error; the turn bias contributes ~400 % to the sweep.
+   for the report, **but do not plan from it.** ⚠ Below two full adjacent sides the AABB *under*-estimates
+   the arena, which under-covers silently, so this needs an explicit completeness check (two legs driven,
+   one turn, both legs terminated on tape) — not an assumption that a partial trace is safe.
+2. **Inflate the span, sized from the span's own error band, not from `eps_final`.** Over 20 000 draws
+   from a distribution fitted to four turns of one lap (*not* 20 000 laps — the distinction matters), the
+   raw span-derived plan under-covers the true side in **71.3 %** of draws; inflating by ~107 mm drops that
+   to **3.6 %** for one extra lane (~+3.4 % of sweep time). An uncovered 47 mm strip 3048 mm long is 1.5 %
+   of the arena, and a 76 mm note centred in it is a mine reported absent.
+3. ⚠ **The number that actually decides the mission is not on this page.** A sweep of N lanes makes
+   2(N−1) 90° turns; at N=29 that is **56 turns and 416° of accumulated heading error** at our measured
+   bias, and one uncorrected lane reversal throws the far end of the next 3048 mm lane **782 mm** off
+   [COMPUTED]. No map — polygon, box or `config` rectangle — survives that. It makes the tape-based
+   lane-end re-fix a **requirement**, and it is the correct reason to stop tuning the map: the map
+   contributes ~1 % of span error, the turn bias ~400 % to the sweep.
 
-⚠ **No lane count above is quotable in the report.** `SENSOR_SPACING_MM` is `[UNMEASURED]`, so the pitch is
-unknown, so 29/52/74 are conditional figures. This hits the AABB and the polygon equally and so does not
-change the recommendation — but no number goes to the instructor until a ruler has been on the mount.
+⚠ **No lane count above is quotable.** `SENSOR_SPACING_MM` is `[UNMEASURED]`, so the pitch is unknown and
+29/52/74 are conditional. It hits AABB and polygon equally, so it does not change the recommendation — but
+no number goes to the instructor until a ruler has been on the mount.
 
 ---
 
@@ -402,20 +403,18 @@ millimetres. Priced in the representation it actually mandates [COMPUTED]:
 | **what the simplifier costs** (90–200 lines, at the [MEASURED] 0.89 bytecode/source ratio of `src/odometry.py`, 7 738 B → 6 885 B) | **~4–6 kB resident, plus transient parse** | 1.6–2.4 % |
 
 **The online simplifier costs two to three times more heap than it saves.** (The brief's 40–80 kB estimate
-for a few hundred lines is ~3× high, but it points the right way, and the plan's own §8 warning is right.)
-
-Two consequences that the plan half-states and should state fully:
+for a few hundred lines is ~3× high, but points the right way; the plan's own §8 warning is right.)
 
 - **Never defend this as "we saved 286 kB."** Defend it as *bounded single-pass condensation with a stated
-  error bound and O(1) state regardless of lap length* — which is true, checkable, and what a reviewer
-  will accept. The published version of the motive is Thrun's "object maps can be more compact" and Wong &
-  MacDonald's grid-map sentence (§2), neither of which depends on our heap figure.
+  error bound and O(1) state regardless of lap length* — true, checkable, and what a reviewer will accept.
+  The published motive is Thrun's "object maps can be more compact" and Wong & MacDonald's grid-map
+  sentence (§2), neither of which depends on our heap figure.
 - **The simplification may be misfiled as a hub problem.** The raw trace already goes to the telemetry CSV
-  on `/flash` — flash, not heap — and the plan says it is never read back in. So the **host already has the
+  on `/flash` — flash, not heap — and the plan says it is never read back in, so the **host already has the
   full trace**, where batch Douglas–Peucker is free, unlimited-memory and strictly better than any one-pass
-  method. The only thing that must happen on the hub is what the hub must *act* on, which is the span.
-  That is the honest form of the operator's idea: the condensation is real and is the report's centrepiece,
-  it just happens where it costs nothing.
+  method. The only thing that must happen on the hub is what the hub must *act* on: the span. That is the
+  honest form of the operator's idea — the condensation is real and is the report's centrepiece, it just
+  happens where it costs nothing.
 
 ---
 
