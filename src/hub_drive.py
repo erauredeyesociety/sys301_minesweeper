@@ -27,12 +27,17 @@ MEASURED CONSTANTS -- change these ONLY from a calibration run, never from reaso
     FORWARD_SIGN  MEASURED 2026-09-03 (examples/motor_poc.py drove a 1 ft square) and CONFIRMED
                   2026-09-08 (find_note.py found notes driving this way, twice). The motors are
                   mounted mirrored, so forward is left NEGATIVE and right POSITIVE.
-    TURN_SIGN     MEASURED 2026-09-08 from telemetry, run 0000043283:
-                      TURN_START_want900_from17  ->  TURN_END_at-955_delta-972_want900
-                  A positive command produced a NEGATIVE yaw delta and the robot turned away from the
-                  corner. So the pairing below is inverted relative to what motor_poc.py implied.
-    TURN_LEAD_DDEG  MEASURED on the same run: commanded 900, achieved 972 -- the loop breaks on the
-                  threshold and the robot then coasts ~72 ddeg (7.2 deg) further. ONE sample only.
+    TURN_SIGN     MEASURED 2026-09-08 by examples/calibrate_directions.py -- by the operator WATCHING
+                  the robot, which is the only kind of evidence that can settle a direction. With -1
+                  he saw spin_right turn LEFT and spin_left turn RIGHT, so +1 is correct.
+                  ⚠ An earlier telemetry-only reading of run 0000043283 argued for -1. That inference
+                  is WITHDRAWN: yaw sign is a convention, not a direction, and it cannot tell you
+                  which way the robot physically went.
+    TURN_LEAD_DDEG  MEASURED n=6 on run 0000456461: commanded 900 with a lead of 70 (target 830)
+                  achieved +866, -853, -881, +840, -860, -846 -- mean magnitude 857.7, i.e. only
+                  ~28 ddeg past the target. So the coast is ~28, not 72, and a lead of 70 made every
+                  turn UNDERSHOOT the commanded angle by ~42 ddeg. One loop tick at ~50 ms and
+                  ~48 deg/s is ~24 ddeg, which matches: this is LOOP LATENCY, not momentum.
 
 MicroPython subset: no f-strings. The LEGO API is imported INSIDE the calls, so this module still
 imports on the host (./scripts/check-docs.py checks that) and only its call sites are hub-only.
@@ -57,7 +62,7 @@ TRACK_WIDTH_MM = 95.0         # mm effective, MEASURED 2026-09-03. Mirror of con
 COUNTS_PER_REV = 360.0        # LEGO spec. Mirror of config.ENCODER_COUNTS_PER_REV.
 
 try:                          # host only: on the hub this import gets the WRONG module, see above
-    import config as _cfg
+    import mission_config as _cfg
     _mirrored = (("WHEEL_DIAMETER_MM", WHEEL_DIAMETER_MM),
                  ("TRACK_WIDTH_MM", TRACK_WIDTH_MM),
                  ("ENCODER_COUNTS_PER_REV", COUNTS_PER_REV))
@@ -76,7 +81,7 @@ TURN_SIGN = 1           # MEASURED 2026-09-08 by examples/calibrate_directions.p
                         # operator WATCHED spin_right turn left and spin_left turn right. +1 is
                         # correct. This is an EYES measurement, which is the only kind that can
                         # settle a direction -- yaw sign alone is a convention, not a direction.
-TURN_LEAD_DDEG = 70     # stop this far short of the target; the robot coasts the rest. MEASURED.
+TURN_LEAD_DDEG = 28     # stop this far short of the target; the robot coasts the rest. MEASURED n=6.
 
 LEFT_FWD = -1 * FORWARD_SIGN
 RIGHT_FWD = 1 * FORWARD_SIGN
@@ -234,12 +239,16 @@ def turn_by(ddeg, dps, tick_ms=50, cap_ms=6000, on_tick=None):
     if target < 100:
         target = abs(ddeg)
 
-    if ddeg > 0:
-        spin_right(dps)
-    else:
-        spin_left(dps)
+    # ⚠ THE SPIN STARTS INSIDE THE TRY. It used to start before it, so a raise from the SECOND
+    # motor.run left the first wheel turning until the operator hit CENTER -- MEASURED under stubs
+    # 2026-09-09, running={'port.A': -150}. The docstring's promise to stop "on every path" was false
+    # for exactly that path.
     t0 = time.ticks_ms()
     try:
+        if ddeg > 0:
+            spin_right(dps)
+        else:
+            spin_left(dps)
         while time.ticks_diff(time.ticks_ms(), t0) < cap_ms:
             y = read_yaw()
             if y is not None and abs(normalize_ddeg(y - y0)) >= target:

@@ -42,7 +42,7 @@ its own constant, each with a bring-up justification that expired when the robot
 `motor_safe_spin.py:50` 100 ("LOW on purpose"), `follow_tape.py:56` 80, `motor_poc.py:18` 120,
 `find_note.py:48` 100, `find_corner.py:61` 100, `drive_to_tape.py:36` 100, `fusion_capture.py:24` 150,
 `g4_spin_and_print.py:27` 150, `sweep_skeleton.py:56` 200, `drive_moves.py:36` 250 — against
-`src/config.py:139 TRAVERSE_SPEED_MMS = 150.0`, **which no example reads.** Raising the speed means editing
+`src/mission_config.py:139 TRAVERSE_SPEED_MMS = 150.0`, **which no example reads.** Raising the speed means editing
 nine files; that is why it never happened.
 
 ### 2.2 `motor.velocity()` is percent of rated speed — CLOSED today, from disk, no hub
@@ -350,7 +350,7 @@ ringing (err changing sign every 4–6 ticks) should appear near Kp = 1.0, valid
 
 | File | Change | ~lines |
 |---|---|---|
-| `src/config.py` | **FREE.** Add one speed block: `SEARCH_SPEED_MMS = 150.0` · `FOLLOW_SPEED_MMS = 100.0` · `TRANSIT_SPEED_MMS = 300.0` · `TICK_PERIOD_MS = 50` · `SENSOR_SPACING_MM = None` (until rulered) · `BLEND_FRACTION = 0.43` · a `max_search_speed_mms(rate_hz)` helper returning `36.48 * rate_hz / 3.86`. Keep `TRAVERSE_SPEED_MMS` as the mission value and set it from `SEARCH_SPEED_MMS`. Comment every number with its evidence. | ~30 |
+| `src/mission_config.py` | **FREE.** Add one speed block: `SEARCH_SPEED_MMS = 150.0` · `FOLLOW_SPEED_MMS = 100.0` · `TRANSIT_SPEED_MMS = 300.0` · `TICK_PERIOD_MS = 50` · `SENSOR_SPACING_MM = None` (until rulered) · `BLEND_FRACTION = 0.43` · a `max_search_speed_mms(rate_hz)` helper returning `36.48 * rate_hz / 3.86`. Keep `TRAVERSE_SPEED_MMS` as the mission value and set it from `SEARCH_SPEED_MMS`. Comment every number with its evidence. | ~30 |
 | `src/hub_drive.py` | **FREE.** Add `YAW_DDEG_PER_MOTORDEG = MM_PER_REV / COUNTS_PER_REV / TRACK_WIDTH_MM * 572.9577951308232` (= 3.3421), `yaw_ddeg_per_dps_of_corr(tick_ms)` returning `2.0 * YAW_DDEG_PER_MOTORDEG * tick_ms/1000.0`, and `hold_kp(tick_ms, damping)` returning `1.0 / (damping * yaw_ddeg_per_dps_of_corr(tick_ms))` with the stability table in the docstring. Pure arithmetic on existing MEASURED constants — no new call sites, still host-importable. | ~25 |
 | `src/main.py` | `TICK_MS = 100 → 50` (**this is what makes 150 mm/s legal at all** — at 9.18 Hz the ceiling is 87 mm/s). Then either delete the `min(60.0, …)` clamp in `_traverse_pct():64-70` or make it **raise** when it bites. | ~4 |
 | `src/hub_telemetry_log.py` | `flush_every` default `10 → 25`, plus an explicit `flush()` at each lane end. ⚠ **Do NOT buffer a whole lane in RAM** — an untethered run that dies mid-lane must still yield its log, which is how the 09-08 session recovered data. | ~3 |

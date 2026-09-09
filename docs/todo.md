@@ -32,6 +32,20 @@
 > ([findings/line-following-viability-2026-09-08.md](./findings/line-following-viability-2026-09-08.md)).
 > Still owed: the first `src/main.py` run, the **sensor spacing** (a ruler), and the **one-sensor swath bug**.
 
+## ▶ 2026-09-09 — competition port landed, three demo-ending faults fixed
+
+`src/main.py` now runs the MEASURED brightness rule (`reflection >= 30`) and reads BOTH sensors.
+Three faults that would each have ended the demo were fixed: the `config` module name is SHADOWED on
+the hub (renamed to `mission_config`), a bare-name `NameError` class in three `hub_*.py` modules (now
+guarded by an undefined-name check in `check-docs.py`), and a recovery handler that could not survive
+the failures it existed to catch. ⚠ **`src/main.py` has STILL NEVER RUN ON HARDWARE** — that is the
+dominant risk. See
+[session_records/2026-09-09](./session_records/2026-09-09_competition-port-callsite-audit-and-deliverables.md).
+
+⚠ **CORRECTION:** reading both sensors buys **REDUNDANCY, not coverage** — `lane_pitch_mm()` is 41 mm
+and does not reference the sensors, so the plan is still 75 lanes at 10 ft. Widening the pitch needs
+the [UNMEASURED] sensor spacing (KU-M33).
+
 ## ▶ NEXT SESSION — START HERE
 
 **[plans/next-session.md](./plans/next-session.md)** — the ordered plan, grouped by **what each item
@@ -130,7 +144,7 @@ The hub, the drive, the deploy route and the detection rule are all closed — w
 
 1. **Builder, with a ruler, sixty seconds — no hub needed:** measure the **centre-to-centre spacing of
    the C and D colour sensors** and their **fore-aft offset**, and measure a **sticky note** and the
-   **tape width** while the ruler is out. `SENSOR_SPACING_MM` does not exist in `src/config.py` today and
+   **tape width** while the ruler is out. `SENSOR_SPACING_MM` does not exist in `src/mission_config.py` today and
    it blocks the corner-turn radius and the swath (KU-M33, KU-M7, KU-P14, KU-D10).
 2. **Make `src/hub_color.py` read `SECOND_COLOR_PORT` as well as `COLOR_PORT`** (KU-D11), and wire the
    brightness rule (`reflection() >= 30`) into `main.py` — `src/calibration.py` is already written, pure

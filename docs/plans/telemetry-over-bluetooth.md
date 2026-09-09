@@ -68,7 +68,7 @@ correct, and the project's own arithmetic says how much correctness there is to 
 [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md): a note is `[ASSUMED]` 76 mm,
 lane pitch is `76 mm − 2 × cross-track error`, and **1° of heading error over a 1.2 m lane costs 21 mm of
 cross-track error**, against the `[ASSUMED]`-optimistic `CROSS_TRACK_ERROR_MM = 15.0` in
-[../../src/config.py](../../src/config.py). Rearranged, that budget is a threshold of concern:
+[../../src/mission_config.py](../../src/mission_config.py). Rearranged, that budget is a threshold of concern:
 
 ```
 15 mm budget ÷ 21 mm per degree per lane  =  0.71°
@@ -192,7 +192,7 @@ Against the 92 B/notification of §3.1:
 | 100 Hz | 9 200 | ✗ | ✗ | ✗ | ✓ |
 
 **This is the crux, and it does not resolve comfortably.** The `SAMPLE_RATE_HZ = 100.0` in
-[../../src/config.py](../../src/config.py) is annotated in that file as *"UNVERIFIED: LEGO spec figure for
+[../../src/mission_config.py](../../src/mission_config.py) is annotated in that file as *"UNVERIFIED: LEGO spec figure for
 the colour sensor"* — a datasheet number, not a measured Python loop rate — and 100 Hz of full telemetry
 needs a link we have no evidence we will get.
 
@@ -539,7 +539,7 @@ Seven blocks, in this order:
 2. **HEADER ECHO.** Reprint the run context — two analyses side by side must be distinguishable without
    scrolling up.
 3. **LOOP RATE.** Median, p5, p95 and max of `diff(t_ms)` — the achieved rate, which
-   [../../src/config.py](../../src/config.py) currently only guesses at `SAMPLE_RATE_HZ = 100.0`. The same
+   [../../src/mission_config.py](../../src/mission_config.py) currently only guesses at `SAMPLE_RATE_HZ = 100.0`. The same
    statistics on `diff(rx_ms)` give link jitter, and on `rx_ms − t_ms` give clock skew (§7).
 4. **HEADING DIVERGENCE.** Feed `enc_l_deg`/`enc_r_deg` to
    [../../src/odometry.py](../../src/odometry.py) `heading_from_encoders()`, compare against `yaw_ddeg`,

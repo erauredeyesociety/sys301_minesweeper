@@ -137,6 +137,51 @@ def check_doc_length():
     return bad, "no doc over {0} lines".format(MAX_DOC_LINES)
 
 
+def check_undefined_names():
+    """Every name a hub-only branch uses must actually exist. ADDED 2026-09-09, and here is why.
+
+    ⚠ THE BUG THIS EXISTS FOR: src/hub_color.py used a BARE `_color` on three lines. It was never
+    imported -- every other hub-facing module correctly writes `hub_api._motor`. On the hub that is a
+    NameError on the FIRST sensor read, which killed calibration instantly and, having no handler,
+    froze the robot on a glyph with no tone. It would have ended the demo.
+
+    check_src_imports() below could not see it, and that is the point: on the host
+    hub_api.API == "simulated", so the SPIKE 3 branch NEVER EXECUTES and the name is never looked up.
+    Every check passed green with the bug present. Nothing in examples/ exercises src/hub_*.py either,
+    and src/main.py had never run. A second instance (src/hub_distance.py) and a third
+    (src/hub_selfcheck.py) were found by audit the same day -- it was a CLASS of bug, not a slip.
+
+    THIS IS NOT A TEST SUITE (ADR-0005). It runs no code and asserts no behaviour; it is static
+    analysis in the same spirit as "a module that won't import is broken", extended to the branches
+    the host interpreter never reaches. Operator decision, 2026-09-09.
+
+    pyflakes is a developer tool, not a runtime dependency. If it is absent the check SKIPS loudly
+    rather than failing -- a missing linter must not block a deploy at 09:00 on demo day.
+    """
+    try:
+        from pyflakes import api as _pf_api, reporter as _pf_reporter
+    except ImportError:
+        return [], "SKIPPED -- pyflakes not installed (python3 -m pip install pyflakes)"
+
+    import io
+    out, err = io.StringIO(), io.StringIO()
+    reporter = _pf_reporter.Reporter(out, err)
+    for path in sorted((ROOT / "src").glob("*.py")):
+        _pf_api.checkPath(str(path), reporter)
+
+    # Undefined names are the class that bites; unused imports are tidiness and must not fail a
+    # deploy. Report those separately so they are visible without being blocking.
+    offenders, notes = [], []
+    for line in out.getvalue().splitlines():
+        if "undefined name" in line:
+            offenders.append(line)
+        elif line.strip():
+            notes.append(line)
+    for line in notes[:8]:
+        print("        note: %s" % line)
+    return offenders, "no undefined name in any src/ module, including hub-only branches"
+
+
 CHECKS = [
     ("relative links resolve", check_links),
     ("docs under the line limit", check_doc_length),
@@ -144,6 +189,7 @@ CHECKS = [
     ("no stray markdown in root", check_stray_markdown),
     ("src/ purity boundary (ADR-0004)", check_src_purity),
     ("src/ modules import on host", check_src_imports),
+    ("no undefined names in src/", check_undefined_names),
 ]
 
 

@@ -19,7 +19,16 @@ RH_SSH_USER="${RH_SSH_USER:-devel}"
 RH_SSH_KEY="${RH_SSH_KEY:-$HOME/.ssh/id_git}"
 RH_LOCAL_PORT="${RH_LOCAL_PORT:-5347}"           # preferred local port; auto-bumped if taken
 RH_HEALTH_PATH="${RH_HEALTH_PATH:-/health}"
-RH_HEALTH_MATCH="${RH_HEALTH_MATCH:-\"status\":\"healthy\"}"
+# ⚠ ACCEPTS "degraded" AS WELL AS "healthy", and that is a MEASURED decision, not a loosening.
+# VERIFIED 2026-09-09: /health returned {"status":"degraded","reason":"db handle not initialized"}
+# while GET /api/discover/search?q=... returned 10 real papers with arXiv IDs, PDF URLs and
+# abstracts. The db handle backs the WORKSPACE and KB features; the DISCOVERY CORPUS SEARCH -- the
+# only endpoint rh-query.sh uses -- does not need it. Refusing on "degraded" therefore reported DOWN
+# on a service that answers our actual query perfectly, and cost a research session.
+# The strictness that matters is preserved: a non-200, a timeout, a half-open socket or a body
+# without a recognised status still FAILS. We are not accepting "anything that answers".
+RH_HEALTH_MATCH="${RH_HEALTH_MATCH:-\"status\":\"}"
+RH_HEALTH_DEGRADED_OK="${RH_HEALTH_DEGRADED_OK:-1}"
 
 # Ports worth looking at on the remote when nothing is cached. The probe, not this list, decides.
 PLAUSIBLE_PORTS=(5347 8000 8001 8080 8081 8443 3000 3001 5000 9000 10100)
@@ -80,6 +89,12 @@ probe_local() {
   body="${out%$'\n'*}"
   [[ "$code" == "200" ]] || return 1
   grep -qF "$RH_HEALTH_MATCH" <<<"$body" || return 1
+  # Say WHICH state it is in. A degraded ResearchHub answers discovery searches but has no workspace
+  # or knowledge base -- the caller deserves to know that before wondering why a save failed.
+  if grep -qF '"status":"degraded"' <<<"$body"; then
+    [[ "$RH_HEALTH_DEGRADED_OK" == "1" ]] || return 1
+    log "NOTE: ResearchHub reports DEGRADED -- discovery search works, workspace/KB do NOT."
+  fi
   return 0
 }
 

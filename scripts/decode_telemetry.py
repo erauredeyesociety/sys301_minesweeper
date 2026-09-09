@@ -20,7 +20,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
-import config                                                    # noqa: E402
+import mission_config as config                                                    # noqa: E402
 import hub_api                                                   # noqa: E402
 import motion_tuning                                             # noqa: E402
 from odometry import degrees_to_mm, normalize_angle             # noqa: E402

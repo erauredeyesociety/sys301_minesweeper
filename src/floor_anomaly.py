@@ -20,7 +20,7 @@ The blind spot is irreducible and NOT a tuning: a note whose chromaticity matche
 deviation ~ 0 and is invisible to any colour-only metric. That is a professor question, not a knob.
 """
 
-import config
+import mission_config as config
 import calibration
 import classify
 

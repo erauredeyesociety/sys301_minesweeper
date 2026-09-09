@@ -61,7 +61,7 @@ the result would be uninterpretable. **Parameterise the sweep the way the code i
 | Parameter | Symbol | Sweep range | Why |
 |---|---|---|---|
 | Threshold centre | `f` = (centre − floor_signal) / contrast | 0.10 … 0.90, step 0.02 | Where between floor and target the decision sits |
-| Hysteresis gap | `h` = gap / contrast | 0.00 … 0.50, step 0.05 | [`HYSTERESIS_FRACTION`](../../src/config.py), currently 0.25 |
+| Hysteresis gap | `h` = gap / contrast | 0.00 … 0.50, step 0.05 | [`HYSTERESIS_FRACTION`](../../src/mission_config.py), currently 0.25 |
 | Min dwell | `MIN_DWELL_SAMPLES` | 1 … 6 | Transient rejection, [detection-and-sweep-techniques.md § 3](../research/detection-and-sweep-techniques.md#edge-counting-state-machine) |
 | Width gates | `MIN_EVENT_SAMPLES`, `MAX_EVENT_SAMPLES` | separately, later | Interact with speed; sweep these only after `f` and `h` are settled |
 
@@ -108,7 +108,7 @@ Three guards, none optional. The third is the one that is easy to miss:
   `≥ w`, never as `w`.
 - **Low `f` produces a small, plausible-looking count, not zero.** Once `f < h/2`, `off_threshold` sits
   *below* the floor level, the detector never releases, and the whole run merges into one event.
-  `MAX_EVENT_SAMPLES` does **not** catch it — [`config.py`](../../src/config.py) calls its value of 400
+  `MAX_EVENT_SAMPLES` does **not** catch it — [`config.py`](../../src/mission_config.py) calls its value of 400
   "generous" precisely so it will not fire in normal use. Running the real
   [`count_stream`](../../src/detector.py) over an illustrative 5-note synthetic stream (invented data,
   2026-08-26) gives, at `h` = 0.50, the row `1, 3, 5, 5, … 5, 4, 3, 1, 0` across `f` = 0.10…0.90: the
@@ -372,7 +372,7 @@ Run all four unconditionally, print one line each, loud on failure.
 Three different rates are conflated everywhere in this project — sensor spec, hub loop, and achieved
 Python loop — and [hub-compute-limits.md § 3](../research/hub-compute-limits.md#3-the-loop-rate--the-load-bearing-unknown)
 is explicit that only the third one is real and that it is unmeasured.
-[`config.SAMPLE_RATE_HZ = 100.0`](../../src/config.py) carries a `UNVERIFIED` comment for that reason.
+[`config.SAMPLE_RATE_HZ = 100.0`](../../src/mission_config.py) carries a `UNVERIFIED` comment for that reason.
 
 The rate statistics themselves — median, p5, p95, max of `diff(t_ms)` — are already specified in
 [telemetry-over-bluetooth.md § 6.1 block 3](./telemetry-over-bluetooth.md#61-analyse_runpy). This
@@ -391,7 +391,7 @@ Compare `samples_across_target` against what the detector needs:
 
 | Needs | Requirement | Source |
 |---|---|---|
-| Presence | Strictly ≥ `max(MIN_DWELL_SAMPLES, MIN_EVENT_SAMPLES)` — the width gate counts the dwell samples, so the two do **not** add — but ask for **≥ 4×** that, because the worst clipped chord, not the full chord, is what has to clear it | [`src/config.py`](../../src/config.py) |
+| Presence | Strictly ≥ `max(MIN_DWELL_SAMPLES, MIN_EVENT_SAMPLES)` — the width gate counts the dwell samples, so the two do **not** add — but ask for **≥ 4×** that, because the worst clipped chord, not the full chord, is what has to clear it | [`src/mission_config.py`](../../src/mission_config.py) |
 | Classification | `N_pure` interior samples after discarding `edge_guard` at each end | [color-discrimination.md § 5.2](../research/color-discrimination.md#52-sample-pitch-and-the-maximum-sweep-speed) |
 
 Report `median_pitch_mm`, `worst_pitch_mm` (the p95, which is the one that misses things), and
@@ -531,5 +531,5 @@ Internal sources, by what they contributed:
 - [./telemetry-over-bluetooth.md](./telemetry-over-bluetooth.md) — the record format and the existing
   `analyse_run.py` block structure this document extends rather than duplicates.
 - [`src/detector.py`](../../src/detector.py), [`src/calibration.py`](../../src/calibration.py),
-  [`src/config.py`](../../src/config.py), [`src/result.py`](../../src/result.py) — the exact functions the
+  [`src/mission_config.py`](../../src/mission_config.py), [`src/result.py`](../../src/result.py) — the exact functions the
   analysis calls.

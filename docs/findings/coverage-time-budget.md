@@ -49,7 +49,7 @@ the question optional.
 | Colour sensors | **one**, and it was a pending purchase | **two**, on ports C and D, `device.id()` = **61** on both | **MEASURED** on the hub over USB, 2026-08-27 |
 | Motors | type unknown; `DRIVE_MAX_DPS` a conservative 660 deg/s | `motor.info(port.A)` → `(device_id=48, max_speed=930)` on A **and** B | **MEASURED** — supersedes the guess |
 | Wheel diameter | `[ASSUMED]` Ø56 | **still `[ASSUMED]`, still Ø24 / Ø56 / Ø88** | unmeasured, and it is now the largest single source of spread |
-| Lane pitch convention | 46 mm (`W − 2e`) | **41 mm** (`W − 2e − margin`) — reconciled to [`src/config.py`](../../src/config.py) | see [§ Pitch convention](#pitch-convention-settled) |
+| Lane pitch convention | 46 mm (`W − 2e`) | **41 mm** (`W − 2e − margin`) — reconciled to [`src/mission_config.py`](../../src/mission_config.py) | see [§ Pitch convention](#pitch-convention-settled) |
 
 **Do not quote LEGO's datasheet figure of 1110 deg/s for a Medium Angular 45603.** The hub reports 930
 for the motor actually attached, and where the hardware and the datasheet disagree the hardware wins
@@ -179,7 +179,7 @@ Two side notes that fall out of this:
 ### Pitch convention — settled
 
 The trade study flagged an unreconciled discrepancy: it used `W − 2e` = 46 mm, while
-[`src/config.py`](../../src/config.py) subtracts a further 5 mm `LANE_OVERLAP_MM` for 41 mm.
+[`src/mission_config.py`](../../src/mission_config.py) subtracts a further 5 mm `LANE_OVERLAP_MM` for 41 mm.
 **Settled here in favour of `config.py`: 41 mm.** The margin is a deliberate safety allowance, the code
 already implements it, and a document that quotes a pitch the robot will not drive is worse than a
 slightly pessimistic one. Consequence: **every single-sensor time in this file is ~12 % worse than the
@@ -379,7 +379,7 @@ file is a robot measurement. It is arithmetic, and every conclusion inherits the
    A third would add roughly another `S` to the pitch — worth re-costing *after* the wheel and `e` are
    measured, and it would fill the hub, foreclosing the boundary sensor. Two sensors plus two free ports
    is a better position than three sensors and none.
-6. **Programmer: `N_SENSORS` and `SENSOR_SPACING_MM` belong in [`src/config.py`](../../src/config.py)**,
+6. **Programmer: `N_SENSORS` and `SENSOR_SPACING_MM` belong in [`src/mission_config.py`](../../src/mission_config.py)**,
    with the detector instantiated per sensor and the pitch computed from `S`, not hard-coded. The
    cross-sensor coincidence test is the easy half of de-duplication — see trade study §7.2 — but it must
    tolerate the along-track offset a heading error introduces.

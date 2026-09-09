@@ -149,17 +149,17 @@ Read-only. Exit codes: `0` captured · `2` no prompt · `3` no port · `4` busy 
 **Dry run first. `upload.py` writes nothing without `--apply`.**
 
 ```bash
-./hub_programmer/upload.py src/config.py
-./hub_programmer/upload.py src/config.py --apply
+./hub_programmer/upload.py src/mission_config.py
+./hub_programmer/upload.py src/mission_config.py --apply
 ```
 
 With no `--to`, the target is `/flash/lib/<basename>`. To place it elsewhere inside `/flash`:
 
 ```bash
-./hub_programmer/upload.py src/config.py --apply --to /flash/lib/config.py
+./hub_programmer/upload.py src/mission_config.py --apply --to /flash/lib/config.py
 ```
 
-**What actually happened, 2026-08-27** (`src/config.py`, 13262 bytes):
+**What actually happened, 2026-08-27** (`src/mission_config.py`, 13262 bytes):
 
 - `/flash/lib` **did not exist** and was created by the script. It was already on `sys.path`
   (`['', '.frozen', '/flash', '/flash/lib']`) — so nothing had to be added to the path.
@@ -283,7 +283,7 @@ python3 probes/capture_baseline.py --to /tmp/post
 diff -ru docs/archives/hub-baseline /tmp/post
 ```
 
-**The complete diff after uploading `src/config.py` on 2026-08-27 was:**
+**The complete diff after uploading `src/mission_config.py` on 2026-08-27 was:**
 
 ```
 - ['README.txt','boot.py','config','main.py','program','pybcdc.inf']

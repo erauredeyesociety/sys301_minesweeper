@@ -310,7 +310,7 @@ This document is the only new file. Recommended, for the operator/parent to appl
 | `docs/plans/known-unknowns.md` | Fold in the sharpened gates when next touched: DN-1 (subscribe test, highest leverage — no upload), the `module_tunnel` probe (U-16), and the second-connection question | Keeps the KU register the single tracker |
 | `docs/plans/competition-program-design.md` | §4.6: note "thin by rate, not columns" governs the **CSV log**; the **live** channel may use the compact `telemetry_bin` subset (a separate versioned parser) | Reconciles the subset with the one-parser rule |
 | `src/telemetry_bin.py` (**new**) | Add the compact live sibling **only after G4 passes** — pure module, one schema (`telemetry.COLUMNS`) with two encoders, `seq` shared so a heartbeat joins to an exact `/flash` row | No schema fork; no premature build |
-| `src/config.py` | When live is built, keep `TELEMETRY_LIVE_ENABLED=False` default; add `TELEMETRY_LIVE_FORMAT` (`"bin"` vs `"csv"`) | Value, not architecture |
+| `src/mission_config.py` | When live is built, keep `TELEMETRY_LIVE_ENABLED=False` default; add `TELEMETRY_LIVE_FORMAT` (`"bin"` vs `"csv"`) | Value, not architecture |
 
 **No `src/` change today, and do NOT add `hub_ble.py`** — every Tier-5 path that would need it is ruled
 out. This is a host-side receiver concern; `telemetry.py` stays untouched.

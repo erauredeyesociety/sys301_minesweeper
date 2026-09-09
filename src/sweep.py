@@ -14,7 +14,7 @@ part we do not trust.
 This module emits commands and consumes completion signals. It never touches a motor.
 """
 
-import config
+import mission_config as config
 
 # Commands the caller (the hub-facing layer) is expected to execute.
 CMD_DRIVE = "drive"      # value: millimetres forward

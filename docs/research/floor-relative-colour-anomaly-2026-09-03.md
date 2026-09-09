@@ -62,7 +62,7 @@ what they already give us:
 | [`src/calibration.py`](../../src/calibration.py) | Learns a floor baseline **vs a KNOWN target**, detects polarity, works in robust median/MAD space, refuses to arm below `MIN_SNR_MAD` contrast (the 6-SD = 8.90-MAD rule). | `median()`, `median_absolute_deviation()`, `CalibrationError`, the 8.90-MAD convention. |
 | [`src/detector.py`](../../src/detector.py) | 4-state Schmitt-trigger edge counter over a **single scalar signal per sample**; counts on the falling edge; width-gates events (too_narrow / too_wide). | The whole state machine, **unchanged**. It only touches `cal.signal(reading)`, `cal.on_threshold`, `cal.off_threshold`. |
 | [`src/classify.py`](../../src/classify.py) | Chromaticity `(r/(r+g+b), g/(r+g+b))` nearest-centroid with a MAD-derived per-class `sigma`, sigma-normalised distance, reject-don't-guess gates. | `_features()`, the `ColorClass` centroid+sigma math (`sigma = 1.4826 * MAD`). |
-| [`src/config.py`](../../src/config.py) | `MIN_SNR_MAD = 8.90`, `HYSTERESIS_FRACTION = 0.25`, `MIN_CONTRAST`. | The 8.90-MAD constant is the anchor for the threshold rule below. |
+| [`src/mission_config.py`](../../src/mission_config.py) | `MIN_SNR_MAD = 8.90`, `HYSTERESIS_FRACTION = 0.25`, `MIN_CONTRAST`. | The 8.90-MAD constant is the anchor for the threshold rule below. |
 
 **The gap:** `calibration.py` needs a *known target* to build thresholds. On the day we have **no known
 target** — only the floor. We need (a) a **floor-only** calibration that captures the floor's multi-modal
@@ -422,7 +422,7 @@ not a tuning knob.
 ## Sources
 
 - [`src/calibration.py`](../../src/calibration.py), [`src/detector.py`](../../src/detector.py),
-  [`src/classify.py`](../../src/classify.py), [`src/config.py`](../../src/config.py) — the existing
+  [`src/classify.py`](../../src/classify.py), [`src/mission_config.py`](../../src/mission_config.py) — the existing
   pipeline this extends (read 2026-09-03).
 - [detection-and-sweep-techniques.md](./detection-and-sweep-techniques.md) — the 6-SD arming rule
   (`contrast >= 6 * floor_sd`, § "DERIVE_THRESHOLDS") that `MIN_SNR_MAD = 8.90` encodes in MAD units.

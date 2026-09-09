@@ -60,12 +60,12 @@ because they can and do drift.
 
 | # | Class day | Sprint / event | Handwritten page done? | Repo copy |
 |---|---|---|---|---|
-| 1 | **2026-08-25** (Tue) | Begin Sprint 1, start project | [ ] | `2026-08-25.md` — not created |
-| 2 | **2026-08-27** (Thu) | Sprint 1 | [ ] | `2026-08-27.md` — not created |
-| 3 | **2026-09-01** (Tue) | Begin Sprint 2, Mid Project | [ ] | `2026-09-01.md` — not created |
-| 4 | **2026-09-03** (Thu) | Sprint 2 | [ ] | `2026-09-03.md` — not created |
-| 5 | **2026-09-08** (Tue) | Sprint 2 | [ ] | `2026-09-08.md` — not created |
-| 6 | **2026-09-10** (Thu) | **Demo Day** | [ ] | `2026-09-10.md` — not created |
+| 1 | **2026-08-25** (Tue) | Begin Sprint 1, start project | [ ] | [`2026-08-25.md`](./2026-08-25.md) — ⚠ **DRAFT**, reconstructed 2026-09-09; QOD blank |
+| 2 | **2026-08-27** (Thu) | Sprint 1 | [ ] | [`2026-08-27.md`](./2026-08-27.md) — ⚠ **DRAFT**, reconstructed 2026-09-09; QOD blank |
+| 3 | **2026-09-01** (Tue) | Begin Sprint 2, Mid Project | [ ] | [`2026-09-01.md`](./2026-09-01.md) — ⚠ **DRAFT**, reconstructed 2026-09-09; QOD blank |
+| 4 | **2026-09-03** (Thu) | Sprint 2 | [ ] | [`2026-09-03.md`](./2026-09-03.md) — ⚠ **DRAFT**, reconstructed 2026-09-09; QOD blank |
+| 5 | **2026-09-08** (Tue) | Sprint 2 | [ ] | [`2026-09-08.md`](./2026-09-08.md) — ⚠ **DRAFT**, reconstructed 2026-09-09; QOD blank |
+| 6 | **2026-09-10** (Thu) | **Demo Day** | [ ] | [`2026-09-10.md`](./2026-09-10.md) — form only; the day has not happened |
 
 **0 of 6 complete.** Current rubric exposure if the project ended today: 30 − (6 × 5) = **0 / 30** on
 the "entry each day" criterion.
@@ -81,4 +81,16 @@ the "entry each day" criterion.
 | File | Purpose |
 |---|---|
 | [TEMPLATE.md](./TEMPLATE.md) | Copy-paste template matching the printed form's fields |
-| `YYYY-MM-DD.md` | One per class day (none yet) |
+| [reconstruction-notes.md](./reconstruction-notes.md) | ⚠ **Read first.** The day-by-day evidence audit behind the six drafts: which dates the repo can prove, which have **no evidence**, the three blockers, and the nine questions only the operator can answer. Not an entry, not a submission |
+| [2026-08-25.md](./2026-08-25.md) | Class day 1 — **DRAFT**, reconstructed from the repo 2026-09-09 |
+| [2026-08-27.md](./2026-08-27.md) | Class day 2 — **DRAFT**, reconstructed from the repo 2026-09-09 |
+| [2026-09-01.md](./2026-09-01.md) | Class day 3 — **DRAFT**, reconstructed from the repo 2026-09-09 |
+| [2026-09-03.md](./2026-09-03.md) | Class day 4 — **DRAFT**, reconstructed from the repo 2026-09-09 |
+| [2026-09-08.md](./2026-09-08.md) | Class day 5 — **DRAFT**, reconstructed from the repo 2026-09-09 |
+| [2026-09-10.md](./2026-09-10.md) | Class day 6, Demo Day — **form only**; the day is in the future |
+
+> ⚠ **All six are DRAFTS assembled from the repository's dated record by an assistant that was not in
+> the room.** They are for the operator to review, correct and own. **The QOD half of every entry is
+> deliberately blank** — no Question of the Day is recorded anywhere in this repo, and that is its own
+> 20-point criterion. Anything about people, attendance or feeling is left as an explicit blank.
+> **Ticking a box above still requires the handwritten page**, which is the actual submission.

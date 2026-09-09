@@ -153,6 +153,15 @@ and Q2 — [../findings/coverage-time-budget.md](../findings/coverage-time-budge
 - Is there a written scoring rubric for Demo Day we should have?
 - Does the robot have a size or parts constraint beyond the budget?
 - Does the Intro Report have required content beyond the CSER template, or is the template the whole spec?
+- **What is the Intro Report worth in points?** Recorded in the repo as `[UNKNOWN — ask Dr. Watson]`,
+  so we cannot weigh effort against the demo or the journal.
+- **Is there a page or word limit?** The CSER 2022 template implies a format but not a length, and the
+  repo has enough measured material to overshoot badly.
+- **Is the report submitted per TEAM or per STUDENT?** This changes who writes what, and it interacts
+  with the roles rule and with "all written team communication is a graded deliverable".
+- **Are the mermaid diagrams acceptable as exported images**, or must figures be redrawn in Word? The
+  repo carries 78 files with mermaid blocks and **zero rendered images**, and `mmdc` is not installed —
+  so this is a real conversion task that needs scoping before 18 SEP.
 - **Is the CSER Word template the required format, and do you want the `.docx`, a PDF, or both?** The
   written instructions name a due date and nothing else — no format, no file type. We are assuming the
   handed-out template is mandatory and submitting both files. A one-word answer confirms or frees it.

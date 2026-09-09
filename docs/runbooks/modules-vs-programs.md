@@ -9,7 +9,7 @@ flowchart TD
         T["scripts/*.py · probes/*.py · hub_programmer/*.py<br/>never uploaded"]
     end
     subgraph LIB["MODULES -> /flash/lib, imported"]
-        M["src/config.py · src/hub_drive.py · src/hub_telemetry_log.py"]
+        M["src/mission_config.py · src/hub_drive.py · src/hub_telemetry_log.py"]
     end
     subgraph SLOT["PROGRAMS -> a Hub OS slot, run"]
         P["examples/*.py · src/main.py"]
@@ -24,7 +24,7 @@ flowchart TD
 
 | Kind | Lives in | Reaches the hub by | Runs when |
 |---|---|---|---|
-| **Module** (library) | `src/hub_*.py`, `src/config.py` | `hub_programmer/upload.py FILE --apply` → `/flash/lib` | never on its own — a program `import`s it |
+| **Module** (library) | `src/hub_*.py`, `src/mission_config.py` | `hub_programmer/upload.py FILE --apply` → `/flash/lib` | never on its own — a program `import`s it |
 | **Program** | `examples/*.py`, `src/main.py` | `hub_programmer/slot_upload.py FILE --apply` → a Hub OS slot | when the operator taps a button |
 | **Host tool** | `scripts/`, `probes/`, `hub_programmer/` | never — it stays on the laptop | when you run it on the laptop |
 
@@ -36,7 +36,7 @@ does something. A host tool talks *to* the hub over USB.
 | File | Kind | What it is |
 |---|---|---|
 | [`src/hub_drive.py`](../../src/hub_drive.py) | **Module** | The skid-steer layer: `forward_mms` · `backward_mms` · `spin_left` · `spin_right` · `arc(speed, radius)` · `turn_by`, plus the mm↔degree geometry. **Owns what left, right, forward and back MEAN** — two constants, `FORWARD_SIGN` and `TURN_SIGN`, each with its measurement beside it. |
-| [`src/config.py`](../../src/config.py) | **Module** | Every tunable, including the MEASURED wheel diameter and track width. `hub_drive` imports its geometry from here so the numbers exist in **one** place. |
+| [`src/mission_config.py`](../../src/mission_config.py) | **Module** | Every tunable, including the MEASURED wheel diameter and track width. `hub_drive` imports its geometry from here so the numbers exist in **one** place. |
 | [`examples/calibrate_directions.py`](../../examples/calibrate_directions.py) | **Program** | Drives each primitive in turn and logs the encoder and yaw deltas, so the operator can *watch* and confirm each move matches its name. This is what **sets** the two constants above. |
 | [`examples/follow_tape.py`](../../examples/follow_tape.py) | **Program** | Follows the blue tape and counts corners. Consumes the module; does not re-derive signs. |
 
@@ -60,7 +60,7 @@ A program can only import a module that is **already on the hub**. Two ways to s
 
 ```bash
 # explicit: upload each module first, then the program
-./hub_programmer/upload.py src/config.py --apply
+./hub_programmer/upload.py src/mission_config.py --apply
 ./hub_programmer/upload.py src/hub_drive.py --apply
 ./hub_programmer/slot_upload.py examples/calibrate_directions.py --apply
 

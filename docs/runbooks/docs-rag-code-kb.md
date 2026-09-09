@@ -176,10 +176,10 @@ Not a claim: these are the commands whose output is quoted.
 - **The api restart took 14 s** (11:41:11 → 11:41:25) and came back `"status":"healthy"` with
   `[{"name":"primary",…},{"name":"code",…}]`.
 - **Citations are line-exact.** `kb:"code"` returned `src/odometry.py:54-59 normalize_angle
-  cos=0.707`; lines 54–59 of that file are the `normalize_angle` definition. `src/config.py:177-183
+  cos=0.707`; lines 54–59 of that file are the `normalize_angle` definition. `src/mission_config.py:177-183
   lane_pitch_mm` likewise.
 - **`/api/ask` with `kb:"code"`** answered in **68.5 s** and named `lane_pitch_mm()` with the right
-  formula, citing `src/config.py:177-183`, `src/sweep.py`, and `src/odometry.py:171-177`.
+  formula, citing `src/mission_config.py:177-183`, `src/sweep.py`, and `src/odometry.py:171-177`.
 
 **Not verified here:** the reconcile loop had not yet ticked when this was written, so *automatic*
 freshness of the code KB is **[INFERRED from the source]** (`_do_reconcile` iterates

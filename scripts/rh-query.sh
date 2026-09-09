@@ -108,8 +108,19 @@ if (( hrc != 0 )); then
   log "           -> ResearchHub is down or restarting on pwnstar. This is NOT a tunnel fault."
   exit $EX_REMOTE_UNHEALTHY
 fi
+# ⚠ DEGRADED IS ACCEPTED FOR DISCOVERY SEARCH -- MEASURED 2026-09-09, not assumed.
+# /health returned {"status":"degraded","reason":"db handle not initialized"} while
+# GET /api/discover/search?q=... returned 10 real papers with arXiv IDs, PDF URLs and abstracts.
+# The db handle backs the WORKSPACE and KB; the discovery corpus search -- the ONLY endpoint this
+# script calls (see the GET below) -- does not need it. Rejecting "degraded" reported DOWN on a
+# service that answers our query perfectly, and cost a research session.
+# Anything OTHER than healthy or degraded still fails: this is a narrowing, not a blanket accept.
 case "$HEALTH" in
   *'"status":"healthy"'*) : ;;
+  *'"status":"degraded"'*)
+    log "PREFLIGHT: ResearchHub is DEGRADED -- discovery search works, workspace/KB do NOT."
+    log "           $HEALTH"
+    ;;
   *)
     log "PREFLIGHT: REMOTE_UNHEALTHY — tunnel is up, ResearchHub answered but is not healthy:"
     log "           $HEALTH"

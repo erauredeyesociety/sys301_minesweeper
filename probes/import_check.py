@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _hubio                                                # noqa: E402
 
 # The pure modules, in dependency order -- config first, since others import it.
-DEFAULT = ["config", "calibration", "detector", "sweep",
+DEFAULT = ["mission_config", "calibration", "detector", "sweep",
            "result", "odometry", "motion_tuning", "classify", "telemetry"]
 
 

@@ -26,7 +26,7 @@ This study is the mitigation artifact for **R-01** in [./risk-register.md](./ris
 >   65 mm spacing that is **2.59×**, not 2.00×. The 2× figure is right only for `S` = lane pitch.
 > - **§3's `v` bracket (150 / 250 mm/s) is superseded.** The hub reports `max_speed = 930` deg/s
 >   (MEASURED), which converts to ground speed only through the **unmeasured** wheel diameter.
-> - **§3's unreconciled lane pitch is settled at 41 mm**, matching [`../../src/config.py`](../../src/config.py).
+> - **§3's unreconciled lane pitch is settled at 41 mm**, matching [`../../src/mission_config.py`](../../src/mission_config.py).
 >
 > **§4–§9 remain valid and are not restated in the finding** — in particular §7.1 (the 31.5 mm worst
 > chord and the ~195 mm/s classification ceiling, which **a second sensor does not raise**), §7.2
@@ -110,7 +110,7 @@ only `N` and `v`.** Nothing else in the build moves the answer.
 |---|---|---|
 | `W` note width | 76 mm | **`[ASSUMED]`** — standard 3 in note; the real notes have not been seen or measured |
 | `e` cross-track error | **15 mm** realistic, 10 mm optimistic | **`[ASSUMED]`** — must be measured by a UMBmark square-path run. 10 mm demands heading held to ~0.5° with a per-lane re-square ([research](../research/detection-and-sweep-techniques.md#coverage-pattern-comparison)) |
-| `L` lane pitch | `W − 2e` → **46 mm** (e=15), 56 mm (e=10) | Derived. ⚠ **Unreconciled:** `src/config.py` subtracts a further 5 mm `LANE_OVERLAP_MM`, giving 41 mm — which adds ~12 % to every time in [§5](#5-run-time-all-arenas-all-n) (10 ft, N=1, v=250: 18.94 min, not 16.91). Settle which is the pitch before quoting either |
+| `L` lane pitch | `W − 2e` → **46 mm** (e=15), 56 mm (e=10) | Derived. ⚠ **Unreconciled:** `src/mission_config.py` subtracts a further 5 mm `LANE_OVERLAP_MM`, giving 41 mm — which adds ~12 % to every time in [§5](#5-run-time-all-arenas-all-n) (10 ft, N=1, v=250: 18.94 min, not 16.91). Settle which is the pitch before quoting either |
 | `v` traverse, presence-only | **250 mm/s** | Bracket midpoint. Large motor 45602 direct-drive gives 396 mm/s at max efficiency; research calls 200–300 mm/s "practical, controllable". **Both owned motors are of UNKNOWN type** — if they are Small 45607 the max-efficiency ceiling is 249 mm/s, which moves these tables by <1 %, but leaves no torque headroom at 250 mm/s ([KU-T3](./known-unknowns.md)) |
 | `v` traverse, classification | **150 mm/s** | Conservative pick inside the finding's bracket; derived ceiling is ~195 mm/s ([§7.1](#71-the-worst-case-chord-is-31-mm-not-20-mm)) |
 | `t_turn` per lane transition | **3.0 s** | **`[ASSUMED]`.** The research *assumes* ~1.5 s per end-of-lane turn in its own time budget — **nothing measures it**, here or anywhere cited. The hybrid sweep additionally requires wall-square → turn → advance `L` → turn. 3.0 s is the honest figure; 1.5 s is the optimistic one. Both are shown where it matters |
@@ -535,7 +535,7 @@ base we already own, and #6 and #7 need no hardware at all.
 - **Builder.** Build that mount when it lands, and **confirm which motor type we own** by reading the part
   number moulded on the two motors ([§11](#11-what-must-be-measured) item 1) — no purchase, no design call.
 - **Programmer.** Implement the **O7 time-box and coverage-fraction report** as a run-time policy over the
-  existing sweep, and keep `N_SENSORS` a config value in `src/config.py` with the detector
+  existing sweep, and keep `N_SENSORS` a config value in `src/mission_config.py` with the detector
   instantiated per sensor. Neither change is speculative: both are needed under every cell of
   [§10](#10-the-decision-table). Also carry Q1, Q2 and Q5 into class as **one batched question with this
   table attached** — [./risk-register.md](./risk-register.md) puts R-01's ask on the Programmer, and the

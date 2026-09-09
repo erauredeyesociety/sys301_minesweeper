@@ -38,7 +38,7 @@ This works because of what the hub turned out to be, measured on 2026-08-27
   written there is importable with no further configuration.
 - There is **32.4 MB free**. Our entire `src/` is a rounding error against it.
 
-**Demonstrated, not proposed:** `src/config.py` (13,262 B, 70 chunks) uploaded in **3.6 s**, the
+**Demonstrated, not proposed:** `src/mission_config.py` (13,262 B, 70 chunks) uploaded in **3.6 s**, the
 hub's own SHA-256 matched the local file, and `probes/import_check.py` reported **`OK config`**.
 
 ### What this decision does NOT include

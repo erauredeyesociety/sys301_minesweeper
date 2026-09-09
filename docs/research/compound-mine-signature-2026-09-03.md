@@ -251,7 +251,7 @@ new hardware, mirrors [color-discrimination § 8](./color-discrimination.md)'s r
 - The pipeline this extends (read 2026-09-03): [`detector.py`](../../src/detector.py),
   [`classify.py`](../../src/classify.py), [`floor_anomaly.py`](../../src/floor_anomaly.py),
   [`event_filter.py`](../../src/event_filter.py), [`odometry.py`](../../src/odometry.py),
-  [`result.py`](../../src/result.py), [`config.py`](../../src/config.py).
+  [`result.py`](../../src/result.py), [`config.py`](../../src/mission_config.py).
 - [floor-relative-colour-anomaly-2026-09-03.md](./floor-relative-colour-anomaly-2026-09-03.md) — the
   `any-anomaly` presence front-end and the same-hue-as-a-floor-band blind spot;
   [color-discrimination.md](./color-discrimination.md) — nearest-centroid classification and the replay

@@ -23,7 +23,7 @@ Both from the **operator, 2026-09-08**, verbally. They supersede anything in the
   the instructor may add or remove notes mid-run. **The one guarantee: mines will never be BLUE.**
 
 **What this invalidates.** `config.BOUNDARY_MODE` is still `"odometry"` and is read by **no executable
-line in the repo** ([../../src/config.py](../../src/config.py):18, and a comment at
+line in the repo** ([../../src/mission_config.py](../../src/mission_config.py):18, and a comment at
 [../../src/main.py](../../src/main.py):286) — so nothing in the shipped program knows the tape exists.
 A closed box means the sweep will cross the boundary on **every lane end**, not occasionally. It also
 partly answers FR-6 ([../scope.md](../scope.md)): the tape is now a usable fence, not just a hazard.
@@ -187,7 +187,7 @@ write the number down** — the "middle hole" height has never been measured in 
 biggest provenance hole in this document. Do **not** chase a 16 mm ±3 mm target: that tolerance is
 unattainable against 25 mm of wobble and the midhole data already gives a 42-point gap.
 
-**Step 1 — `src/config.py`, ~4 lines, pure, zero runtime risk.**
+**Step 1 — `src/mission_config.py`, ~4 lines, pure, zero runtime risk.**
 Extend the `DETECT_MODE` comment with a third value `"reflect"`, and add
 `TARGET_REFLECTANCE_SAMPLES = ()` — a tuple of integer reflectance values pasted from the day's
 `YELLOW`/mine capture (today's port-C values would be `51..68`), empty meaning *no mine has been

@@ -12,7 +12,7 @@
 > encoder delta becomes a forward distance** and **how a turn ramps its speed while closing on the gyro**.
 > **Measured behaviour from:** [../findings/drive-checkpoint-2026-09-01.md](../findings/drive-checkpoint-2026-09-01.md)
 > · [../findings/imu-characterisation-2026-08-27.md](../findings/imu-characterisation-2026-08-27.md).
-> **Maps onto:** `src/odometry.py` (pure), `src/config.py`, `src/hub_motors.py`, `src/sweep.py`,
+> **Maps onto:** `src/odometry.py` (pure), `src/mission_config.py`, `src/hub_motors.py`, `src/sweep.py`,
 > `examples/`.
 
 **Two conventions, held throughout.** (1) Everything is in **encoder-degrees, wheel-revolutions and
@@ -424,7 +424,7 @@ signature moves.**
 
 | File | Change | Why |
 |---|---|---|
-| `src/config.py` | Add `LEFT_MOTOR_FORWARD_SIGN = -1` / `RIGHT_MOTOR_FORWARD_SIGN = +1` (MEASURED 2026-09-01) in the drivetrain block; add the "Turn profile" constants of §B.7. Note `TURN_CRUISE_DPS` vs the existing `TURN_RATE_DPS` (plateau vs time-estimate mean) — do not conflate. Coordinate `TURN_ENC_SCALE` with the coverage brief (single definition). | The pure odometry layer imports the mirror signs from here (it cannot import `hub_motors`); the profile is auto-tuned from named constants. |
+| `src/mission_config.py` | Add `LEFT_MOTOR_FORWARD_SIGN = -1` / `RIGHT_MOTOR_FORWARD_SIGN = +1` (MEASURED 2026-09-01) in the drivetrain block; add the "Turn profile" constants of §B.7. Note `TURN_CRUISE_DPS` vs the existing `TURN_RATE_DPS` (plateau vs time-estimate mean) — do not conflate. Coordinate `TURN_ENC_SCALE` with the coverage brief (single definition). | The pure odometry layer imports the mirror signs from here (it cannot import `hub_motors`); the profile is auto-tuned from named constants. |
 | `src/odometry.py` | Add the pure distance helpers (`signed_wheel_mm`, `forward_distance_mm`, `body_revs`) and the turn helpers (`turn_speed_profile`, `plan_turn`, `encoder_turn_to_body_deg`, `turn_converged`, `gyro_stalled`). Extend `Odometry.__init__`/`update` to apply `left_sign`/`right_sign` at the difference step (old call form still valid). No hub import; stays pure. | Distance needs the mirror applied per-wheel before the mean; turns need a host-testable profile + health checks. `encoder_turn_to_body_deg` is shared with the coverage brief — one helper. |
 | `src/hub_motors.py` | Replace the hard-coded `LEFT_FWD/RIGHT_FWD` values with references to the new `config` constants (single source of truth), keeping the write-side sign exactly as is. Add a one-line comment that **reads are raw, writes are signed, odometry applies the read-side sign** (the no-double-flip rule, §A.2). | Prevents the sign from being defined in two places and drifting; documents the read/write asymmetry. |
 | `src/sweep.py` | Where `CMD_TURN` is documented ("positive = right"), add a wiring note that the executor maps it to the CCW-positive odometry frame (`target = yaw − turn_deg`, `spin_dir = −sign(turn_deg)`) and that the mirror makes **both** motors take `spin_dir` (§B.5). No state-machine change. | The one convention seam (sweep positive=right vs odometry CCW-positive) is settled in the runner, once, not scattered. |
@@ -488,6 +488,6 @@ already stream the raw rows for.
   *Computational Analysis of Jerk-Limited Velocity Planning for AGVs*; *Efficient Learning Control of
   Point-to-Point Robot Motion* — the S-curve (jerk-limited) vs trapezoidal choice and why bounding jerk
   suppresses slip at the ramp ends.
-- `src/odometry.py`, `src/config.py`, `src/hub_motors.py`, `src/hub_imu.py`, `src/sweep.py` — the code
+- `src/odometry.py`, `src/mission_config.py`, `src/hub_motors.py`, `src/hub_imu.py`, `src/sweep.py` — the code
   every formula and signature above maps onto.
 ```

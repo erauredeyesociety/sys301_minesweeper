@@ -138,7 +138,7 @@ on Demo Day changes a value in §3 or disables a §1 stage — it never sends an
 - [competition-movement-options-2026-09-03.md](./competition-movement-options-2026-09-03.md) — movement
   modes M0–M5 · [colour-sensor-mounting-wobble-2026-09-03.md](../findings/colour-sensor-mounting-wobble-2026-09-03.md)
   — why line-following is dropped
-- [../../src/config.py](../../src/config.py) · [../../src/floor_anomaly.py](../../src/floor_anomaly.py)
+- [../../src/mission_config.py](../../src/mission_config.py) · [../../src/floor_anomaly.py](../../src/floor_anomaly.py)
   (anomaly front-end) · [../../src/calibration.py](../../src/calibration.py) (target front-end) ·
   [../../src/detector.py](../../src/detector.py) (the one counter both feed) ·
   [../../src/classify.py](../../src/classify.py) · [conops.md](./conops.md) — OC-9 (may a sample be placed)

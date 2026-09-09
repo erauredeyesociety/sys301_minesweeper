@@ -9,7 +9,7 @@ the same note on white tile reads darker. The rest of the pipeline works in "sig
 on-target is always the high state, so nothing downstream needs to care.
 """
 
-import config
+import mission_config as config
 
 
 def median(values):

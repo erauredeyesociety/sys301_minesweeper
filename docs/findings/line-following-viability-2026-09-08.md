@@ -187,7 +187,7 @@ Two readings of this table:
 
 | | Value |
 |---|---|
-| Sensor spacing `S` | **> 76 mm [MEASURED lower bound only]** — one 76 mm note can never cover both ([port-map](../hardware/port-map.md)). Exact spacing **[UNMEASURED]**, and `SENSOR_SPACING_MM` does not exist in [`src/config.py`](../../src/config.py) |
+| Sensor spacing `S` | **> 76 mm [MEASURED lower bound only]** — one 76 mm note can never cover both ([port-map](../hardware/port-map.md)). Exact spacing **[UNMEASURED]**, and `SENSOR_SPACING_MM` does not exist in [`src/mission_config.py`](../../src/mission_config.py) |
 | Tape width `W` | 24–48 mm [ASSUMED range], **unmeasured** |
 | Straddle half-deadband `(S − W)/2` | **26 mm** at S = 76 / W = 24 · 14 mm at S = 76 / W = 48 · 43 mm at S = 110 / W = 24 |
 
@@ -322,7 +322,7 @@ same argument the 1 ft square already MEASURED: sum of four turns was −389.7°
 
 | # | Action | Why it beats a controller |
 |---|---|---|
-| **1** | **Make `src/hub_color.py` read `SECOND_COLOR_PORT` as well as `COLOR_PORT`.** It is declared in `hub_api.py` and referenced **nowhere** in `src/` — the mission code is a **one-sensor robot** today | Halves the sweep: 75 lanes / 229 m → 38 lanes / 116 m [COMPUTED, `src/config.py`]. ⚠ Do **not** raise the lane pitch until both ports are genuinely read every tick — that is the one change that silently loses mines |
+| **1** | **Make `src/hub_color.py` read `SECOND_COLOR_PORT` as well as `COLOR_PORT`.** It is declared in `hub_api.py` and referenced **nowhere** in `src/` — the mission code is a **one-sensor robot** today | Halves the sweep: 75 lanes / 229 m → 38 lanes / 116 m [COMPUTED, `src/mission_config.py`]. ⚠ Do **not** raise the lane pitch until both ports are genuinely read every tick — that is the one change that silently loses mines |
 | **2** | Verify the `HOLD_SIGN = -1` fix and the divergence guard **only if** the gyro hold is used by the lawnmower (it should be) — on the bench, one short run, watching | Both are [UNVERIFIED]. The lawnmower needs a heading hold even though it needs no line follower. See [guard-every-feedback-loop](../lessons_learned/guard-every-feedback-loop.md) |
 | **3** | **Measure the tape width** with a ruler (KU-P14) and **measure the sensor spacing** (`SENSOR_SPACING_MM` does not exist in `config.py`) | Both are numerators of the speed cap and the lane pitch. Two ruler readings delete two [ASSUMED]s |
 | **4** | Run `find_corner.py` once at a corner and once mid-edge | `EDGE_STRAIGHT` is a result, not a failure — the two runs together are the demonstration. [Runbook](../runbooks/corner-demo.md) |

@@ -1,5 +1,32 @@
 # Runbook — ResearchHub tunnel and paper fetching
 
+> ## ⚠ DEGRADED IS USABLE — MEASURED 2026-09-09
+>
+> `/health` can return `{"status":"degraded","reason":"db handle not initialized"}` while the service
+> is **perfectly usable for what we need**. Verified the same minute: `GET /api/discover/search?q=...`
+> returned **10 real papers with arXiv IDs, PDF URLs and abstracts** in that exact state.
+>
+> The db handle backs the **workspace and knowledge base**. The **discovery corpus search** — the only
+> endpoint `rh-query.sh` calls — does not need it. Both `rh-tunnel.sh` and `rh-query.sh` previously
+> rejected `degraded` and reported the service DOWN, which cost a research session on a service that
+> was answering our queries correctly.
+>
+> Both now **accept `healthy` or `degraded` and say which**, and still fail on anything else — a
+> non-200, a timeout, a half-open socket, or an unrecognised status. That is a narrowing, not a
+> blanket accept.
+>
+> **What degraded actually costs you:** no workspace, no saving papers to a knowledge base. Searching
+> the general corpus is unaffected.
+>
+> ⚠ **Two health checks existed for the same fact** — one in `rh-tunnel.sh`, one in `rh-query.sh` —
+> and fixing one still left the wrapper refusing. If this rule changes again, change it in both.
+>
+> **On result quality, honestly:** discovery search proxies searxng, so results are mixed. A query
+> returned genuine arXiv papers (e.g. `2503.17005`) alongside SEO noise (several ChatGPT landing
+> pages). Treat it as a *supplement* to WebSearch, not a replacement, and always check that a returned
+> title is actually a paper before citing it.
+
+
 **When to run this:** only when the literature workflow is actually needed — a real literature review
 for the Intro Report, or a search the local `grep`-first order
 ([../plans/2026-08-25-docs-rag-and-literature-workflow.md](../plans/2026-08-25-docs-rag-and-literature-workflow.md))

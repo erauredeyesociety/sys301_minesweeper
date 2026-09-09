@@ -9,9 +9,13 @@ classification, boundary stop, live telemetry) is a knob-toggled bolt-on that on
 skeleton -- docs/plans/minimalism-contract-2026-09-03.md. A professor answer moves a config VALUE or
 disables a stage; it never moves a box.
 
-DEFAULT front-end is DETECT_MODE="anomaly": floor_anomaly learns the floor at run start and flags
-anything unlike it -- no target sample, no known colour, robust to the floor changing on the day. It
-feeds detector.EdgeCounter, which counts on the falling edge, so mines added/removed mid-run are
+DEFAULT front-end is DETECT_MODE="brightness": raw reflectance from BOTH colour sensors, fused to one
+scalar (brightness.fuse takes the MAX, so one mine crossing either sensor counts exactly once). It is
+COLOUR-AGNOSTIC, so it survives the mine colour changing on the day, and the boundary tape is
+INVISIBLE to it -- tape reflectance sits inside the carpet band, so no blue veto is needed.
+⚠ This REPLACED DETECT_MODE="anomaly" on 2026-09-09: the chromaticity front end was MEASURED to fail
+on the real carpet -- yellow INVISIBLE, blue tape a 100% false positive (src/brightness.py).
+It feeds detector.EdgeCounter, which counts on the falling edge, so mines added/removed mid-run are
 handled by construction: completion is COVERAGE, never a tally.
 
 LAYER BOUNDARY (ADR-0004): only hub_*.py touch the LEGO API. This file calls them and stays otherwise
@@ -25,10 +29,10 @@ MicroPython subset: no f-strings.
 """
 import time
 
-import config
+import mission_config as config
 import odometry
 import sweep
-import floor_anomaly
+import brightness
 import detector
 import result
 import hub_runtime                       # wraps the hub-only `runloop` (ADR-0004 purity boundary)
@@ -42,7 +46,12 @@ try:
 except ImportError:
     CsvLog = None
 
-TICK_MS = 100                            # ~10 Hz, the rate MEASURED achievable on the square run
+TICK_MS = 50                             # ~20 Hz commanded. MEASURED 2026-09-09 across 16 logs the
+                                         # loop actually achieves median 54 ms but MEAN 75 ms
+                                         # (13.3 Hz), because the CsvLog flush costs a deterministic
+                                         # +51 ms on one tick in ten. This was 100 ms (9.2 Hz), which
+                                         # halved the safe traverse speed for no reason --
+                                         # config.max_safe_speed_mms() turns a rate into that ceiling.
 
 
 def _now():
@@ -101,18 +110,16 @@ class RunContext(object):
             self.odo.update(enc[0], enc[1], hub_imu.read_yaw_deg())
 
     def _detect_tick(self):
-        # DETECT_MODE="anomaly": distance-from-floor scalar -> the same EdgeCounter a target run uses.
-        if self.counter is None or self.floor_model is None:
+        # DETECT_MODE="brightness": raw reflectance from BOTH sensors, fused to one scalar, into the
+        # same EdgeCounter. See src/brightness.py for why this replaced the chromaticity front end --
+        # it was MEASURED to make yellow invisible and blue tape a 100% false positive on this carpet.
+        if self.counter is None:
             return
-        sample = hub_color.read_rgb()
-        if sample is None:
+        signal = brightness.fuse(hub_color.read_reflection_pair())
+        if signal is None:
             self.mission.none_samples += 1
             return
-        d = self.floor_model.deviation(sample)
-        if d is None:
-            self.mission.none_samples += 1
-            return
-        event = self.counter.update(d)
+        event = self.counter.update(signal)
         if event is not None:
             if event.accepted:
                 self.mission.add_detection(color=None)   # anomaly = presence; colour is UNKNOWN
@@ -220,7 +227,7 @@ async def wait_release(timeout_ms=2000):
 async def calibrate_floor(ctx):
     """Creep forward sampling the floor, then build the anomaly model and derive its thresholds.
     Returns True on success; False is a CORRECT outcome when the floor is too noisy/busy to model."""
-    if config.DETECT_MODE != "anomaly":
+    if config.DETECT_MODE not in ("brightness", "anomaly"):
         # BOLT-ON: the "target" front-end (calibration.py + CALIBRATE_TARGET) is not in the core build.
         return False
     samples = []
@@ -230,7 +237,9 @@ async def calibrate_floor(ctx):
     ticks = 0
     try:
         while _since(t0) < config.CALIBRATION_FLOOR_MS:
-            s = hub_color.read_rgb()
+            # Sample the SAME quantity the detector will use, from the SAME sensors -- a floor model
+            # built from a different signal than the run uses is worse than no model.
+            s = brightness.fuse(hub_color.read_reflection_pair())
             if s is not None:
                 samples.append(s)
             ticks += 1
@@ -240,8 +249,10 @@ async def calibrate_floor(ctx):
     dt = _since(t0) / 1000.0
     ctx.tick_hz = (ticks / dt) if dt > 0 else 0.0
     try:
-        model = floor_anomaly.build_floor_model(samples)
-        cal = floor_anomaly.derive_thresholds(model, samples)
+        # The thresholds are FIXED and measured; the floor burst is the ARMING GATE that confirms the
+        # floor really is dark here. Refusing to arm is a CORRECT outcome; a phantom count is not.
+        model = None
+        cal = brightness.derive_thresholds(samples)
         # DERIVE: turn the MEASURED tick rate into detector width gates, so a too-wide plateau (a floor
         # seam, or two merged notes) is REJECTED rather than counted as one mine. A rate too low to
         # resolve the target raises -> CALIBRATION_FAILED, the honest outcome (config.event_width_gates).
@@ -267,8 +278,16 @@ async def countdown(ctx):
 
 async def do_sweep(ctx):
     """Drive the boustrophedon plan, counting on each falling edge, until COMPLETE / TIMEBOX / ABORT."""
-    plan = sweep.SweepPlan()
+    # Sweep the DECLARED region, not the whole arena -- see mission_config.SWEEP_WIDTH_MM for the
+    # arithmetic. Covering a small square completely and saying so is defensible; covering 17% of a
+    # big one and reporting a bare count is not.
+    plan = sweep.SweepPlan(width_mm=config.SWEEP_WIDTH_MM, length_mm=config.SWEEP_LENGTH_MM)
     ctx.mission.lanes_planned = plan.total_lanes
+    # ⚠ RESTART THE CLOCK HERE. t_start was set in __init__, before up to 433 s of operator waiting
+    # (ARMED tap 120 s + calibrate + READY tap 300 s + countdown 10 s) -- all of it charged against
+    # RUN_TIMEBOX_S. A slow operator could consume the entire budget before a wheel turned, ending
+    # with lanes_completed = 0 and TIMEBOX for no visible reason. The timebox is for SWEEPING.
+    ctx.t_start = _now()
     hub_imu.reset_yaw()                  # zero the heading so the logged pose is in the arena frame
     hub_ui.show_glyph("arrow")
     while not plan.is_done():
@@ -300,11 +319,17 @@ async def do_sweep(ctx):
         # CMD_RESQUARE is a no-op under BOUNDARY_MODE="odometry" (the core has no boundary reference).
         if ctx.abort:
             return "ABORTED"
-    # Every planned lane swept => COMPLETE even if the clock ran out on the final step; lanes left
-    # unswept because the timebox cut in => TIMEBOX.
-    if plan.lanes_remaining() == 0:
+    # ⚠ COMPLETE MEANS LANES WERE DRIVEN. This previously asked plan.lanes_remaining(), which is the
+    # PLAN'S INTERNAL INDEX -- so a run whose every drive failed (dead encoders and gyro) exhausted
+    # the plan without moving and reported COMPLETE with lanes 0/75. The count must never be dressed
+    # as a full sweep it did not perform.
+    done = ctx.mission.lanes_completed
+    planned = ctx.mission.lanes_planned
+    if planned > 0 and done >= planned:
         return "COMPLETE"
-    return "TIMEBOX" if ctx.hit_timebox else "COMPLETE"
+    if ctx.hit_timebox:
+        return "TIMEBOX"
+    return "DEGRADED"          # the plan ended but the lanes were not driven -- say so, do not lie
 
 
 async def show_number(n):
@@ -348,11 +373,14 @@ def _open_event_log(ctx):
 
 
 async def main():
-    hub_ui.tone_rising()
     mission = result.MissionResult()
     ctx = RunContext(mission, int(config.RUN_TIMEBOX_S * 1000))
     reached_report = False
     try:
+        # tone_rising() moved INSIDE the try 2026-09-09. It was the FIRST hub call in the program and
+        # it sat outside every handler, so if it raised -- and its signature is [UNVERIFIED] -- the
+        # program died before the guard that exists to report exactly that.
+        hub_ui.tone_rising()
         # ARMED -- motors HELD, wait for the operator's tap ON THE ARENA. Never calibrate on the bench.
         hub_motors.stop_motors()
         hub_ui.show_glyph("s")
@@ -380,6 +408,16 @@ async def main():
                 status = await do_sweep(ctx)
                 mission.set_status(_status_const(status), status)
                 reached_report = True
+    except Exception:
+        # ⚠ THE HIGHEST-VALUE SIX LINES IN THIS FILE. Roughly thirty hub call sites in this program
+        # have never executed, and without this every one of them fails as a FROZEN GLYPH with no
+        # tone -- indistinguishable, across a room, from a robot that is thinking. Motors are cut by
+        # the finally below; this is about telling the operator that something broke.
+        mission.set_status(result.STATUS_UNKNOWN, "exception")
+        hub_motors.stop_motors()
+        hub_ui.tone_falling()
+        await hold("x")
+        return
     finally:
         hub_motors.stop_motors()
         if ctx.evlog is not None:

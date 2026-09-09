@@ -183,7 +183,7 @@ bounding box of all tape sightings (the outward spur inflates it permanently: a 
 **Interior tape is a non-problem** and needs no code: the mine rule is `reflection >= 30`, and blue tape
 reads **7–9**, entirely inside the carpet band 3–9 — the mine detector *cannot see tape at all*
 [MEASURED, [surface-survey-2026-09-08.txt](../findings/runs/surface-survey-2026-09-08.txt)]. ⚠ That
-holds only for the reflectance rule; `src/config.py` still ships `DETECT_MODE = "anomaly"`, under which
+holds only for the reflectance rule; `src/mission_config.py` still ships `DETECT_MODE = "anomaly"`, under which
 blue tape is the most conspicuous object on the floor. Fixing that outranks everything in this document
 ([carpet-detection-and-blue-boundary-2026-09-08.md](./carpet-detection-and-blue-boundary-2026-09-08.md)).
 
@@ -320,7 +320,7 @@ Apply in this order — 1 first, because everything else is fed by `on_tape()`.
    angled pass. **The hand rule is immune to this bias — that is a large part of why it is the
    recommendation** — but the `CONCAVE_TRUST` override is not.
 3. **`SENSOR_SPACING_MM` is [UNMEASURED]** — a lower bound of >76 mm only, and it does not exist in
-   `src/config.py`. `BAR_PAIR_MM = 40` is derived from the bound, so its angle tolerance is unknown;
+   `src/mission_config.py`. `BAR_PAIR_MM = 40` is derived from the bound, so its angle tolerance is unknown;
    the lane pitch for the sweep needs the real number regardless.
 4. **`SENSOR_AHEAD_MM` (fore-aft offset from the drive axle to the sensor line) is [UNMEASURED]** —
    still the literal placeholder in `docs/hardware/build-record.md`. If it is 40–60 mm, the robot ends a

@@ -364,7 +364,7 @@ This document edits nothing but itself. These are the follow-ups it implies:
 |---|---|---|
 | [./INDEX.md](./INDEX.md) | add a row for this doc | INDEX coverage (`check-docs.py` enforces it); this task may write only one file, so the row is owed |
 | `scripts/check-docs.py` | run it after this doc lands (links · INDEX · purity boundary) | the standing guard; ADR-0005 leaves it the only check |
-| [../../src/config.py](../../src/config.py) | add the tier flags `BOUNDARY_MODE` (already present, extend to `"tape"`), `LINE_SQUARE_ENABLED`; the blocks listed in §6 | the tiers are selected by values, per commitment 6 |
+| [../../src/mission_config.py](../../src/mission_config.py) | add the tier flags `BOUNDARY_MODE` (already present, extend to `"tape"`), `LINE_SQUARE_ENABLED`; the blocks listed in §6 | the tiers are selected by values, per commitment 6 |
 | [./next-session.md](./next-session.md) · [../todo.md](../todo.md) | fold in the tier target (T0 = Demo Day goal) and the critical path (§5) | keep the SSOT aligned with the decision |
 | [./questions-for-the-professor.md](./questions-for-the-professor.md) | keep **Q0 first** (autonomy), then Q1/Q3/Q5 — Q0 is the only architecture fork left | §3 Group A/D |
 
@@ -386,7 +386,7 @@ restate them, it points at them.
   creep-on-approach, two-sided `BOUNDARY_DEVIATION_MIN`, B1 backstop); `odometry-fusion-and-health-2026-09-01.md`
   (applied mirror signs, `heading_hold_pair`, `turn_speed_profile`/`plan_turn`, fault helpers, the
   no-coast-datum correction); `bench-measurement-plan.md` (BM-0..BM-10, dependency order, BM-3 keystone,
-  the movement-tuning sidecar outputs); `src/config.py`, `src/sweep.py`, `src/odometry.py`, `src/detector.py`,
+  the movement-tuning sidecar outputs); `src/mission_config.py`, `src/sweep.py`, `src/odometry.py`, `src/detector.py`,
   `src/result.py`, `src/classify.py`, `src/calibration.py`, `src/motion_tuning.py`, `src/hub_api.py`,
   `src/hub_color.py`, `src/hub_motors.py` (the code every binding maps onto); `docs/todo.md` (current state,
   Q0, the three real blockers).

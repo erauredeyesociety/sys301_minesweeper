@@ -5,7 +5,7 @@ so they can be unit-checked on the host before a robot ever moves.
 """
 import math
 
-from config import WHEEL_DIAMETER_MM
+from mission_config import WHEEL_DIAMETER_MM
 from odometry import degrees_to_mm, normalize_angle
 
 

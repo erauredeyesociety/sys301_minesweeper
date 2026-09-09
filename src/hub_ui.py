@@ -71,7 +71,15 @@ def show_frame(rows):
         for row in rows:
             for value in row:
                 flat.append(int(value))
-        light_matrix.show(flat)                       # SPIKE 3: one list of 25, whole frame at once
+        # GUARDED: the flat-25 argument shape is [UNVERIFIED] on our hub, and this call is reachable
+        # from INSIDE main.py's top-level exception handler (via hold -> show_glyph). An unguarded
+        # raise there escapes the handler that exists to report the failure, and the robot freezes
+        # with no tone -- exactly the _color failure mode. A wrong guess must cost a PICTURE, not the
+        # run. Narrow list: these are the shapes a wrong signature produces, not read failures.
+        try:
+            light_matrix.show(flat)                   # SPIKE 3: one list of 25, whole frame at once
+        except (TypeError, ValueError, AttributeError, OSError):
+            pass
         return None
     if API == API_SPIKE2:
         matrix = hub_api._hub_obj().light_matrix              # UNVERIFIED call site -- never run
@@ -107,7 +115,13 @@ def beep(freq_hz, ms):
         # SPIKE 3: sound.beep(freq, duration_ms, volume) returns an Awaitable. UNVERIFIED whether it
         # sounds at all when it is never awaited; if it does not, this call becomes runloop-aware and
         # every caller of beep() stays unchanged, which is why it is wrapped here.
-        sound.beep(int(freq_hz), int(ms))
+        # GUARDED for the same reason as show() above: the argument order and defaults are
+        # [UNVERIFIED] (docs/findings/hub-api-surface-2026-09-01.md), and tone_falling() is called
+        # from inside main.py's recovery handler. A silent hub is survivable; a lost run is not.
+        try:
+            sound.beep(int(freq_hz), int(ms))
+        except (TypeError, ValueError, AttributeError, OSError):
+            pass
         return None
     if API == API_SPIKE2:
         # SPIKE 2 speaks MIDI NOTE NUMBERS (44-123) and SECONDS, not Hz and ms -- convert, do not guess.

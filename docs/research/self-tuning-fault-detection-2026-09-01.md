@@ -404,7 +404,7 @@ Status constants (plain strings, no `enum`): `HEALTH_OK = "ok"`, `HEALTH_SLIP = 
   (the straight-track cross-check feeding `div`), `heading_disagreement_deg()` (its `[UNVERIFIED]` threshold
   is now set from the straight-drive `div` p95 — this brief closes that docstring TODO), `Odometry.update()`
   (unchanged; the checks read the same encoder + gyro values it consumes).
-- `src/config.py` — `WHEEL_DIAMETER_MM`, `TRACK_WIDTH_MM`, `ENCODER_COUNTS_PER_REV`, `HEADING_DISAGREE_LIMIT_DEG`,
+- `src/mission_config.py` — `WHEEL_DIAMETER_MM`, `TRACK_WIDTH_MM`, `ENCODER_COUNTS_PER_REV`, `HEADING_DISAGREE_LIMIT_DEG`,
   `STUCK_YAW_TICKS` (reframed), plus the new primitives and floors listed below.
 - `src/hub_imu.py` — `read_yaw_deg()`, `read_tilt_ddeg()`, `read_accel()` (the disturbance inputs);
   `angular_velocity()` is the direct yaw-rate source, subject to the KU-M19 deadband caveat.
@@ -425,9 +425,9 @@ Collision-safe: **not applied here.** One change per row, each additive.
 
 | File | Recommended change |
 |---|---|
-| `src/config.py` | Add Group-N primitives: `GYRO_NOISE_DPS`, `ACCEL_NOISE_MG`, `TILT_NOISE_DDEG` (all `[ASSUMED]`, "MEASURE with motors on the floor"), `YAW_DRIFT_DPS = 0.0033` (MEASURED 2026-08-27, PARTIAL — driving drift KU-M28), `GRAVITY_MG = 989.0` (MEASURED). Add scale factors `K_YAW`, `K_YAW_RESID_DPS`, `TURN_ENC_SCALE`, `DIV_P95_DEG` (all `[ASSUMED]`, KU-M27). Add policy + floors: `FAULT_SIGMA = 6.0`, `ACCEL_FLOOR_MG = 15.0`, `YAW_RATE_FLOOR_DPS = 1.0`, `TILT_FLOOR_DDEG = 10.0`, `ENC_TURN_FLOOR_DPS = 30.0`, `ENC_STILL_FLOOR_DPS = 10.0`, `SLIP_DWELL_TICKS = 3`. Every one carries its derivation in the comment. |
-| `src/config.py` | Reframe `STUCK_YAW_TICKS = 50`: note it is **superseded** by `turn_slip()` (a model residual + `SLIP_DWELL_TICKS`), and keep it only as the degraded encoder-only fallback tick count. Its existing KU-M19 deadband caveat stays. |
-| `src/config.py` | Change the `HEADING_DISAGREE_LIMIT_DEG = 10.0` comment to say it is **derived** from the straight-drive `div` p95 at run start (via `DIV_P95_DEG`), not hand-set. |
+| `src/mission_config.py` | Add Group-N primitives: `GYRO_NOISE_DPS`, `ACCEL_NOISE_MG`, `TILT_NOISE_DDEG` (all `[ASSUMED]`, "MEASURE with motors on the floor"), `YAW_DRIFT_DPS = 0.0033` (MEASURED 2026-08-27, PARTIAL — driving drift KU-M28), `GRAVITY_MG = 989.0` (MEASURED). Add scale factors `K_YAW`, `K_YAW_RESID_DPS`, `TURN_ENC_SCALE`, `DIV_P95_DEG` (all `[ASSUMED]`, KU-M27). Add policy + floors: `FAULT_SIGMA = 6.0`, `ACCEL_FLOOR_MG = 15.0`, `YAW_RATE_FLOOR_DPS = 1.0`, `TILT_FLOOR_DDEG = 10.0`, `ENC_TURN_FLOOR_DPS = 30.0`, `ENC_STILL_FLOOR_DPS = 10.0`, `SLIP_DWELL_TICKS = 3`. Every one carries its derivation in the comment. |
+| `src/mission_config.py` | Reframe `STUCK_YAW_TICKS = 50`: note it is **superseded** by `turn_slip()` (a model residual + `SLIP_DWELL_TICKS`), and keep it only as the degraded encoder-only fallback tick count. Its existing KU-M19 deadband caveat stays. |
+| `src/mission_config.py` | Change the `HEADING_DISAGREE_LIMIT_DEG = 10.0` comment to say it is **derived** from the straight-drive `div` p95 at run start (via `DIV_P95_DEG`), not hand-set. |
 | `src/odometry.py` | Add the pure `sigma_band()`, `derive_fault_tuning()`, `FaultTuning`, `turn_slip()`, `disturbance()`, `turn_rate_multiplier()` and the `HEALTH_*` string constants (signatures above). Update `heading_disagreement_deg()`'s docstring: the "must be MEASURED" threshold is now the straight-drive p95, and the value **grows on turns by design** (caster), so callers gate it to straight segments. |
 | `data_analysis/motion.py` | Add `estimate_k_yaw()` to the `constants()` block; emit `K_YAW`, its RMS residual, and the CW/CCW Type-A/B gap alongside `D_eff`, `b̂`, `k`. |
 | `docs/plans/known-unknowns.md` | On **KU-M27**, replace "design in flight, `docs/research/`" with a link to this brief; note the fault half is **diameter-free** (needs KU-M21 only for the mm scale). On **KU-M28**, cross-link this brief's step-0/step-1 as where driving drift gets measured. |

@@ -14,7 +14,7 @@ Counting happens on the FALLING edge, once the event's width is known, so a too-
 (noise) or a too-wide plateau (a seam, or two merged notes) can be rejected with a reason.
 """
 
-import config
+import mission_config as config
 
 # How many recent events to keep for diagnostics. The count is authoritative and is never affected
 # by this -- it is incremented in _close() independently of the list.

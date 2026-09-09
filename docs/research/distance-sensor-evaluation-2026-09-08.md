@@ -146,7 +146,7 @@ directly observable by the **two colour sensors already on ports C/D**, with no 
 | **Range off external room objects — LOCALISATION / odometry-drift correction** | **WEAK, and dominated** | §3.1. Blocked by a 2000 mm cliff to unmeasured room objects, ±700 mm of cross-range at 1 m, and reflectors that move. And the closed tape box now supplies a *better* exteroceptive fix for free, at every lane end, from owned sensors. |
 | **Side-facing wall-follow / heading reference** | **WEAK** *(downgraded from "conditionally strong" once the box was confirmed closed)* | The gyro already holds heading; the closed tape polygon supplies re-squaring references at the lane ends. A room wall would add a mid-lane cross-track check — real, but the smallest of the three, contingent on an unmeasured ≤1500 mm clearance. |
 | **Intruder / obstacle / other-robot stop** | **WEAK — the least-weak role, and the strongest that survives** | §3.2. The one genuine ultrasonic strength not dominated by owned hardware. But the *need* is unconfirmed, **soft targets return `-1` so the robot does not stop**, several 45604s in one room hear each other's pings, and a shove/tilt → stop already exists free on the IMU ([fault-detection-cross-check](./fault-detection-cross-check-2026-09-01.md)). |
-| **Tape-boundary detection (FR-6)** | **USELESS** | The original KU-P3 argument, unchanged and now doubly moot: 0.1–0.3 mm of tape vs ±20 mm + a 50 mm blind zone, *and* the owned colour sensors do the job. `BOUNDARY_MODE="distance"` in [`config.py`](../../src/config.py) stays unreachable. |
+| **Tape-boundary detection (FR-6)** | **USELESS** | The original KU-P3 argument, unchanged and now doubly moot: 0.1–0.3 mm of tape vs ±20 mm + a 50 mm blind zone, *and* the owned colour sensors do the job. `BOUNDARY_MODE="distance"` in [`config.py`](../../src/mission_config.py) stays unreachable. |
 | **Edge / table-drop detection** | **USELESS** | No drop exists (taped classroom floor), *and* geometrically impossible: the ~50 mm blind zone exceeds the robot's floor clearance, so a downward sensor cannot be mounted low enough to read the floor at all. |
 | **Start-gate / hand-wave start** | **WEAK** | Works in principle. The hub has **three free buttons**; never spend a port and Schrute Bucks to replace a free button. |
 | **Mine detection (FR-2 / FR-2b)** | **USELESS** | See §2 — three independent reasons, any one sufficient. |
@@ -155,7 +155,7 @@ directly observable by the **two colour sensors already on ports C/D**, with no 
 
 **The steelman, as it stood.** The 45604's best case was containment: the arena has no walls, so if the
 tape ran out the robot could wander into the room, and `CROSS_TRACK_ERROR_MM = 15.0` in
-[`config.py`](../../src/config.py) is `[ASSUMED]` and has **never been measured**. A forward range read
+[`config.py`](../../src/mission_config.py) is `[ASSUMED]` and has **never been measured**. A forward range read
 off the room would convert *"drove into the room"* into *"stopped early"*, for ~15 lines against
 scaffolding that already exists. That was the operator's angle and it was a fair one — KU-P3 never
 considered it.

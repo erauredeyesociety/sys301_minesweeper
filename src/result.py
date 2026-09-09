@@ -9,7 +9,7 @@ The invariant detected == classified + unknown is asserted, not assumed -- if it
 the accounting is broken and we want to know on the bench, not on Demo Day.
 """
 
-import config
+import mission_config as config
 
 UNKNOWN = "unknown"
 

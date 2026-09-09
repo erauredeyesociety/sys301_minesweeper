@@ -70,7 +70,7 @@ One file, by [`hub_programmer/upload.py`](../../hub_programmer/upload.py), which
 out of `probes/` because everything in `probes/` is read-only:
 
 ```
-hub_programmer/upload.py src/config.py --apply
+hub_programmer/upload.py src/mission_config.py --apply
 ```
 
 | | |
@@ -83,7 +83,7 @@ hub_programmer/upload.py src/config.py --apply
 
 Two cross-checks done on the host today, read-only, with no hub involved:
 
-- `sha256sum src/config.py` in the working tree still returns `05a3efef…828a` at 13262 bytes —
+- `sha256sum src/mission_config.py` in the working tree still returns `05a3efef…828a` at 13262 bytes —
   the hash the hub computed is the hash of the file we actually have.
 - `upload.py` sets `CHUNK = 192` raw bytes per REPL line; `ceil(13262 / 192) = 70`, which is the chunk
   count reported. The mechanics are internally consistent.

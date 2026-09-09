@@ -20,12 +20,49 @@ from hub_api import API, API_SPIKE2, API_SPIKE3
 # a layer ON TOP built from raw RGB -- see docs/research/color-discrimination.md.
 
 def read_reflection():
-    """Reflected light, 0-100. None if unreadable. THE primary detection signal."""
+    """Reflected light, 0-100, from the PRIMARY sensor. None if unreadable.
+
+    THE primary detection signal: MEASURED carpet 3-9, blue tape 7-9, yellow note 51-73, pink 97+
+    (docs/findings/colour-survey-and-first-detection-2026-09-08.md).
+    """
     if API == API_SPIKE3:
-        return _color.reflection(hub_api._require(hub_api.COLOR_PORT, "hub_api.COLOR_PORT"))
+        return hub_api._color.reflection(hub_api._require(hub_api.COLOR_PORT, "hub_api.COLOR_PORT"))
     if API == API_SPIKE2:
         return hub_api._color_obj().get_reflected_light()
     return None
+
+
+def read_reflection_second():
+    """Reflected light from the SECOND sensor, or None when there is not one.
+
+    Returns None rather than raising when SECOND_COLOR_PORT is unset -- a one-sensor build is a
+    legitimate configuration, and the caller fuses whatever it gets.
+    """
+    if API == API_SPIKE3:
+        port = getattr(hub_api, "SECOND_COLOR_PORT", None)
+        if port is None:
+            return None
+        try:
+            return hub_api._color.reflection(port)
+        except (OSError, ValueError, RuntimeError):
+            # ONLY real read failures. A blanket `except Exception` here HID a NameError for weeks --
+            # this module used a bare `_color` that was never imported, so the second sensor silently
+            # returned None on the hub while the primary raised. Found 2026-09-09.
+            return None
+    return None                 # SPIKE 2 exposed only one sensor object; not our hub anyway
+
+
+def read_reflection_pair():
+    """(primary, second) reflectance. Either element may be None.
+
+    ⚠ THIS EXISTS BECAUSE OF A REAL BUG, fixed 2026-09-09. `hub_api.SECOND_COLOR_PORT` was declared
+    and read NOWHERE in src/ -- so the mission code ran a ONE-sensor swath while two sensors were
+    mounted and both were read fine by everything in examples/. At the 10 ft arena that is the
+    difference between 75 lanes and 38, i.e. between a sweep that cannot fit a demo slot and one that
+    can. Callers should fuse this with brightness.fuse(), which takes the MAX so that one physical
+    mine crossing either sensor still counts exactly once.
+    """
+    return (read_reflection(), read_reflection_second())
 
 
 def read_rgb():
@@ -37,7 +74,7 @@ def read_rgb():
     partly so that the scale cancels -- measure it before any absolute threshold is written.
     """
     if API == API_SPIKE3:
-        return _color.rgbi(hub_api._require(hub_api.COLOR_PORT, "hub_api.COLOR_PORT"))
+        return hub_api._color.rgbi(hub_api._require(hub_api.COLOR_PORT, "hub_api.COLOR_PORT"))
     if API == API_SPIKE2:
         return hub_api._color_obj().get_rgb_intensity()
     return None

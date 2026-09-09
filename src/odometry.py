@@ -22,7 +22,7 @@ See docs/research/motion-control-and-odometry.md.
 
 import math
 
-import config
+import mission_config as config
 
 
 def wheel_circumference_mm(diameter_mm=None):

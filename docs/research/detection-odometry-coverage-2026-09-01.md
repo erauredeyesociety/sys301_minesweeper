@@ -333,7 +333,7 @@ flowchart LR
 - `src/odometry.py` — `Pose`, `Odometry.update(gyro_heading_deg)`, `heading_from_encoders()`,
   `encoder_heading_deg` cross-check, `heading_disagreement_deg()`, `normalize_angle()`,
   `cross_track_error_mm()`, `degrees_to_mm()`/`mm_to_degrees()`.
-- `src/config.py` — `WHEEL_DIAMETER_MM`, `TRACK_WIDTH_MM`, `ENCODER_COUNTS_PER_REV = 360`,
+- `src/mission_config.py` — `WHEEL_DIAMETER_MM`, `TRACK_WIDTH_MM`, `ENCODER_COUNTS_PER_REV = 360`,
   `HEADING_DISAGREE_LIMIT_DEG`, `TURN_RATE_DPS`, `STUCK_YAW_TICKS`; **new** `TURN_ENC_SCALE`.
 - `src/hub_motors.py` — CONFIRMED mirrored signs (LEFT=A forward −v, RIGHT=B forward +v),
   `DRIVE_MAX_DPS = 930`, id 48.
@@ -670,7 +670,7 @@ existing function signature or state changes.
 |---|---|---|
 | `src/classify.py` | Add `specular_features` (R,G,B only); extend `ColorClass` with two optional trailing fields + `is_specular`; extend `build_classes` (`reflection_by_name` optional); add `classify_2axis`, `separability_2axis`, `is_boundary`. **Leave `classify()` and `separability_report()` untouched** as the matte path / raw-chroma view. Add a `S_MIN` comment for the matte partition (A.1-9). | Makes saturation a signal instead of a discarded failure; every threshold `[ASSUMED]` until bench GATE. |
 | `src/detector.py` | Add pure `saturated`/`saturation_count`, `BoundaryWatch`/`BoundaryTrip`, `skew_sign_from_crossings`, `skew_deg_from_crossings`, `width_class`, `Event.span_mm`. **Do NOT touch `EdgeCounter`'s four-state core.** Comment that a `REJECT_TOO_WIDE` + boundary-colour event must be surfaced to the caller for boundary-STOP (a wiring note; the rgbi buffer is the caller's). | Rising-edge boundary trip stops before the wheels cross; width and skew are the along-tape and angle cues. |
-| `src/config.py` | Add the "Surface classification (2-axis)" and "Caster / turn calibration" and "Two-sensor coverage" blocks listed above; `pass_pitch_mm`/`pass_count`/`max_heading_drift_deg_per_min`; extend `BOUNDARY_MODE` with `'tape'`; comment `TRACK_WIDTH_MM` as the **straight** track and add `TURN_ENC_SCALE` as the **spin** scale kept separate; keep `CLASSES=('target',)`. | A clarified answer or bench number changes a value here, never a state. |
+| `src/mission_config.py` | Add the "Surface classification (2-axis)" and "Caster / turn calibration" and "Two-sensor coverage" blocks listed above; `pass_pitch_mm`/`pass_count`/`max_heading_drift_deg_per_min`; extend `BOUNDARY_MODE` with `'tape'`; comment `TRACK_WIDTH_MM` as the **straight** track and add `TURN_ENC_SCALE` as the **spin** scale kept separate; keep `CLASSES=('target',)`. | A clarified answer or bench number changes a value here, never a state. |
 | `src/calibration.py` | Add two-sided `boundary_deviation_threshold`; capture a short **stationary** `reflection()` burst per class and pass it to `build_classes` as `reflection_by_name`. Tag the mode-switch "safe while stationary" claim `[UNVERIFIED]` (A.1-6). | Tape polarity vs floor is unknown; a polarity-locked detector could miss the tape → out of arena. |
 | `src/result.py` | Add `add_boundary()`/`boundary_hits` and a `skew_deg` field; keep boundary **out** of `by_color` so `detected == classified + unknown` holds. | Boundary is logged, never over-indexes `CLASS_GLYPHS`. |
 | `src/hub_color.py` | Ensure `read_rgb(side)` returns full `(r,g,b,i)`; sweep loop reads `read_rgb()` only (single `rgbi` mode, presence + clip from one read); `read_reflection()` from the calibration path only. | One sensor mode all run (avoids mode-thrash C8). |
@@ -744,7 +744,7 @@ ruler, unblocks the most **decisions**.
 - Galceran & Carreras (2013) survey §10 — coverage under uncertainty degrades within-cell; Acar & Choset
   2002b: drive the boundaries to minimize dead-reckoning error; Gabriely & Rimon STC leaves the perimeter
   ring uncovered (all cited in the repo's sweep-techniques doc).
-- `src/config.py`, `src/odometry.py`, `src/detector.py`, `src/classify.py`, `src/calibration.py`,
+- `src/mission_config.py`, `src/odometry.py`, `src/detector.py`, `src/classify.py`, `src/calibration.py`,
   `src/result.py`, `src/sweep.py` — the actual code every design maps onto.
 
 ---

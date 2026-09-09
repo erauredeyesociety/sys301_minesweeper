@@ -23,7 +23,7 @@ interesting sentence in the whole build.
 **Motors confirmed:** both `device_id` **48** with `motor.info` `max_speed` **930 deg/s** (measured
 2026-09-01), so [KU-T3](../plans/known-unknowns.md) is closed at the hub. **Wheel diameter and track
 width are still UNMEASURED** — they are read off the built robot, not derived, and every distance/turn
-number in [`src/config.py`](../../src/config.py) depends on them. The rear caster is *unidirectional*,
+number in [`src/mission_config.py`](../../src/mission_config.py) depends on them. The rear caster is *unidirectional*,
 which matters: it rolls freely forward/back but resists sideways scrub, so a pivot turn drags it and
 that shows up as a heading-vs-encoder discrepancy to calibrate out, not a bug.
 

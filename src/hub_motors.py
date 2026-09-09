@@ -93,11 +93,27 @@ def drive(left_pct, right_pct):
 
 
 def stop_motors():
-    """Stop both motors. Called from the try/finally that guards the whole run (degraded mode AB2)."""
+    """Stop both motors. Returns True if both were commanded, False if either failed.
+
+    ⚠ THIS FUNCTION MUST NEVER RAISE. It is called from the outer `finally:` in main.py, so a raise
+    here REPLACES whatever outcome the run had and escapes main() -- with a wheel still turning.
+    MEASURED under stubs 2026-09-09: with the LEFT stop injected to fail, the RIGHT motor was never
+    even commanded and both wheels kept running. Each stop is therefore attempted INDEPENDENTLY.
+
+    `except Exception` is deliberate HERE, and only here, against the project's usual narrow-except
+    rule: a function whose entire purpose is to run in a finally: cannot afford to be choosy about
+    what it survives. It reports failure through the return value instead of a raise, so a caller
+    that cares can escalate. hub_drive.stop() has always done this; this brings the two into line.
+    """
+    ok = True
     if API == API_SPIKE3:                             # UNVERIFIED call site -- never run
-        hub_api._motor.stop(hub_api._require(hub_api.LEFT_MOTOR_PORT, "hub_api.LEFT_MOTOR_PORT"))    # SPIKE 3 stops BRAKE by default
-        hub_api._motor.stop(hub_api._require(hub_api.RIGHT_MOTOR_PORT, "hub_api.RIGHT_MOTOR_PORT"))
-        return None
+        for name, port_const in (("hub_api.LEFT_MOTOR_PORT", hub_api.LEFT_MOTOR_PORT),
+                                 ("hub_api.RIGHT_MOTOR_PORT", hub_api.RIGHT_MOTOR_PORT)):
+            try:
+                hub_api._motor.stop(hub_api._require(port_const, name))   # SPIKE 3 brakes by default
+            except Exception:
+                ok = False
+        return ok
     if API == API_SPIKE2:                             # UNVERIFIED call site -- never run
         hub_api._motor_obj("left").stop()
         hub_api._motor_obj("right").stop()

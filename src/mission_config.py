@@ -30,6 +30,19 @@ BOUNDARY_MARGIN_MM = 100.0     # [ASSUMED] how far outside the arena the pose ma
                                # CROSS_TRACK_ERROR_MM settle it; too tight and healthy odometry
                                # noise ends every lane early.
 
+# --- Sweep region ------------------------------------------------------------
+# ⚠ THE ARENA AND THE SWEPT REGION ARE DIFFERENT THINGS, and conflating them produces a demo that
+# reports a number nobody can defend. [COMPUTED from MEASURED constants] a 3048 mm arena at the
+# current 41 mm one-sensor pitch is 75 lanes / 231.6 m / ~1618 s. RUN_TIMEBOX_S of 300 s buys 13 of
+# those lanes -- 17% coverage. No tuning closes a 5x gap.
+#   3048 x 3048 -> 75 lanes, 231.6 m, ~1618 s   IMPOSSIBLE in a demo slot
+#    914 x  914 -> 23 lanes,  21.9 m,  ~168 s   fits, with real margin
+#    762 x  762 -> 19 lanes,  15.2 m,  ~119 s   fits even at the tail-safe 100 mm/s
+# So the demo sweeps a DECLARED SMALLER REGION completely and says so, rather than covering a sixth
+# of the arena and implying a full search. sweep.SweepPlan already accepts the region as arguments.
+SWEEP_WIDTH_MM = 914.0         # 3 ft. Set to ARENA_WIDTH_MM only when the time budget allows it.
+SWEEP_LENGTH_MM = 914.0        # 3 ft.
+
 # --- Run budget --------------------------------------------------------------
 RUN_TIMEBOX_S = 300.0          # [ASSUMED] placeholder. MUST come from professor Q2 (how long
                                # the demo slot actually gives us).
@@ -45,7 +58,18 @@ CLASSES = ("target",)          # [ASSUMED] narrowest defensible reading of the b
 #                sample, NO known colour. The IRREDUCIBLE-CORE default (minimalism-contract 2026-09-03).
 #   "target"  -- calibration.py: a known target exemplar. The OPTIONAL bolt-on; needs CALIBRATE_TARGET
 #                plus a professor "a sample may be placed" (OC-9). Not wired in the core build.
-DETECT_MODE = "anomaly"        # [ASSUMED] default; the day may switch to "target"
+DETECT_MODE = "brightness"     # MEASURED 2026-09-08 -- see src/brightness.py for why this replaced
+                               # "anomaly", which was refuted on the real carpet (yellow INVISIBLE,
+                               # blue tape a 100% false positive).
+# Brightness thresholds, MEASURED on the mission's own surfaces at the mounted height:
+#   carpet 3-9 | blue tape 7-9 (INSIDE the carpet band) | yellow note 51-73 | pink note 97+
+# Zero overlap, 43-point gap. 30 is dead centre: 21 points clear of the brightest carpet and 21
+# below the dimmest note. PROVEN on hardware -- examples/find_note.py found a real note while moving,
+# untethered, twice (PINK refl=99, YELLOW refl=62).
+MINE_REFL_ON = 30.0            # reflectance at or above which a mine is present
+MINE_REFL_OFF = 20.0           # falling-edge threshold; the 10-point gap is the Schmitt hysteresis
+MINE_FLOOR_MARGIN = 15.0       # the floor burst must stay this far BELOW MINE_REFL_ON or the run
+                               # REFUSES TO ARM. Measured carpet max is 9, so this passes by 6.
 COUNTDOWN_S = 10               # [ASSUMED] operator "clear the arena" window before SWEEP starts
 
 # LOG_EVENTS writes the on-hub significant-event CSV (pose + each detection) to /flash during SWEEP.

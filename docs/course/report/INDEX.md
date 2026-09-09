@@ -29,6 +29,7 @@ already solved — LibreOffice round-trips this template with all 20 `Els-` styl
 | **Template (the thing we fill in)** | `../source-material/cser_template_cser2022 (7).docx` |
 | **Template rendered (read this for the rules)** | `../source-material/cser_template_cser2022 (7).pdf` |
 | Section-by-section plan + which repo file feeds each section | [outline.md](./outline.md) |
+| **The assembled draft** — every section the repo can support, with `[GAP — needs X]` in place of anything it cannot, plus the figures-and-tables production list | [draft.md](./draft.md) |
 | What's due when, across all deliverables | [../deliverables.md](../deliverables.md) |
 
 ---

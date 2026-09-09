@@ -1,6 +1,6 @@
 # Runbook — Measure the Drivetrain
 
-> **Purpose.** Replace the `[ASSUMED]` drivetrain constants in [../../src/config.py](../../src/config.py)
+> **Purpose.** Replace the `[ASSUMED]` drivetrain constants in [../../src/mission_config.py](../../src/mission_config.py)
 > with measurements taken on the real robot, on the real floor, in one class period.
 > **Operator:** the **Builder** — the only person permitted to operate the robot.
 > **At the laptop:** the **Programmer**, who types, reads the echo-back aloud, and writes numbers down.
@@ -103,7 +103,7 @@ Everything from M1 goes into [../hardware/build-record.md](../hardware/build-rec
 ## 5. Step M3 — effective rolling diameter under load (12 min) — **the keystone**
 
 **Why the moulded number is suspect.** `WHEEL_DIAMETER_MM = 56.0` in
-[../../src/config.py](../../src/config.py) gives a geometric circumference of 175.9 mm. **Prime Lessons
+[../../src/mission_config.py](../../src/mission_config.py) gives a geometric circumference of 175.9 mm. **Prime Lessons
 (a community deck, not LEGO)** uses **17.5 cm** in its worked code where the same deck's own geometry
 says 17.6 ([../research/speed-envelope.md](../research/speed-envelope.md) § Wheel options). **That deck
 gives no reason for the 0.6 % difference** — loaded-tyre deflection is this project's inference and is
@@ -277,7 +277,7 @@ v_expected = pi * D_eff * omega / 360                   <- what the commanded wh
 | `motor.velocity()` tracks the command, `v_ground` tracks `v_expected`, but the **lateral offset grows** step over step and the yaw trace oscillates or ramps | **Control loss.** The heading loop, not the motor, is the limit — and it binds *lower* than the motor does |
 
 **The stopping rule.** Stop at the first step where the lateral offset **over `L`** exceeds
-`CROSS_TRACK_ERROR_MM` in [../../src/config.py](../../src/config.py) (`[ASSUMED]` 15 mm). That constant is
+`CROSS_TRACK_ERROR_MM` in [../../src/mission_config.py](../../src/mission_config.py) (`[ASSUMED]` 15 mm). That constant is
 the allowance for **one full lane**, so this comparison is only valid because M7.1 makes `L` the same lane
 M8 uses — if you were forced to use a shorter run, say so on the paper and treat the verdict as
 provisional rather than rescaling it. **The previous step is the practical top speed**, and going faster than it is self-defeating: it
@@ -289,7 +289,7 @@ buys seconds on the lane and spends them on a narrower lane pitch and more lanes
 ## 8. Step M8 — cross-track error over a real lane (20 min, or 7 for M8-lite)
 
 This is the number the sweep design is built on. `CROSS_TRACK_ERROR_MM` feeds `lane_pitch_mm()` →
-`lane_count()` → `sweep_path_mm()` in [../../src/config.py](../../src/config.py), and therefore the entire
+`lane_count()` → `sweep_path_mm()` in [../../src/mission_config.py](../../src/mission_config.py), and therefore the entire
 run-time budget.
 
 **Heading hold ON for this step** — this is the configuration the mission actually runs.
@@ -400,7 +400,7 @@ because the code still holds the guess while the register says we know
 |---|---|---|
 | 11.1 | Write the finding: every number **with its units, surface, lighting, trial count, spread and date** | **`docs/findings/drivetrain-calibration.md`** (new), plus a row in [../findings/INDEX.md](../findings/INDEX.md) |
 | 11.2 | Keep the raw CSVs alongside it | They are the evidence, and they let the arithmetic be redone without the robot |
-| 11.3 | Update the constants and **strike the `[ASSUMED]` marker**, leaving the surface and date in the comment | [../../src/config.py](../../src/config.py): `WHEEL_DIAMETER_MM` (M3) · `TRACK_WIDTH_MM` (M4) · `SAMPLE_RATE_HZ` (M5) · `CROSS_TRACK_ERROR_MM` (M8 **maximum**) · `TRAVERSE_SPEED_MMS` (M7/M8) |
+| 11.3 | Update the constants and **strike the `[ASSUMED]` marker**, leaving the surface and date in the comment | [../../src/mission_config.py](../../src/mission_config.py): `WHEEL_DIAMETER_MM` (M3) · `TRACK_WIDTH_MM` (M4) · `SAMPLE_RATE_HZ` (M5) · `CROSS_TRACK_ERROR_MM` (M8 **maximum**) · `TRAVERSE_SPEED_MMS` (M7/M8) |
 | 11.4 | Re-check the pure logic after 11.3. **`tests/persistent/` does not exist yet**, so today this is one command, not a suite: `python3 -c "import sys; sys.path.insert(0,'src'); import config; print(config.lane_pitch_mm(), config.lane_count(), config.sweep_path_mm())"` | A `ValueError` from `lane_pitch_mm()` means the measured cross-track error makes guaranteed coverage impossible at the assumed 76 mm target. **That is a real answer** — raise it as R-01, never loosen the check. When the floor is written, this row becomes "run `tests/persistent/`" |
 | 11.5 | Record the motor variant, both wheel diameters, and the geometry | [../hardware/build-record.md](../hardware/build-record.md) § 2 and § 3 |
 | 11.6 | Record the device on each port with the date a human watched it respond | [../hardware/port-map.md](../hardware/port-map.md) |

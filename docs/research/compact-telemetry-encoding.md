@@ -375,7 +375,7 @@ the files are **not** edited.
 |---|---|---|
 | `docs/research/INDEX.md` | Add a row for this doc. (`./scripts/check-docs.py` will flag it as un-indexed until then.) | INDEX-coverage rule |
 | `src/telemetry_bin.py` (**new**) | Add the §6 sibling **only when live telemetry is actually built** (after G4). Pure module; import the field names it carries from `telemetry.COLUMNS`. | Keeps one schema, two encoders; no schema fork |
-| `src/config.py` | When live is enabled, keep `TELEMETRY_LIVE_ENABLED=False` default; add `TELEMETRY_LIVE_FORMAT="bin"` (vs `"csv"`) so the live channel can select the compact encoder without touching the `/flash` log format | Value, not architecture |
+| `src/mission_config.py` | When live is enabled, keep `TELEMETRY_LIVE_ENABLED=False` default; add `TELEMETRY_LIVE_FORMAT="bin"` (vs `"csv"`) so the live channel can select the compact encoder without touching the `/flash` log format | Value, not architecture |
 | `docs/plans/competition-program-design.md` | §4.6: note that "thin by rate, not columns" governs the **CSV log**; the **live** channel may use the compact `telemetry_bin` subset (a separate versioned parser), which is what makes the ~3 Hz heartbeat — or a modest live stream — fit the pessimistic floor with margin | Reconciles the subset with the one-parser rule |
 | `docs/research/telemetry-while-driving.md` | Cross-reference this doc from §2.1 / §3.5 as the payload-side companion to the link-side MTU analysis; both feed gate G3 | Keeps the two telemetry docs in sync |
 

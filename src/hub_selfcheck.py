@@ -12,6 +12,15 @@ value. A caller that gets None knows it has no data; a caller that gets 0 does n
 """
 import hub_api
 from hub_api import API, API_SPIKE2, API_SPIKE3
+# The readers this module probes live one per device (ADR-0004). They were referenced by BARE NAME
+# and never imported -- and because the probe tuple below is built OUTSIDE the try, the NameError
+# fired before a single probe ran, so selfcheck() could never return OK, NOT_OK or UNKNOWN on real
+# hardware: it threw. Invisible on the host, where the function exits early on hub_api.available().
+# Found 2026-09-09 by the undefined-name check now standing in ./scripts/check-docs.py.
+import hub_color
+import hub_distance
+import hub_imu
+import hub_motors
 
 # Which probes must pass for the run to proceed. The distance sensor is NOT here: we do not own one,
 # and whether we ever will depends on the professor's answer about the arena boundary. Including it
@@ -45,11 +54,11 @@ def selfcheck(required=None):
     # which names the port actually at fault, not just the probe name, or the Builder is sent to the
     # wrong plug. Per-side attribution would need a per-side read the LEGO API shape does not give.
     probes = (
-        ("left_motor", lambda: read_motor_degrees()[0]),
-        ("right_motor", lambda: read_motor_degrees()[1]),
-        ("yaw", read_yaw_deg),
-        ("color_reflection", read_reflection),
-        ("distance", read_distance_mm),
+        ("left_motor", lambda: hub_motors.read_motor_degrees()[0]),
+        ("right_motor", lambda: hub_motors.read_motor_degrees()[1]),
+        ("yaw", hub_imu.read_yaw_deg),
+        ("color_reflection", hub_color.read_reflection),
+        ("distance", hub_distance.read_distance_mm),
     )
     for name, fn in probes:
         try:

@@ -4,7 +4,7 @@
 Every figure is either quoted from a source that was actually fetched, or arithmetic over a quoted figure
 and labelled as such. Nothing here was measured on our hub.
 **Answers:** *"what are the hardware resources on the SPIKE Prime?"* and *"is SLAM feasible?"*
-**Governs:** `SAMPLE_RATE_HZ` in [../../src/config.py](../../src/config.py), the sample budget in
+**Governs:** `SAMPLE_RATE_HZ` in [../../src/mission_config.py](../../src/mission_config.py), the sample budget in
 [../plans/telemetry-and-analysis.md](../plans/telemetry-and-analysis.md), and the localization rung the
 sweep is built on ([../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md)).
 
@@ -57,7 +57,7 @@ lane count — which is the number `CROSS_TRACK_ERROR_MM` stands for, and the mu
 coverage-time budget.
 
 **One thing this changes in the code today:** `SAMPLE_RATE_HZ = 100.0` in
-[../../src/config.py](../../src/config.py) is the **colour sensor's** rate off LEGO's fact sheet — now
+[../../src/mission_config.py](../../src/mission_config.py) is the **colour sensor's** rate off LEGO's fact sheet — now
 sourced, previously bare "UNVERIFIED". It is **not** the rate a Python loop achieves, and the two must not
 be one constant (§3.1).
 
@@ -176,7 +176,7 @@ That is why the LEGO API takes **milliseconds** and **integer degrees** rather t
 The Cortex-M4's FPU exists, but a MicroPython float is a *heap-allocated boxed object* — every arithmetic
 result allocates, and allocation eventually triggers GC. Interpreter overhead swamps the FPU.
 
-**Actionable for our code:** [../../src/config.py](../../src/config.py) uses floats throughout
+**Actionable for our code:** [../../src/mission_config.py](../../src/mission_config.py) uses floats throughout
 (`ARENA_WIDTH_MM = 1000.0`, `TRAVERSE_SPEED_MMS = 150.0`) — correct and harmless for the *pure* host-side
 modules. Anything landing **inside the per-sample loop on the hub** should be integer millimetres /
 millidegrees, converted once at the boundary in [../../src/hub_*.py](../../src/hub_api.py).
@@ -207,7 +207,7 @@ reuse one buffer · `gc.collect()` at a safe point, never inside the control loo
 | **Port/wire rate** | LPF2 UART link | `115 kB port speed`; 115200 baud after handshake | Sourced (LEGO; pybricks/technical-info) |
 | **Python loop rate** | Iterations/s a `while` loop achieves *including* the sensor call | **UNKNOWN** | **Still UNKNOWN after the 2026-08-27 hub session — deliberately.** One *component* of it was measured (a full IMU tick = 1.350 ms, § 3.2a) but a component cost is **not** a loop rate: it excludes driving, detecting and logging. Do not promote this row on the strength of it, and do not fill § 3.4's speed table from it |
 
-`SAMPLE_RATE_HZ = 100.0` in [../../src/config.py](../../src/config.py) is row 1. Every consumer of it —
+`SAMPLE_RATE_HZ = 100.0` in [../../src/mission_config.py](../../src/mission_config.py) is row 1. Every consumer of it —
 `samples_per_target()`, the event-width gate in [../../src/detector.py](../../src/detector.py), the
 traverse ceiling in [./color-discrimination.md](./color-discrimination.md) §5.2 — needs row 3.
 **They are not the same number, and row 3 can only be smaller.**
@@ -280,7 +280,7 @@ the spot must be *entirely inside* the note to give a pure sample. With the wors
 
 The 100 Hz row reproduces the trade study's § 7.1 figures exactly, as it must. **At 50 Hz the 300 mm/s that
 the 3-sensor option back-solves for is already unreachable; at 25 Hz so is the 150 mm/s standing in
-[../../src/config.py](../../src/config.py).** That is a design consequence, not a tuning consequence, which
+[../../src/mission_config.py](../../src/mission_config.py).** That is a design consequence, not a tuning consequence, which
 is why D-2 is the highest-value ten minutes of the first hub session.
 
 ---
@@ -620,4 +620,4 @@ instructables.com *MicroPython on SPIKE Prime* (body did not render).
 [../plans/2026-08-25-coverage-strategy-trade-study.md](../plans/2026-08-25-coverage-strategy-trade-study.md) ·
 [../decisions/0001-stock-lego-firmware-only.md](../decisions/0001-stock-lego-firmware-only.md) ·
 [../runbooks/hub-identification.md](../runbooks/hub-identification.md) ·
-[../../src/config.py](../../src/config.py) · [../../src/hub_*.py](../../src/hub_api.py)
+[../../src/mission_config.py](../../src/mission_config.py) · [../../src/hub_*.py](../../src/hub_api.py)

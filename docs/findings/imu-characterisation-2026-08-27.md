@@ -362,7 +362,7 @@ stationary, but it also **swallows genuine slow rotation**. Two things follow:
 
 - The 0.0033 °/s figure may be a property of the filter rather than of the sensor, and would not
   survive contact with a robot that is actually turning slowly.
-- [`src/config.py`](../../src/config.py) `STUCK_YAW_TICKS = 50` assumes "yaw unchanged while the
+- [`src/mission_config.py`](../../src/mission_config.py) `STUCK_YAW_TICKS = 50` assumes "yaw unchanged while the
   encoders show a turn" means a *broken* gyro. On a slow enough turn, a deadband could make a
   perfectly healthy gyro look stuck.
 
@@ -370,9 +370,9 @@ Settling it needs a motorised slow turn with encoders as the reference, which ne
 
 ---
 
-## 6. What this closes in `src/config.py`, and what it does not
+## 6. What this closes in `src/mission_config.py`, and what it does not
 
-**No constant in [`src/config.py`](../../src/config.py) gains a measured value from this session.**
+**No constant in [`src/mission_config.py`](../../src/mission_config.py) gains a measured value from this session.**
 What changes is which comments are still true.
 
 | Constant | Effect of this finding |

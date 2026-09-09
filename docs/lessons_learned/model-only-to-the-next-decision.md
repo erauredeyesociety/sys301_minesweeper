@@ -58,7 +58,7 @@ knowing which numbers are real, not having more of them.**
 - Before extending an analysis, ask: **which decision does the next number change?** If none, stop.
 - An unmeasured value becomes a **variable plus a bench procedure**, not a better estimate. Put the
   procedure in [../plans/bench-measurement-plan.md](../plans/bench-measurement-plan.md) and the variable
-  in [`src/config.py`](../../src/config.py), where changing it later costs one edit.
+  in [`src/mission_config.py`](../../src/mission_config.py), where changing it later costs one edit.
 - **Parameterise so measurement is cheap.** The reason this cost us little: arena size, wheel diameter,
   track width, and thresholds were already arguments and config values, so the real numbers will change
   values and not architecture.

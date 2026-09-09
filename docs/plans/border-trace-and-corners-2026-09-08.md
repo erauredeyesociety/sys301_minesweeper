@@ -335,7 +335,7 @@ cannot do.
 > what boustrophedon coverage exists to avoid. Crookedness is absorbed entirely by the per-lane `L_i`.
 
 Pitch with two downward sensors spaced `S`: `P = S + (76 − 2e − m) = S + 41 mm` [COMPUTED from
-`src/config.py`]. `lanes = ceil(span_across / P)` · `turns = 2*(lanes − 1)`.
+`src/mission_config.py`]. `lanes = ceil(span_across / P)` · `turns = 2*(lanes − 1)`.
 
 | Arena | S = 0 (one sensor) | S = 41 | S = 65 |
 |---|---|---|---|
@@ -346,7 +346,7 @@ Pitch with two downward sensors spaced `S`: `P = S + (76 − 2e − m) = S + 41 
 `SECOND_COLOR_PORT` is declared in `hub_api.py` and referenced nowhere else in the repo. So the honest
 figure for the program as it stands is the **75-lane column**, and **the pitch must not be raised to
 `S + 41` until both ports are actually read every tick** — raising it first is the one change that
-silently loses mines. `SENSOR_SPACING_MM` does not exist in `src/config.py` at all.
+silently loses mines. `SENSOR_SPACING_MM` does not exist in `src/mission_config.py` at all.
 
 ### 6.2 Belt-and-braces lane termination
 

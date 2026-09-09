@@ -49,7 +49,7 @@ HELD**, so a slot that auto-Starts never calibrates on the bench.
 
 - **`src/hub_runtime.py`** (new) — wraps the hub-only `runloop` so `main.py` reaches the async runtime
   through a `hub_*` module and stays host-importable (ADR-0004; check-docs enforces it).
-- **`src/config.py`** — added `DETECT_MODE` ("anomaly" default) and `COUNTDOWN_S` (10).
+- **`src/mission_config.py`** — added `DETECT_MODE` ("anomaly" default) and `COUNTDOWN_S` (10).
 
 ## Deliberately NOT built (per contract §4 — bolt-ons, each one knob away)
 

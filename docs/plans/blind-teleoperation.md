@@ -57,7 +57,7 @@ Nothing here is measured.
 
 **Lane geometry.** `config.lane_pitch_mm()` = `TARGET_SIZE_MM − 2×CROSS_TRACK_ERROR_MM −
 LANE_OVERLAP_MM` = 76 − 30 − 5 = **41.0 mm**. All three inputs are `[ASSUMED]` in
-[../../src/config.py](../../src/config.py) — the note has never been seen and cross-track error has
+[../../src/mission_config.py](../../src/mission_config.py) — the note has never been seen and cross-track error has
 never been measured.
 
 **Heading, illustratively.** The per-lane lateral allowance is `CROSS_TRACK_ERROR_MM` = 15 mm — it is

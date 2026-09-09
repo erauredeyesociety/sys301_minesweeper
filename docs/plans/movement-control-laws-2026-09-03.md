@@ -29,7 +29,7 @@ HUB-FACING; nothing here edits `src/` — the code changes are collected in
 From [../hardware/port-map.md](../hardware/port-map.md),
 [../findings/drive-checkpoint-2026-09-01.md](../findings/drive-checkpoint-2026-09-01.md),
 [../findings/colour-first-look-2026-09-01.md](../findings/colour-first-look-2026-09-01.md), and
-[../../src/config.py](../../src/config.py):
+[../../src/mission_config.py](../../src/mission_config.py):
 
 | Fact | Value | Status |
 |---|---|---|
@@ -535,7 +535,7 @@ briefs' recommended-changes tables — where they do, this is the same change, n
 |---|---|---|
 | [../../src/detector.py](../../src/detector.py) | Add pure `straddle_deviations(...)` and `straddle_error(...)` (§1.5) beside the boundary/skew helpers the coverage brief already proposes. Add `STRADDLE_*` regime string constants. **Do not touch `EdgeCounter`.** | The two-sensor error signal is a detection concern; keeps it pure and replayable. |
 | [../../src/odometry.py](../../src/odometry.py) | Add pure `line_straddle_pair(...)` (§1.5) beside `heading_hold_pair`, same output convention. No hub import; no `Odometry` change. | The steering output is a motion concern and must match the `hub_motors.drive` contract. |
-| [../../src/config.py](../../src/config.py) | Add the "Line straddle" block (§1.4); reuse `SENSOR_SPACING_MM`, `pass_pitch_mm`, `BOUNDARY_DEVIATION_MIN` proposed by the coverage brief; add `SQUARE_SKEW_TOL_DEG`. Keep `CLASSES=('target',)`. | A clarified answer or bench number changes a value here, never a state. |
+| [../../src/mission_config.py](../../src/mission_config.py) | Add the "Line straddle" block (§1.4); reuse `SENSOR_SPACING_MM`, `pass_pitch_mm`, `BOUNDARY_DEVIATION_MIN` proposed by the coverage brief; add `SQUARE_SKEW_TOL_DEG`. Keep `CLASSES=('target',)`. | A clarified answer or bench number changes a value here, never a state. |
 | [../../src/calibration.py](../../src/calibration.py) | The two-sided `boundary_deviation_threshold(...)` the coverage brief proposes is what `straddle_deviations` consumes — one shared helper. | Tape polarity is unknown; a polarity-locked signal could miss it. |
 | [../../src/sweep.py](../../src/sweep.py) | Bind `CMD_RESQUARE` to the two-sensor line-square (§2.3); `STEP` drives `pass_pitch_mm(S)`; add boundary-triggered lane end and the online `x_far`/`y_far` mapping (§2.4). Same corrections the coverage brief §C.2 lists. | The lane law and the mapping live in the sweep sequencer. |
 | [../../src/result.py](../../src/result.py) | `add_boundary()`/`boundary_hits`, a `skew_deg` field, `note_relocalized(source, residual_deg)`, `STATUS_DEGRADED` — as the coverage brief already lists; the four discovered edges are recorded here. | The mapping and each absolute re-square are logged, out of the `detected == classified + unknown` invariant. |
@@ -561,7 +561,7 @@ briefs' recommended-changes tables — where they do, this is the same change, n
   `A:−v,B:+v`, 1 rev = 360 enc-deg, 930 dps, the ~9° startup-ramp shortfall (**not** a decel-coast datum).
 - [../findings/colour-first-look-2026-09-01.md](../findings/colour-first-look-2026-09-01.md) — `rgbi`
   0–1024, matched sensors C and D, `reflection()` surface-vs-air separation.
-- [../../src/config.py](../../src/config.py), [../../src/odometry.py](../../src/odometry.py),
+- [../../src/mission_config.py](../../src/mission_config.py), [../../src/odometry.py](../../src/odometry.py),
   [../../src/detector.py](../../src/detector.py), [../../src/sweep.py](../../src/sweep.py),
   [../../src/calibration.py](../../src/calibration.py), [../../src/classify.py](../../src/classify.py) —
   the code every law maps onto: `heading_hold_pair`, `cross_track_error_mm`, `normalize_angle`,

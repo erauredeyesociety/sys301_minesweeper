@@ -75,7 +75,13 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   Store prices can change; the ledger records the price actually paid per line, not a price list.
 - **Hodge-podge hardware: measure, don't model.** Closed on the bench since: wheel Ø **63.5 mm**,
   effective track width **95 mm** (both MEASURED 2026-09-03 from a driven 1 ft square), loop rate
-  **20 Hz** sustained while driving *and* logging *and* reading both colour sensors, coast after a stop
+  **median 54 ms (18.5 Hz) but MEAN 75 ms = 13.3 Hz** while driving *and* logging *and* reading both
+  colour sensors — ⚠ *corrected 2026-09-09 from "20 Hz sustained", which was the median quoted as if
+  it were a guarantee.* The jitter has a known cause: the `CsvLog` flush costs a deterministic
+  **+51 ms on one tick in ten**. **Use the TAIL, not the median, for any guarantee** — a speed giving
+  two samples at the median gives ZERO at p95. `config.max_safe_speed_mms()` turns a rate into the
+  safe traverse ceiling (162 mm/s at 13.3 Hz), against the **worst-case 36.48 mm chord** (a 76 mm
+  note crossed at 45° at the worst lane offset), *not* the 76 mm note size, coast after a stop
   trigger **~3 mm**, motor `max_speed` **930 deg/s** (runs to date have used only 80–100 dps). **Still
   unmeasured:** sensor spacing, cross-track error, and whether the heading wander is a systematic bias or
   zero-mean noise — the last one is load-bearing, because a *bias* costs 85 mm of drift over 3048 mm and
@@ -177,7 +183,7 @@ defensible reading and parameterize, so a clarified answer changes a value, not 
   ⚠ **KNOWN BUG, still present:** `src/hub_color.py` reads only `hub_api.COLOR_PORT`. **`SECOND_COLOR_PORT`
   is declared in `hub_api.py` and read NOWHERE in `src/`** — so the mission code has a **one-sensor
   swath** while two sensors are mounted and both are read fine by `examples/`. At 10 ft that is the
-  difference between 75 lanes and 38. ⚠ **Do not raise the lane pitch until both ports are genuinely read
+  the PRECONDITION for a wider lane pitch, which at 10 ft would be the difference between 75 lanes and 38. ⚠ **CORRECTED 2026-09-09: reading both ports does NOT by itself halve the lane count.** `lane_pitch_mm()` is `TARGET_SIZE_MM - 2*CROSS_TRACK_ERROR_MM - LANE_OVERLAP_MM` = 41 mm and does not reference the sensors at all, so `SweepPlan` still plans **75 lanes** with both ports read. What the two-sensor fix buys is **REDUNDANCY** — either sensor can catch a mine, so one dropping out no longer loses it. Halving the lanes needs the PITCH widened, which needs the **[UNMEASURED]** sensor spacing (KU-M33). Say redundancy, not coverage. ⚠ **Do not raise the lane pitch until both ports are genuinely read
   every tick** — that is the one change that silently loses mines.
 - **Budget:** [docs/course/budget.md](docs/course/budget.md) is the live Schrute Buck ledger and the single
   source of truth — a plain markdown table. Add a row and carry the running balance down; don't build a

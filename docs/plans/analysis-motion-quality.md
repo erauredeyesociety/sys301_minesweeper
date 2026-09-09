@@ -21,7 +21,7 @@
 
 Two logged columns — `enc_l_deg`/`enc_r_deg` and `yaw_ddeg` — are enough to answer *"did the robot drive
 where it thought it did?"*, and to **extract the drivetrain constants rather than assume them**.
-`WHEEL_DIAMETER_MM = 56.0` and `TRACK_WIDTH_MM = 176.0` in [../../src/config.py](../../src/config.py) are
+`WHEEL_DIAMETER_MM = 56.0` and `TRACK_WIDTH_MM = 176.0` in [../../src/mission_config.py](../../src/mission_config.py) are
 both `[ASSUMED]` placeholders (KU-M3) and both scale everything downstream: distance, turn angle, lane
 pitch, run time.
 
@@ -376,7 +376,7 @@ healthy runs and below the heading budget `θ_max = atan(ε / L)` that one lane 
 ## Cross-track error, and its honest limits
 
 `CROSS_TRACK_ERROR_MM = 15.0` is `[ASSUMED]` and flagged optimistic in both
-[../../src/config.py](../../src/config.py) and
+[../../src/mission_config.py](../../src/mission_config.py) and
 [../findings/coverage-time-budget.md](../findings/coverage-time-budget.md). It feeds `lane_pitch_mm()` →
 `lane_count()` → `sweep_path_mm()`, so it multiplies the entire run-time budget: on the finding's formula
 (`pitch ≤ 76 − 2e`) 15 mm cuts the usable pitch from 76 mm to 46 mm and takes the 10-foot case from 125 m
@@ -636,7 +636,7 @@ this analysis falsifies or confirms) · [telemetry-over-bluetooth.md](./telemetr
 (record format, sibling analysis blocks) · [telemetry-and-analysis.md](./telemetry-and-analysis.md) (why
 analysis is planned before it is written) · [known-unknowns.md](./known-unknowns.md) (KU-M3, M4, M5, M8,
 M9) · [bench-measurement-plan.md](./bench-measurement-plan.md) (the class period these runs come from) ·
-[../../src/odometry.py](../../src/odometry.py) and [../../src/config.py](../../src/config.py) (the
+[../../src/odometry.py](../../src/odometry.py) and [../../src/mission_config.py](../../src/mission_config.py) (the
 functions replayed and the constants replaced).
 
 **ResearchHub:** queried 2026-08-26 on odometry calibration, dead-reckoning error, and gyro/encoder

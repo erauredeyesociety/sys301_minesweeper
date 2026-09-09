@@ -47,4 +47,4 @@ honest one.
 
 **Related:** [standalone-run-and-retrieve](./standalone-run-and-retrieve-2026-09-03.md) ·
 [colour-sensor-mounting-wobble](./colour-sensor-mounting-wobble-2026-09-03.md) ·
-`examples/motor_poc.py` · `scripts/decode_telemetry.py` · `src/config.py`
+`examples/motor_poc.py` · `scripts/decode_telemetry.py` · `src/mission_config.py`

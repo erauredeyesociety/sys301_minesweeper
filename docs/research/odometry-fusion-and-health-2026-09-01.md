@@ -611,7 +611,7 @@ All **pure** (host-runnable, no hub import) unless marked HUB-FACING. All thresh
 | `src/odometry.py` | `disturbance(enc_left_dps, enc_right_dps, accel_mg, d_tilt_ddeg, yaw_rate_dps, tuning) -> str\|None` | wheels still + IMU moving ⇒ lifted/pushed/tipped (post-settle gate) |
 | `src/odometry.py` | `HEALTH_OK/SLIP/STALL/DISTURBED = "ok"/"slip"/"stall"/"disturbed"` | plain string status constants (no enum) |
 | `src/hub_imu.py` | (no new signatures) — consumers of `read_yaw_deg()` route deltas through `normalize_angle`; `omega_gyro` source is `angular_velocity()` **or** differenced `tilt_angles()` yaw, and which one is recorded | the deadband caveat (5.5) rides here |
-| `src/config.py` | new constants (heading hold + Groups N/S/D + turn-profile + stop-margin block + floors) | see RECOMMENDED CHANGES |
+| `src/mission_config.py` | new constants (heading hold + Groups N/S/D + turn-profile + stop-margin block + floors) | see RECOMMENDED CHANGES |
 | `data_analysis/motion.py` | `estimate_turn_scale(encdiff_deg, yaw_deg) -> (turn_enc_scale, rms_resid)` and `estimate_k_yaw(encdiff_dps, omega_gyro_dps) -> (k_yaw, rms_resid)` | log-side turn scale and K_YAW by origin-regression; inputs must be forward-positive/sign-corrected |
 
 **Where the split falls:** the pure run-time consumers live in **`src/odometry.py`** (already the pure
@@ -627,7 +627,7 @@ part of this Write task** — see RECOMMENDED CHANGES.
 **This sidecar applies docs only.** Each source change below is additive and should be implemented after
 the bench gates are agreed; no hub I/O belongs inside these pure helpers.
 
-- **[`src/config.py`](../../src/config.py)** — add, with each derivation in its comment:
+- **[`src/mission_config.py`](../../src/mission_config.py)** — add, with each derivation in its comment:
   - **Drivetrain:** if the 2.5 in wheels are confirmed, seed `WHEEL_DIAMETER_MM = 63.5` only as
     `[ASSUMED]`; replace with BM-3 `D_eff` before any `--distance` move is trusted. Keep the measured
     motor signs single-sourced (`hub_api` today, or aliases here if they are moved deliberately).
@@ -737,7 +737,7 @@ the bench gates are agreed; no hub I/O belongs inside these pure helpers.
 - [detection-odometry-coverage-2026-09-01.md](./detection-odometry-coverage-2026-09-01.md) §B — scrubbing
   caster (gyro-closed turns, `TURN_ENC_SCALE`, two effective tracks, G1 suppressed on turns), §D.5 the
   no-coast-datum correction, `r_max = 2ev/L²`.
-- [`src/odometry.py`](../../src/odometry.py), [`src/config.py`](../../src/config.py),
+- [`src/odometry.py`](../../src/odometry.py), [`src/mission_config.py`](../../src/mission_config.py),
   [`src/hub_motors.py`](../../src/hub_motors.py), [`src/hub_imu.py`](../../src/hub_imu.py),
   [`src/sweep.py`](../../src/sweep.py), [`src/calibration.py`](../../src/calibration.py) — the code every
   formula and signature maps onto.

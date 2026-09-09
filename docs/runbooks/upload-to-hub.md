@@ -8,7 +8,7 @@
 >
 > **What actually works, proven 2026-08-27:** base64 chunks over the MicroPython REPL on `/dev/spike`
 > into **`/flash/lib`**, verified by a **SHA-256 the hub computes on itself**, then an import check.
-> `src/config.py` went up in 3.6 s — 13262 bytes, 70 chunks, hash `05a3efef…828a` matched, then
+> `src/mission_config.py` went up in 3.6 s — 13262 bytes, 70 chunks, hash `05a3efef…828a` matched, then
 > `OK config`. **No LEGO app, no `mpy-cross`, no GCC, no Windows.** Procedure:
 > [deploy-to-hub.md](./deploy-to-hub.md). Decision:
 > [ADR-0007](../decisions/0007-deploy-by-writing-modules-to-flash-lib.md).
@@ -53,7 +53,7 @@ The route that **is** proven, for comparison:
 
 ```mermaid
 flowchart LR
-    S["src/config.py<br/>on the host"] --> C["hub_programmer/upload.py --apply<br/>70 base64 chunks over the REPL"]
+    S["src/mission_config.py<br/>on the host"] --> C["hub_programmer/upload.py --apply<br/>70 base64 chunks over the REPL"]
     C --> F["/flash/lib/config.py<br/>13262 B, 3.6 s"]
     F --> V["SHA-256 computed ON THE HUB<br/>matches the local file"]
     V --> I["probes/import_check.py<br/>→ OK config"]

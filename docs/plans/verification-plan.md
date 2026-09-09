@@ -127,7 +127,7 @@ MAD spread.
   sign-off before the experiment runs — pick it *first*, so the result cannot be argued backwards from
   the data.
 - `config.MIN_CONTRAST = 12.0` reflectance points is likewise a **placeholder bound** in
-  `src/config.py`, marked as such. Replace it with a value justified by this experiment.
+  `src/mission_config.py`, marked as such. Replace it with a value justified by this experiment.
 
 ### 3.4 Why a FAIL is cheap
 

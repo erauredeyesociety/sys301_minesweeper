@@ -23,7 +23,7 @@ def read_distance_mm():
     Returning 0 for out-of-range would read as 'a wall is touching us' and drive a stop. None.
     """
     if API == API_SPIKE3:
-        mm = _distance.distance(hub_api._require(hub_api.DISTANCE_PORT, "hub_api.DISTANCE_PORT"))
+        mm = hub_api._distance.distance(hub_api._require(hub_api.DISTANCE_PORT, "hub_api.DISTANCE_PORT"))
         # SPIKE 3 returns -1, NOT an exception, whenever it cannot read -- which is the COMMON case
         # pointed at open space or an off-axis wall (docs/research/detection-and-sweep-techniques.md).
         # -1 mm is not a distance; it is the sentinel this module exists to translate.

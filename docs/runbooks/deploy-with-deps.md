@@ -2,7 +2,7 @@
 
 > **Status: resolver PROVEN on the host, 2026-09-04. The hub-touching `--apply` path is [UNVERIFIED].**
 > `hub_programmer/deploy_deps.py` resolves a program's transitive local imports with Python's `ast`
-> module (host logic, no hardware) and was host-tested on `src/main.py` and `src/config.py`. The
+> module (host logic, no hardware) and was host-tested on `src/main.py` and `src/mission_config.py`. The
 > `--apply` half only *orchestrates* two existing tools — `upload.py` (PROVEN 2026-08-27) and
 > `slot_upload.py` (still UNTESTED on our hub) — but that orchestration has **not** been run against
 > our hardware. Run it over USB to make it MEASURED and file the transcript under
@@ -67,7 +67,7 @@ hub_motors   hub_runtime  hub_telemetry_log  hub_ui  odometry  result  sweep
 `calibration` and `classify` are not imported by `main.py` directly — they come in transitively through
 `floor_anomaly`, which is exactly why a hand-typed list is error-prone and this tool exists. Ignored as
 stdlib/hub-only: `color_sensor, distance_sensor, hub, math, motor, os, runloop, spike, time`. A leaf
-module resolves to nothing — `deploy_deps.py src/config.py` reports 0 dependencies.
+module resolves to nothing — `deploy_deps.py src/mission_config.py` reports 0 dependencies.
 
 ## ⚠ The Hub OS goes down in the middle of `--apply`, by construction
 

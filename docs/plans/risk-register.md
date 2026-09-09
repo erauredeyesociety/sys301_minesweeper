@@ -93,7 +93,7 @@ Status `REALIZED` — 2026-09-08**
 >
 > **What changed it:** the operator stated the competition expectation is a **10 FOOT square (3048 mm)** —
 > the expensive end of the whole range, and it is now the planning value in
-> [`config.py`](../../src/config.py) (`PROVISIONAL`, "not set in stone", KU-P1). Against the speeds
+> [`config.py`](../../src/mission_config.py) (`PROVISIONAL`, "not set in stone", KU-P1). Against the speeds
 > actually MEASURED, [COMPUTED]:
 >
 > | Configuration | Lanes | Path | Time |
@@ -142,7 +142,7 @@ no longer guaranteed at all.
   closable **today, with a ruler, by the Builder, at no cost**.
 - **Mitigation:** Ask Q1, Q2 and Q5 **in one written message, first** — they are free to ask and they
   gate the architecture. Meanwhile keep arena size, lane pitch, and speed as parameters in
-  [config.py](../../src/config.py), never as constants, so an answer changes a value and not the
+  [config.py](../../src/mission_config.py), never as constants, so an answer changes a value and not the
   design — and **add `N_SENSORS` and `SENSOR_SPACING_MM` to that list**, with the pitch computed from
   the spacing rather than hard-coded. Do **not** tune a sweep before the units are known; tuning for the
   wrong arena is a wasted class session. **New and cheapest of all: measure the wheel diameter.** It is
@@ -534,7 +534,7 @@ caught it** — that is the row doing its job, and it belongs in the report's ve
 - **Cause:** FR-3 requires each target counted **exactly once**. Two notes touching read as one wide
   event; one note clipped at a glancing chord across two lanes reads as two. Whether the layout even
   allows adjacency is [KU-P6](./known-unknowns.md).
-- **Mitigation:** the event-width gate already in [config.py](../../src/config.py) — too narrow
+- **Mitigation:** the event-width gate already in [config.py](../../src/mission_config.py) — too narrow
   is noise, too wide is a seam or two merged notes — plus hysteresis and a dwell requirement on state
   changes. Ask Q6 so the gate is tuned to a real layout rather than a guessed one.
 - **Contingency:** report the count **with** the number of out-of-gate events rather than silently

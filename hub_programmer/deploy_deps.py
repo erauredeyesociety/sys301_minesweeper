@@ -166,12 +166,36 @@ def deploy(entry_path, deps, apply_it):
         if rc != 0:
             print("\nFAILED: upload.py exited %d on '%s'. Stopping -- the program is NOT started." % (rc, m))
             return 1
-    rc = _run(entry_cmd)
-    if rc != 0:
-        print("\nFAILED: slot_upload.py exited %d on the entry. Dependencies are in /flash/lib, "
-              "but the program did not upload/start." % rc)
-        return 1
-    print("\nDone: %d dependency module(s) in /flash/lib, entry uploaded and started." % len(deps))
+    # ⚠ STOP HERE. This is NOT a missing feature -- running the entry now would fail 100% of the
+    # time, and understanding why matters.
+    #   upload.py drives the MicroPython REPL, and to get a prompt it sends Ctrl-C.
+    #   Ctrl-C interrupts whatever MicroPython is running -- which is the HUB OS.
+    #   slot_upload.py speaks the Hub OS's binary control protocol, so with the Hub OS dead it
+    #   cannot get a DeviceUuidResponse and aborts at its identity check (correctly: it writes
+    #   nothing rather than risk writing to an unidentified hub).
+    # Every one of the module uploads above has therefore just killed the Hub OS, and there is no
+    # software recovery -- a Ctrl-D soft reset was tested with protocol verification and 25 s of
+    # retries on 2026-09-08 and does NOT relaunch it. Only a power cycle does, and this tool cannot
+    # press a button. So it hands off honestly instead of failing at the last step.
+    print("")
+    print("=" * 78)
+    print("MODULES DEPLOYED -- %d module(s) written to /flash/lib and hash-verified." % len(deps))
+    print("=" * 78)
+    print("")
+    print("  ⚠ THE HUB OS IS NOW DEAD. upload.py sends Ctrl-C to reach the REPL, and that stops the")
+    print("    Hub OS -- which is exactly what slot_upload.py needs alive. Starting the program from")
+    print("    here would abort at the identity check every time.")
+    print("")
+    print("  DO THIS:")
+    print("    1. POWER-CYCLE THE HUB -- single press the centre button off, then on.")
+    print("       (Single presses only. Never press-and-hold CONNECT while USB is plugged in.)")
+    print("    2. Then run the entry yourself:")
+    print("")
+    print("       %s" % " ".join(entry_cmd))
+    print("")
+    print("  Modules PERSIST in /flash/lib across power cycles (ADR-0007), so step 2 is all that is")
+    print("  left -- and if only the entry changed next time, skip this tool and run step 2 alone.")
+    print("=" * 78)
     return 0
 
 

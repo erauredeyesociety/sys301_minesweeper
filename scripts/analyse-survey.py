@@ -4,7 +4,8 @@
     ./scripts/analyse-survey.py                 # today's capture
     ./scripts/analyse-survey.py <file>
 
-Runs the REAL detection code (src/floor_anomaly.py, src/classify.py) over the labelled samples,
+Reports the SHIPPED brightness rule (reflection >= 30) first, then the REFUTED chromaticity rule for
+comparison only. Runs the real src/ code for both,
 so this is not a parallel re-implementation that could agree with the robot by accident and
 disagree in the arena. What it reports:
 
@@ -28,7 +29,9 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "src"))
 
+import brightness         # noqa: E402
 import calibration        # noqa: E402
+import mission_config as config  # noqa: E402
 import classify           # noqa: E402
 import floor_anomaly      # noqa: E402
 
@@ -45,8 +48,16 @@ MIN_TOTAL = 30
 
 
 def load(path):
-    """-> {label: {port: [(r,g,b,i), ...]}}, dropping any row without usable chromaticity."""
+    """-> (by_label, by_refl).
+
+    by_label holds (r,g,b,i) for the CHROMATICITY analysis and drops saturated / near-dark rows.
+    by_refl holds raw reflectance and drops NOTHING -- because the two questions need opposite
+    hygiene. ⚠ MEASURED 2026-09-09: the chromaticity filters throw away 298 of 497 YELLOW_NOTE
+    samples, and they are the BRIGHTEST ones (reflectance 98-99). Scoring a BRIGHTNESS rule on the
+    dim survivors is how this tool came to report that yellow mines were undetectable.
+    """
     by_label = {}
+    by_refl = {}
     with open(path) as fh:
         for line in fh:
             line = line.strip()
@@ -56,6 +67,10 @@ def load(path):
             if len(f) < 11:
                 continue
             label, port_name = f[1], f[2]
+            try:                                  # reflectance FIRST, before any filtering
+                by_refl.setdefault(label, {}).setdefault(port_name, []).append(int(f[6]))
+            except (ValueError, IndexError):
+                pass
             try:
                 r, g, b, i = int(f[7]), int(f[8]), int(f[9]), int(f[10])
             except ValueError:
@@ -65,7 +80,7 @@ def load(path):
             if r + g + b < MIN_TOTAL:
                 continue                       # nothing under the sensor
             by_label.setdefault(label, {}).setdefault(port_name, []).append((r, g, b, i))
-    return by_label
+    return by_label, by_refl
 
 
 def chroma(samples):
@@ -77,6 +92,41 @@ def chroma(samples):
             calibration.median([p[1] for p in pts]),
             calibration.median([p[2] for p in pts]),
             len(pts))
+
+
+def report_shipped_rule(by_refl, port_name):
+    """THE RULE THE ROBOT ACTUALLY RUNS: reflection >= mission_config.MINE_REFL_ON.
+
+    This section is the point of the tool on demo morning. It answers, from the real capture, the
+    only two questions that matter: would each surface trip the shipped detector, and would the floor
+    let the robot ARM at all.
+    """
+    labels = [l for l in sorted(by_refl) if port_name in by_refl[l] and by_refl[l][port_name]]
+    if not labels:
+        return
+    print("")
+    print("=" * 76)
+    print("SENSOR %s -- THE SHIPPED RULE: reflection >= %.0f   (this is what the robot runs)"
+          % (port_name, config.MINE_REFL_ON))
+    print("=" * 76)
+    print("  %-18s %5s %6s %6s %6s %6s   %s" % ("surface", "n", "min", "med", "p90", "max", "% >= on"))
+    print("  " + "-" * 66)
+    for label in labels:
+        v = sorted(by_refl[label][port_name])
+        n = len(v)
+        med = v[n // 2]
+        p90 = v[int(0.90 * (n - 1))]
+        pct = 100.0 * sum(1 for x in v if x >= config.MINE_REFL_ON) / n
+        print("  %-18s %5d %6d %6d %6d %6d   %5.1f%%" % (label, n, v[0], med, p90, v[-1], pct))
+
+    if FLOOR_LABEL in by_refl and port_name in by_refl[FLOOR_LABEL]:
+        print("")
+        try:
+            cal = brightness.derive_thresholds(by_refl[FLOOR_LABEL][port_name])
+            print("  ARMING GATE: ARMS.  %s" % cal.describe())
+        except Exception as exc:
+            print("  ARMING GATE: REFUSES -- %s" % exc)
+            print("  (That is the run refusing to start. Fix the floor or the mount, not the rule.)")
 
 
 def report_port(by_label, port_name):
@@ -119,7 +169,10 @@ def report_port(by_label, port_name):
     print("")
     print("  floor model: %d band(s)   %s" % (len(model.exemplars), cal.describe()))
     print("")
-    print("  ANOMALY SCORE vs this floor   (trips the detector when dev > on-threshold)")
+    print("  ⚠ REFUTED chromaticity rule -- kept ONLY for comparison. This is NOT what the robot")
+    print("    runs: it was measured to make yellow INVISIBLE and blue tape a 100%% false positive")
+    print("    on this carpet (docs/findings/colour-survey-and-first-detection-2026-09-08.md).")
+    print("  anomaly score vs this floor   (would trip when dev > on-threshold)")
     print("  %-14s %8s %8s %8s   %s" % ("surface", "med_dev", "min_dev", "%above", "verdict"))
     print("  " + "-" * 62)
 
@@ -183,7 +236,7 @@ def main(argv):
         print("no such file: %s" % path)
         return 64
 
-    by_label = load(path)
+    by_label, by_refl = load(path)
     if not by_label:
         print("no SV rows in %s" % path)
         return 1
@@ -192,35 +245,21 @@ def main(argv):
     print("SURFACE SURVEY ANALYSIS -- %s" % os.path.relpath(path, REPO))
     print("surfaces captured: %s" % ", ".join(sorted(by_label)))
 
+    for port_name in ("C", "D"):
+        report_shipped_rule(by_refl, port_name)
+
     all_verdicts = {}
     for port_name in ("C", "D"):
         v = report_port(by_label, port_name)
         if v:
             all_verdicts[port_name] = v
 
-    # The one line that decides whether the sweep needs a blue veto before Demo Day.
-    print("")
-    print("=" * 76)
-    print("WHAT THIS MEANS FOR THE RUN")
-    print("=" * 76)
-    for port_name, v in all_verdicts.items():
-        tape = [l for l in v if "TAPE" in l and v[l][0] >= 50.0]
-        mines = [l for l in v if l not in ("FLOOR",) and "TAPE" not in l]
-        missed = [l for l in mines if v[l][0] < 90.0]
-        print("")
-        print("  sensor %s:" % port_name)
-        if missed:
-            print("    MINES NOT RELIABLY DETECTED: %s" % ", ".join(missed))
-            print("      -> the sweep would drive over these and count nothing.")
-        elif mines:
-            print("    all captured mine colours trip the detector reliably.")
-        if tape:
-            print("    BOUNDARY TAPE ALSO TRIPS THE DETECTOR: %s" % ", ".join(tape))
-            print("      -> an unmodified sweep counts the boundary as mines.")
-            print("      -> needs the blue veto (mines are never blue -- operator 2026-09-08).")
-        elif any("TAPE" in l for l in v):
-            print("    boundary tape does NOT trip the detector -- no veto needed.")
-    print("")
+    # ⚠ THE OLD "WHAT THIS MEANS FOR THE RUN" VERDICT WAS DELETED 2026-09-09. It scored the REFUTED
+    # chromaticity rule and then told the operator, in confident prose, that his yellow mines were
+    # undetectable and that he needed a blue veto -- both the exact OPPOSITE of what was measured and
+    # of what src/brightness.py ships. On demo morning that would have pushed the Builder to change
+    # the detector away from the rule GATE 1 was closed with. One accountable path per concern: the
+    # SHIPPED-RULE section above is the verdict, and src/brightness.py owns the rule itself.
     return 0
 
 
