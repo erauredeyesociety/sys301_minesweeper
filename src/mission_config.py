@@ -265,7 +265,7 @@ def max_safe_speed_mms(rate_hz, chord_mm=None, min_samples=None):
     the rate it was asked for -- they differ by ~17% in our logs.
 
     COMPUTED reference points, worst-case chord 36.48 mm at 3 samples:
-        9.18 Hz  (src/main.py, TICK_MS=100)  ->  112 mm/s
+        9.18 Hz  (the OLD main.py rate, kept only as a reference point)  ->  112 mm/s
        16.58 Hz  (examples loop, TICK_MS=50) ->  202 mm/s
     """
     if chord_mm is None:

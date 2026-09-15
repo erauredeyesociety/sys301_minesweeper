@@ -1,5 +1,38 @@
 # sys301_minesweeper
 
+## 🚨 DEMO DAY — upload and run in 60 seconds (no Claude needed)
+
+```bash
+cd ~/sys301_minesweeper
+# 1. Plug in USB. If a program is running, press the hub's CENTER button to stop it.
+#    (Used run.py / download.py / a probe since the hub last booted? Power-cycle the hub first.)
+./hub_programmer/slot_upload.py examples/demo_day.py --apply
+# 2. Hub shows "S". Unplug USB.
+```
+
+**Run it:**
+
+1. Put the robot **inside** the square, at a corner on the border **opposite the wall**, facing
+   **along** that border (parallel to the wall), sensors ~6 cm inside the tape.
+2. Standing behind the robot, the wall is now on its left or its right. Tap that button (**LEFT** or
+   **RIGHT**). 3-2-1 countdown, then it sweeps lanes and shifts one wheel-pivot (~95 mm) toward the wall each lane.
+3. The live mine count shows on the light matrix with a beep per mine. Tap **LEFT/RIGHT** to end and
+   show the final count. **CENTER** kills the program.
+
+**If it fails:**
+
+| Symptom | Fix |
+|---|---|
+| Upload aborts at the identity check | Power-cycle the hub (unplug, hold CENTER to turn off, turn on), then re-run the upload |
+| Upload succeeds but nothing starts | A program is already running: press CENTER, re-run the upload |
+| Demo program misbehaves | Fallback, proven: `./hub_programmer/slot_upload.py examples/find_note.py --apply`. Drives forward and stops on a note |
+
+**Afterwards, get the log:** plug in USB and run `python3 hub_programmer/download.py --all`.
+
+⚠ Never hold the CONNECT (Bluetooth) button while plugging in USB. Never accept a "Hub update" prompt.
+
+---
+
 ERAU **SYS 301 Systems Engineering — Introductory Project** (Fall 2026). A four-person team builds and
 programs a LEGO Education SPIKE Prime robot to find sticky-note "mines" inside an arena outlined in blue
 painters tape, and produces the graded course deliverables. This repository holds all of it: robot code,
